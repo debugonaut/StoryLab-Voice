@@ -1,0 +1,193 @@
+/* ============================================================
+   STORYLAB VOICE — DESIGN TOKENS
+   System: Industrial field terminal
+   ------------------------------------------------------------
+   The UI is a piece of field equipment: steel plates, etched
+   labels, amber readouts, hard edges, physical feedback.
+   ============================================================ */
+
+/* --- Local fonts (Google Sans family, bundled for zero-signal use) --- */
+@font-face {
+  font-family: 'Google Sans Flex';
+  font-style: normal;
+  font-weight: 300 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('../assets/fonts/google-sans-flex-300-800-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  font-style: normal;
+  font-weight: 300 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('../assets/fonts/google-sans-flex-300-800-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Google Sans Code';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('../assets/fonts/google-sans-code-400-600-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Google Sans Code';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('../assets/fonts/google-sans-code-400-600-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  /* ----------------------------------------------------------
+     Surfaces — warm graphite, not flat black
+     ---------------------------------------------------------- */
+  --color-bg-base:       #0a0c0b;
+  --color-bg-panel:      #141815;
+  --color-bg-raised:     #1b201c;
+  --color-bg-inset:      #080a09;
+  --color-bg-overlay:    rgba(5, 7, 6, 0.82);
+  --color-bg-hover:      #232923;
+
+  /* Steel gradients */
+  --grad-panel:          linear-gradient(180deg, #171b18 0%, #121613 100%);
+  --grad-raised:         linear-gradient(180deg, #20261f 0%, #171c18 100%);
+  --grad-inset:          linear-gradient(180deg, #070908 0%, #0b0e0c 100%);
+  --grad-amber:          linear-gradient(180deg, #ffbc45 0%, #f59e0b 58%, #e08a06 100%);
+  --grad-steel-edge:     linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0));
+
+  /* ----------------------------------------------------------
+     Structure — hairlines + chassis
+     ---------------------------------------------------------- */
+  --color-border:        #343b35;
+  --color-border-heavy:  #4a534b;
+  --color-border-light:  #222722;
+  --color-border-amber:  rgba(245, 158, 11, 0.48);
+
+  /* ----------------------------------------------------------
+     Accent — amber / warning orange
+     ---------------------------------------------------------- */
+  --color-accent:        #f59e0b;
+  --color-accent-bright: #ffc24b;
+  --color-accent-hover:  #ffb020;
+  --color-accent-dim:    #9a6509;
+  --color-accent-ink:    #1a1204;
+  --color-accent-glow:   rgba(245, 158, 11, 0.16);
+  --color-accent-glow-sm:rgba(245, 158, 11, 0.07);
+  --color-accent-wash:   rgba(245, 158, 11, 0.045);
+
+  /* ----------------------------------------------------------
+     Ink — warm bone on steel
+     ---------------------------------------------------------- */
+  --color-text-primary:  #ece9dd;
+  --color-text-secondary: #b4b6a9;
+  --color-text-muted:    #94988c;
+  --color-text-faint:    #7c8075;
+  --color-text-accent:   #f5b544;
+  --color-text-inverse:  #151106;
+
+  /* ----------------------------------------------------------
+     Signal / semantic
+     ---------------------------------------------------------- */
+  --color-ok:            #75d99a;
+  --color-ok-dim:        #2f7b4c;
+  --color-ok-glow:       rgba(117, 217, 154, 0.14);
+  --color-warn:          #f5a524;
+  --color-error:         #ff7264;
+  --color-error-dim:     #8f372f;
+  --color-error-glow:    rgba(255, 114, 100, 0.13);
+  --color-info:          #8db4ff;
+  --color-info-glow:     rgba(141, 180, 255, 0.12);
+
+  --color-offline-bg:    #33250e;
+  --color-offline-text:  #ffdf9e;
+
+  /* Subject coding (kept from the product design system) */
+  --subject-math:        #c4a2ff;
+  --subject-science:     #75d99a;
+  --subject-social:      #8db4ff;
+  --subject-evs:         #a8df8b;
+
+  /* ----------------------------------------------------------
+     Typography
+     ---------------------------------------------------------- */
+  --font-heading:        'Google Sans Flex', 'Google Sans', system-ui, -apple-system, sans-serif;
+  --font-body:           'Google Sans Flex', 'Google Sans', system-ui, -apple-system, sans-serif;
+  --font-mono:           'Google Sans Code', 'Google Sans', 'Courier New', monospace;
+
+  --font-heading-weight: 600;
+  --font-heading-transform: none;
+  --font-heading-tracking: -0.02em;
+
+  --text-2xs:  0.625rem;  /* 10px — micro stamps */
+  --text-xs:   0.6875rem; /* 11px — etched labels */
+  --text-sm:   0.8125rem; /* 13px — secondary */
+  --text-base: 0.9375rem; /* 15px — body */
+  --text-md:   1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.375rem;
+  --text-2xl:  1.75rem;
+  --text-3xl:  2.25rem;
+  --text-4xl:  3rem;
+  --text-hero: clamp(2.75rem, 7vw, 4.75rem);
+
+  /* Kept for existing teammate screens */
+  --font-heading-tracking-legacy: 0.07em;
+
+  /* ----------------------------------------------------------
+     Space + layout
+     ---------------------------------------------------------- */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+
+  --radius: 0px;
+  --radius-sm: 0px;
+  --border-w: 1px;
+  --border-w-heavy: 2px;
+
+  --max-w: 1320px;
+  --header-h: 64px;
+  --gutter: clamp(16px, 3vw, 40px);
+
+  /* ----------------------------------------------------------
+     Depth
+     ---------------------------------------------------------- */
+  --shadow-panel: 0 24px 60px -34px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255,255,255,0.035) inset;
+  --shadow-float: 0 40px 90px -40px rgba(0, 0, 0, 0.95);
+  --shadow-btn:   0 2px 0 #8a5506, 0 8px 22px -10px rgba(245, 158, 11, 0.55);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  --glow-amber:   0 0 0 1px var(--color-accent), 0 0 28px -6px var(--color-accent-glow);
+
+  /* ----------------------------------------------------------
+     Motion
+     ---------------------------------------------------------- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:  120ms;
+  --dur-base:  220ms;
+  --dur-slow:  420ms;
+  --dur-boot:  900ms;
+
+  /* ----------------------------------------------------------
+     Z-index
+     ---------------------------------------------------------- */
+  --z-base: 1;
+  --z-header: 50;
+  --z-overlay: 90;
+  --z-boot: 200;
+  --z-toast: 300;
+}

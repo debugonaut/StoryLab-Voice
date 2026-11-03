@@ -1,0 +1,15 @@
+
+
+===== PAGE 1 =====
+Group members:
+Pritam Tatkari 202401100099  
+Ritesh Gavhane 202401100082  
+Aadesh Khande 202401100090  
+Anurag Kumbhar 202401100109
+PRACTICAL NO.03 Prepare Structural Design Using UML Class, Deployment and Package 
+Diagrams for real world application. 
+Class Diagram:
+Deployment Diagram:
+
+===== PAGE 2 =====
+Package Diagram:

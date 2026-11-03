@@ -1,0 +1,91 @@
+
+
+===== PAGE 1 =====
+Group  Members:  
+Pritam  Tatkari  202401100099   
+Ritesh  Gavhane  202401100082   
+Aadesh  Khande  202401100090   
+Anurag  Kumbhar  202401100109    TITLE:StoryLab  Voice   A  Voice-Guided  Educational  Ecosystem  with  AI  Assistant,  Multi-Subject  Stories,  and  Virtual  
+Labs
+ 
+   
+System  Modeling:  Use  Case  Analysis  
+1.  Actors  (Users)  
+●  Student:  Primary  rural  learner  who  uses  voice/touch  to  interact  with  stories  and  virtual  
+labs.
+ ●  Teacher:  Supervisor  who  assigns  modules,  monitors  student  progress,  and  views  
+reports.
+ ●  Administrator:  System  engineer  who  manages  user  roles,  AI  voice  models,  and  system  
+configurations.
+ ●  AI  Voice  Assistant:  Central  intelligent  subsystem  coordinating  speech  recognition,  TTS,  
+and
+ 
+core
+ 
+app
+ 
+engines.
+ 
+2.  Primary  Use  Cases  
+●  UC-01:  Interact  via  Voice  Chatbot:  Bidirectional  spoken  tutoring,  Q&A,  and  navigation.  ●  UC-02:  Learn  via  Multi-Subject  Stories  (StoryLearn):  Interactive  audio  story  modules  
+with
+ 
+embedded
+ 
+questions.
+ ●  UC-03:  Perform  Virtual  Science  Experiment  (LabInBox):  Voice-guided  2D  virtual  lab  
+execution.
+ 
+
+===== PAGE 2 =====
+●  UC-04:  Process  Offline  Speech:  Local  Speech-to-Text  (STT)  and  Text-to-Speech  (TTS)  
+conversion.
+ ●  UC-05:  Sync  Offline  Data:  Local  data  storage  and  periodic  cloud  synchronization.  ●  UC-06:  Assign  Modules  &  Monitor  Progress:  Teacher  curriculum  assignment  and  
+analytics
+ 
+tracking.
+ ●  UC-07:  Manage  System  &  AI  Configuration:  Admin  audit  logs  and  AI  voice  model  
+deployment.
+ 
+3.  Key  Relationships  &  Dependencies  
+Include  Relationships  (<<include>>)  
+●  UC-01  (Voice  Chatbot)  <<include>> Convert  Speech  to  Text  (Always  parses  
+student
+ 
+audio
+ 
+input)
+ ●  UC-01  (Voice  Chatbot)  <<include>> Convert  Text  to  Speech  (Always  generates  
+spoken
+ 
+AI
+ 
+response)
+ ●  UC-02  (StoryLearn)  <<include>> UC-01  (Voice  Chatbot)  (Stories  are  narrated  via  
+chatbot)
+ ●  UC-03  (LabInBox)  <<include>> UC-01  (Voice  Chatbot)  (Virtual  labs  are  directed  via  
+chatbot)
+ ●  UC-02  /  UC-03  <<include>> Store  Data  Locally  (Saves  progress  offline  
+automatically)
+ 
+Extend  Relationships  (<<extend>>)  
+●  Provide  Spoken  Hint  <<extend>> UC-01  (Triggers  conditionally  when  student  is  
+stuck)
+ ●  Generate  Lab  Report  <<extend>> UC-03  (Executes  upon  experiment  completion)  ●  Sync  Local  Data  to  Cloud  <<extend>> UC-05  (Triggers  when  internet  connection  is  
+restored)
+ 
+Generalization  (Inheritance)  
+●  Student  is-a User  (Inherits  userId,  name,  language;  adds  age,  learningLevel)  ●  Teacher  is-a User  (Inherits  userId,  name,  language;  adds  schoolId,  assignment  
+tools)
+ ●  Administrator  is-a User  (Inherits  userId,  name,  language;  adds  adminId,  
+management
+ 
+rights)
+ 
+ 
+ 
+
+===== PAGE 3 =====
+ 
+USE-CASE  DIAGRAM:  
+ 

@@ -1,0 +1,48 @@
+{
+  "id": "science-plants",
+  "title": "How Plants Eat Light",
+  "subject": "Science",
+  "grade": "4-6",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "Have you ever wondered how a plant eats? Plants cannot go to a market like Rani! Instead, they make their own food using something all around us — sunlight!",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "What do plants need to make their food? Is it sunlight and water, or sunlight and fire?",
+      "hint": "Think about what a plant needs to grow.",
+      "options": [
+        { "label": "Sunlight and water", "correct": true,  "next": "s3_correct" },
+        { "label": "Sunlight and fire",  "correct": false, "next": "s3_wrong"   }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Exactly right! Plants use sunlight, water from the soil, and carbon dioxide from the air to make their food. This amazing process is called photosynthesis!",
+      "next": "s4"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Not quite! Plants do not use fire — that would burn them! They use sunlight, water, and the air around them. This process is called photosynthesis.",
+      "next": "s4"
+    },
+    {
+      "id": "s4",
+      "type": "narrate",
+      "text": "Photosynthesis is like a factory inside every green leaf. The leaf takes in sunlight, water, and carbon dioxide gas, and turns them into sugar for the plant to eat. And as a bonus, it releases oxygen — the air we breathe!",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "Amazing! You have learned about photosynthesis. Plants are nature's own food factories. Well done!"
+    }
+  ]
+}
+

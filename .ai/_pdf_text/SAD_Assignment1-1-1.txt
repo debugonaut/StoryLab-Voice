@@ -1,0 +1,510 @@
+
+
+===== PAGE 1 =====
+Software Requirements Specification for StoryLab
+V oice: A V oice-Guided Educational Ecosystem with
+AI Assistant, Multi-Subject Stories, and Virtual
+Labs
+Aadesh Khande
+Department of Computer Engineering
+PRN / Roll No: 202401100090
+Pritam Tatkari
+Department of Computer Engineering
+PRN / Roll No: 202401100099
+Ritesh Gavhane
+Department of Computer Engineering
+PRN / Roll No: 202401100082
+Anurag Kumbhar
+Department of Computer Engineering
+PRN / Roll No: 202401100109
+Abstract—This document presents the complete Software
+Requirements Specification (SRS) forStoryLab V oice(Release
+1.0), structured in strict alignment with the standard IEEE
+Std 830-1998 SRS template and ISO/IEC 25010:2011 quality
+guidelines. StoryLab Voice is an offline-first, voice-guided educa-
+tional platform developed for resource-constrained rural schools
+where physical laboratory facilities and reliable broadband
+connectivity are unavailable. Centered around an empathetic
+AI Voice Assistant Chatbot, the platform drives two primary
+pedagogical modules:StoryLearn(an interactive, multi-subject
+storytelling engine across Math, Science, Social Studies, and EVS)
+andLabInBox(a 2D voice-guided virtual science experiment
+simulator). This specification formally delineates product scope,
+external interface requirements, detailed system features with
+priority ratings, and non-functional constraints. Furthermore, it
+provides a comprehensive process model identification, selecting
+and analyzing the Spiral Model as the optimal risk-driven
+development methodology.
+Index Terms—Software Requirements Specification (SRS),
+IEEE Std 830-1998, Conversational AI, Voice-Guided Learning,
+Virtual Laboratories, Offline-First Architecture, Spiral Process
+Model, Risk Analysis.
+I. INTRODUCTION
+A. Purpose
+This Software Requirements Specification (SRS) document
+defines the complete functional, non-functional, and interface
+requirements forStoryLab Voice(Release 1.0). The scope
+covers an integrated web/mobile application powered by a
+central AI V oice Assistant Chatbot, driving two primary ped-
+agogical learning modules:
+•LabInBox:An interactive, browser-based virtual science
+experiment simulator guided entirely by the conversational
+voice chatbot.
+Release 1.0 — Software Requirements Specification (SRS) Document
+and Process Model Analysis adhering to IEEE Std 830-1998 and ISO/IEC
+25010:2011 standards.
+•StoryLearn:A multi-subject story-based learning engine
+across Mathematics, Science, Social Studies, and Environ-
+mental Studies (EVS), narrated and assessed through the
+conversational chatbot interface.
+This document outlines system behavior, interface specifica-
+tions, performance constraints, and architectural boundaries
+for full-stack implementation.
+B. Document Conventions
+•Priority Levels:Requirements are categorized with[High],
+[Medium], or[Low]priority tags. Child requirements in-
+herit priority from parent modules unless explicitly speci-
+fied.
+•Typography: Bold textdenotes system roles, core modules,
+and API calls.Monospaced textdesignates code enti-
+ties, database schema attributes, and configuration variables.
+•Requirement Identifiers:Functional requirements are
+tagged uniquely asFR-CB-xx(Chatbot Core),FR-SL-xx
+(StoryLearn), andFR-LB-xx(LabInBox).
+C. Intended Audience and Reading Suggestions
+This document is targeted towards the following project
+stakeholders:
+•Software Engineers & Developers:Focus on Section II
+(Overall Description), Section III (External Interfaces), and
+Section IV (System Features) for implementation architec-
+ture.
+•UI/UX Designers:Refer to Section II-D, Section III-A,
+and Section V for conversational UI and accessibility con-
+straints.
+•System Architects:Focus on chatbot conversation state
+management, offline voice pipelines, and virtual lab canvas
+integration.
+•Quality Assurance (QA) Testers:Review Section IV and
+Section V to construct test suites and verify acceptance
+criteria.
+
+===== PAGE 2 =====
+Suggested Sequence:Read Section I-D for strategic context,
+proceed to Section II for product architecture, and examine
+Section IV for detailed functional requirements.
+D. Product Scope
+StoryLab V oice is an offline-first educational platform en-
+gineered for rural schools. Rather than requiring students to
+navigate complex graphical menus or parse dense textual
+material, students interact directly with an empathetic AI
+V oice Chatbot Companion. The chatbot serves as an always-
+available personal tutor: narrating localized educational stories,
+posing guiding questions, answering spontaneous queries in
+real time, and guiding students step-by-step through virtual
+science experiments.
+Primary Objectives & Goals:
+1) Provide a conversational, judgment-free voice interface
+serving as an always-available personal tutor for rural
+students.
+2) Eliminate physical laboratory equipment dependencies by
+offering interactive virtual simulations directed entirely via
+voice dialogue.
+3) Contextualize multi-subject syllabus curricula into local-
+ized audio stories orchestrated by the chatbot engine.
+E. References
+•IEEE Std 830-1998,IEEE Recommended Practice for Soft-
+ware Requirements Specifications, IEEE Computer Society.
+•ISO/IEC 25010:2011,Systems and Software Engineering —
+Systems and Software Quality Requirements and Evaluation
+(SQuaRE).
+•W3C Standard,WebRTC API & Web Audio API Specifica-
+tions.
+•B. W. Boehm, “A Spiral Model of Software Development
+and Enhancement,”IEEE Computer, vol. 21, no. 5, pp. 61–
+72, 1988.
+II. OVERALLDESCRIPTION
+A. Product Perspective
+StoryLab V oice is architected around a central Conversa-
+tional AI Chatbot layer. The chatbot serves as the primary
+user interface, coordinating real-time bidirectional data flow
+between local offline speech models, the LabInBox simulation
+canvas, and the StoryLearn curriculum database.
+B. Product Functions
+The principal functional capabilities provided by StoryLab
+V oice include:
+•Continuous Voice Interaction:Real-time speech recogni-
+tion (STT) and local voice synthesis (TTS) for hands-free
+pedagogical engagement.
+•Contextual Academic Tutoring:Answering curriculum
+queries dynamically in simplified vernacular or English.
+•Interactive Story-Based Learning:Branching educational
+narrative delivery across four academic subjects (Math,
+Science, Social Studies, EVS).
+STORYLAB VOICE CORE
+AI V oice Assistant Chatbot & Central Conversational Engine
+StoryLearn
+V oice-Interactive
+Multi-Subject Stories
+LabInBox
+V oice-Guided Virtual
+Science Simulator
+Offline Data Engine & Local Storage
+Local Database (IndexedDB) & Cached Speech Models
+Cloud Synchronization Engine
+Intermittent 2G/3G Background Sync & Supervisor Analytics
+Fig. 1. StoryLab V oice System Architecture and Data Flow.
+•Voice-Controlled Science Experimentation:Direct speech
+manipulation of apparatus, chemical mixing, and physics
+simulations on a 2D HTML5 canvas.
+•Autonomous Offline Operation & Sync:Zero-connectivity
+classroom execution with automated background data sync
+upon reconnecting.
+C. User Classes and Characteristics
+•Rural Students (Ages 6–15):Primary end-users who inter-
+act by speaking to and listening to the chatbot companion
+in their native vernacular language or simplified English.
+•Rural Teachers / NGO Facilitators:Supervisors who
+monitor conversation summaries, assign syllabus mod-
+ules/experiments, and track learning analytics through a
+dedicated dashboard.
+•System Administrators:Technical staff who manage re-
+gional voice synthesis models, maintain curriculum map-
+pings, and audit AI response accuracy.
+D. Operating Environment
+•Client Hardware:Android 8.0+ smartphones and tablets
+equipped with a minimum of 2 GB RAM, integrated micro-
+phone, and audio speaker hardware.
+•Supported Browsers:Chromium-based browsers (Google
+Chrome 88+, Microsoft Edge), and Progressive Web App
+(PW A) runtime containers.
+•Network Constraints:Full functionality in disconnected
+offline settings using lightweight on-device speech synthe-
+sis, accompanied by periodic analytics synchronization over
+intermittent 2G/3G cellular links.
+E. Design and Implementation Constraints
+•Storage Limits:Total local footprint (PW A assets, audio
+caches, and lightweight acoustic models) must strictly re-
+main≤25MB.
+
+===== PAGE 3 =====
+•Latency Budget:Total conversational speech-to-response
+loop must execute in≤1.8s on 2 GB RAM hardware.
+•Web Standards:Application must strictly rely on open web
+standards (W3C Web Audio, WebRTC, Service Workers,
+IndexedDB).
+F . User Documentation
+User documentation includes a spoken interactive intro-
+ductory tutorial delivered by the chatbot on first launch, a
+simplified visual onboarding card for students, and a web-
+based supervisor manual for teachers.
+G. Assumptions and Dependencies
+•It is assumed that client devices possess functional micro-
+phone and speaker hardware.
+•Speech recognition accuracy assumes reasonable classroom
+noise levels (≤65dB).
+•Dependency on browser support forIndexedDBand
+HTML5 Canvas API.
+III. EXTERNALINTERFACEREQUIREMENTS
+A. User Interfaces
+•Conversational Voice Interface:Primary bidirectional
+voice interaction loop enabling 100% hands-free navigation.
+•Visual Avatar / Waveform:Animated visual feedback
+indicating real-time chatbot states:Listening,Thinking, and
+Speaking.
+•Lab Canvas UI:Clean 2D graphical apparatus display
+responsive to touch and voice triggers.
+B. Hardware Interfaces
+•Standard3.5mm audio jack / USB-C / built-in microphone
+for voice capture (16kHz mono sampling).
+•Built-in loudspeaker or external earphones for TTS audio
+playback.
+C. Software Interfaces
+•Local Storage API:HTML5IndexedDBfor storing les-
+son state, student progress, and local voice response caches.
+•Audio APIs:W3C Web Audio API and WebRTC for low-
+latency audio capture and waveform visualization.
+•Service Worker Engine:CacheStorage API for offline
+PW A asset caching.
+D. Communications Interfaces
+•Sync Protocol:RESTful HTTPS with compressed JSON
+payloads.
+•Network Resilience:Background Sync API handling inter-
+mittent 2G/3G connectivity without blocking UI.
+IV. SYSTEMFEATURES& FUNCTIONALREQUIREMENTS
+A. AI Voice Assistant Chatbot Core
+Description & Priority:A bidirectional conversational
+engine serving as the core pedagogical interface. Priority:
+High.
+Stimulus/Response Sequence:Student speaks→Speech is
+converted to text (STT)→Contextual dialogue engine parses
+intent→Audio response is synthesized (TTS) and played→
+Avatar waveform displays speaking state.
+TABLE I
+FUNCTIONALREQUIREMENTS: AI VOICEASSISTANTCHATBOT
+Req ID Priority Requirement Statement
+FR-CB-01HighThe chatbot shall support continuous
+voice-in/voice-out conversation using
+Speech-to-Text (STT) and Text-to-Speech
+(TTS) pipelines.
+FR-CB-02HighThe chatbot shall answer student-asked
+educational questions on demand using
+localized, age-appropriate language.
+FR-CB-03HighThe chatbot shall detect student confusion
+or long pauses during activities and proac-
+tively offer spoken hints.
+FR-CB-04MediumThe chatbot shall provide gentle, support-
+ive feedback on student answers at the end
+of a topic without interrupting flow.
+B. StoryLearn (Voice-Interactive Multi-Subject Stories)
+Description & Priority:Delivers syllabus concepts across
+Mathematics, Science, Social Studies, and EVS through inter-
+active branching stories. Priority:High.
+TABLE II
+FUNCTIONALREQUIREMENTS: STORYLEARNMODULE
+Req ID Priority Requirement Statement
+FR-SL-01HighThe chatbot shall narrate multi-subject ed-
+ucational stories incorporating local rural
+variables (crops, markets, festivals).
+FR-SL-02HighThe chatbot shall pause narrative delivery
+at key learning moments to ask open-ended
+or choice-based questions to the student
+via voice.
+FR-SL-03MediumThe system shall dynamically adapt nar-
+rative difficulty based on student voice
+responses and comprehension levels.
+C. LabInBox (Voice-Guided Virtual Science Simulator)
+Description & Priority:An interactive 2D virtual labora-
+tory environment wherein the AI chatbot acts as a laboratory
+instructor. Priority:High.
+V. NON-FUNCTIONALREQUIREMENTS
+A. Performance Requirements
+•Conversational Latency:Chatbot speech-to-response gen-
+eration latency must remain under1.8s to maintain natural
+conversational pacing.
+
+===== PAGE 4 =====
+TABLE III
+FUNCTIONALREQUIREMENTS: LABINBOXMODULE
+Req ID Priority Requirement Statement
+FR-LB-01HighThe chatbot shall verbally explain lab
+setup, safety procedures, and step-by-step
+instructions (e.g., “Now, tell me which
+solution we should heat first”).
+FR-LB-02HighStudents shall be able to control canvas
+elements using voice commands spoken to
+the chatbot (e.g., “Pour the blue beaker
+into the flask”).
+FR-LB-03MediumUpon experiment completion, the chatbot
+shall discuss findings with the student and
+generate an automated digital lab report.
+•Offline Capacity:Core story modules, lab instructions,
+and cached chatbot responses must function 100% offline
+without internet.
+•Resource Footprint:Total application bundle footprint,
+including lightweight local voice synthesis assets, must not
+exceed25MB.
+B. Usability & Accessibility Requirements
+•Conversational UX:Students must be able to complete
+100% of designated learning pathways entirely through
+voice dialogue.
+•Visual Voice Feedback:The graphical interface must fea-
+ture an animated visual avatar/waveform displaying explicit
+states when the chatbot is thinking, speaking, or listening.
+C. Security & Safety Requirements
+•Voice Data Privacy:Student voice recordings must be
+processed locally on-device and not permanently stored or
+transmitted without explicit teacher authorization.
+•Secure Synchronization:Analytics data synchronized to
+cloud servers must be encrypted in transit using TLS 1.3.
+•Child Safety:AI responses must be strictly filtered to
+guarantee age-appropriate, positive pedagogical interactions.
+D. Software Quality Attributes
+•Robustness:Gracefully handle background classroom noise
+and diverse regional student dialects.
+•Portability:Uniform execution across Android smart-
+phones, tablets, and low-cost PW A client browsers.
+•Maintainability:Modular separation between the voice
+core, StoryLearn curriculum, and LabInBox simulation can-
+vas.
+VI. PROCESSMODELIDENTIFICATION& ANALYSIS
+A. Introduction
+StoryLab V oice is an offline-first educational platform de-
+signed specifically for rural schools. It combines an AI V oice
+Assistant Chatbot, StoryLearn for interactive multi-subject
+stories, and LabInBox for voice-guided virtual science exper-
+iments.
+The engineering of this platform encompasses several tech-
+nically challenging and interdependent components:
+•On-device Speech-to-Text (STT) and Text-to-Speech (TTS)
+processing under tight hardware limits.
+•Conversational AI dialogue management and contextual
+state tracking.
+•Robust offline functionality with asynchronous, bidirectional
+cloud data synchronization.
+•Real-time voice-controlled 2D virtual physics and chemistry
+experiment simulations.
+•Dynamic and adaptive pedagogical learning algorithms tai-
+lored to varied student comprehension levels.
+Consequently, the chosen software development life cycle
+(SDLC) process model must facilitate incremental delivery
+while systematically identifying, evaluating, and mitigating
+technical risks.
+B. Identified Process Model: The Spiral Model
+Identified Process Model: Spiral Model(Boehm, 1988).
+TheSpiral Modelis identified as the most suitable software
+process model for StoryLab V oice. It uniquely merges the
+iterative nature of rapid prototyping with the controlled, sys-
+tematic aspects of linear development models, while anchor-
+ing every iteration aroundexplicit risk analysis. The system
+evolves through concentric spiral cycles, where each loop
+progressively elaborates requirements, analyzes risks, builds
+prototypes, and validates deliverables with end users.
+Cumulative Commitment
+Progress Through PhasesQUADRANT I
+•Determine Objectives
+•Identify Constraints
+•Explore Alternatives
+QUADRANT II
+•Risk Analysis
+•Edge AI Feasibility
+•Rapid Prototyping
+QUADRANT III
+•Detailed Design
+•Code Implementation
+•Rigorous Testing
+QUADRANT IV
+•Rural User Review
+•Teacher Feedback
+•Plan Next Phase
+S1: AI Core
+S2: StoryLearn
+S3: LabInBox
+S4: Offline Sync
+S5: Full Release
+Fig. 2. Four Quadrants of the Spiral Model Tailored for StoryLab V oice.
+C. Justification and Risk Analysis
+The adoption of the Spiral Model for StoryLab V oice is
+justified across six foundational engineering dimensions:
+1)High Technical Risk Management:StoryLab V oice in-
+tegrates complex edge AI voice interaction, offline speech
+
+===== PAGE 5 =====
+inference, dynamic conversational logic, and real-time vir-
+tual laboratory simulations on low-cost hardware. The
+Spiral Model ensures that high-risk technical bottlenecks
+(such as audio latency and memory overflows) are isolated,
+analyzed, and mitigated in early spiral loops prior to full-
+scale engineering.
+2)Prototyping & Incremental Feasibility:Rapid prototyp-
+ing is embedded into each cycle. A standalone functional
+prototype of the AI V oice Assistant Chatbot Core can be
+built, evaluated on low-end target hardware, and bench-
+marked before committing development resources to the
+complex virtual laboratory canvas.
+3)Structured Incremental Development Phases:The sys-
+tem is engineered logically across five sequential spiral
+iterations:
+Phase 1:AI Voice Assistant Chatbot Core:Build
+STT/TTS pipelines, voice activity detection,
+and conversational state tracking.
+Phase 2:StoryLearn Multi-Subject Story Engine:Im-
+plement branching narratives, dynamic audio
+streaming, and localized cultural variables.
+Phase 3:LabInBox Virtual Science Simulator:Develop
+HTML5/Canvas 2D simulation physics and map
+spoken intents to canvas interactions.
+Phase 4:Offline Storage, Local Caching & Cloud Syn-
+chronization:ImplementIndexedDBcaching,
+conflict resolution, and background syncing over
+2G/3G networks.
+Phase 5:End-to-End System Integration & Field Testing:
+Execute full-system integration, regression vali-
+dation, performance profiling, and usability trials
+in rural classrooms.
+4)Continuous User Feedback Loops:Rural students and ed-
+ucators evaluate each spiral release. This regular feedback
+loop allows developers to iteratively calibrate speech recog-
+nition accuracy for regional accents, refine pedagogical
+dialogue tones, and enhance accessibility for non-technical
+users.
+5)Adaptability to Changing Requirements:Elements such
+as regional language dialects, state syllabus curriculum
+revisions, and ambient classroom noise profiles will in-
+evitably evolve during field trials. The Spiral Model ef-
+fortlessly accommodates modifications at each planning
+boundary.
+6)Early Testing & Multi-Stage Validation:Every spiral
+iteration culminates in rigorous formal verification. Perfor-
+mance defects—such as latency spikes (>1.8s), speech
+recognition mismatches, and animation rendering lags—are
+caught and resolved early in the lifecycle rather than during
+final deployment.
+D. Conclusion on Process Model Selection
+The Spiral Model is the optimal software development
+process model for StoryLab V oice because it provides a risk-
+driven, iterative, and flexible framework. It establishes the
+TABLE IV
+COMPARISON OFCANDIDATESDLC PROCESSMODELS
+Criterion Waterfall Standard
+Agile
+Spiral
+Model
+Risk Handling Poor ModerateHigh / Ex-
+plicit
+Edge AI Prototyping No ModerateNative
+Requirement Flexibility Very Low HighHigh
+Hardware Constraints Risky ReactiveProactive
+Suitability Not Suitable PartialOptimal
+exact structural rigor necessary for a multi-faceted educa-
+tional platform integrating conversational AI, voice processing,
+offline execution, and interactive scientific simulations. By
+coupling prototype-driven risk analysis with continuous field
+evaluation, the engineering team guarantees high recognition
+accuracy, minimal response latency, and maximum pedagogi-
+cal efficacy prior to final release.
+VII. CONCLUSION
+This Software Requirements Specification has articulated
+the complete functional, non-functional, and structural require-
+ments for Release 1.0 ofStoryLab Voice, following IEEE
+Std 830-1998 guidelines. By situating an AI V oice Assistant
+Chatbot at the center of both multi-subject narrative learning
+(StoryLearn) and hands-on virtual laboratory experimenta-
+tion (LabInBox), the platform effectively democratizes quality
+STEM and humanities education for resource-constrained rural
+schools. The formal selection of theSpiral Modelprovides
+a disciplined, risk-mitigated pathway toward successful devel-
+opment, rigorous testing, and field deployment.
+APPENDIX
+•AI:Artificial Intelligence.
+•COPPA:Children’s Online Privacy Protection Act.
+•EVS:Environmental Studies (Elementary School Curricu-
+lum).
+•IndexedDB:Client-side transactional NoSQL database in
+modern web browsers.
+•PW A:Progressive Web Application.
+•SDLC:Software Development Life Cycle.
+•SRS:Software Requirements Specification.
+•STT:Speech-to-Text (V oice Recognition).
+•TTS:Text-to-Speech (Speech Synthesis).
+•WebRTC:Web Real-Time Communication API.
+REFERENCES
+[1] IEEE Std 830-1998,IEEE Recommended Practice for Software Require-
+ments Specifications, IEEE Computer Society, Oct. 1998.
+[2] ISO/IEC 25010:2011,Systems and software engineering — Systems and
+software Quality Requirements and Evaluation (SQuaRE) — System and
+software quality models, International Organization for Standardization,
+2011.
+[3] B. W. Boehm, “A Spiral Model of Software Development and Enhance-
+ment,”IEEE Computer, vol. 21, no. 5, pp. 61–72, May 1988, doi:
+10.1109/2.59.
+[4] W3C Audio Working Group,Web Audio API, W3C Recommendation,
+2021. [Online]. Available: https://www.w3.org/TR/webaudio/
+
+===== PAGE 6 =====
+[5] W3C WebRTC Working Group,WebRTC 1.0: Real-Time Communica-
+tion Between Browsers, W3C Recommendation, 2021. [Online]. Avail-
+able: https://www.w3.org/TR/webrtc/
+[6] R. S. Pressman and B. R. Maxim,Software Engineering: A Practi-
+tioner’s Approach, 9th ed. New York, NY , USA: McGraw-Hill, 2020.
+[7] I. Sommerville,Software Engineering, 10th ed. Boston, MA, USA:
+Pearson, 2015.

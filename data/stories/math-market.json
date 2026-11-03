@@ -1,0 +1,43 @@
+{
+  "id": "math-market",
+  "title": "The Market Day",
+  "subject": "Math",
+  "grade": "3-5",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "Rani went to the village market with 50 rupees. She wants to buy mangoes that cost 8 rupees each. Let us help her figure out how many mangoes she can buy!",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "How many mangoes can Rani buy with 50 rupees, if each mango costs 8 rupees?",
+      "hint": "Try dividing 50 by 8.",
+      "options": [
+        { "label": "6 mangoes", "correct": true,  "next": "s3_correct" },
+        { "label": "7 mangoes", "correct": false, "next": "s3_wrong"   },
+        { "label": "5 mangoes", "correct": false, "next": "s3_wrong"   }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Wonderful! 50 divided by 8 is 6, with 2 rupees left over as change. Rani buys 6 mangoes and has 2 rupees left. You are a great mathematician!",
+      "next": "end"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Good try! Let us think again. 8 times 6 equals 48, which is less than 50. 8 times 7 equals 56, which is more than 50. So Rani can only buy 6 mangoes. She gets 2 rupees back as change!",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "Excellent work! You finished the Market Day story. Division helps us share things fairly!"
+    }
+  ]
+}
+

@@ -1,0 +1,16 @@
+
+
+===== PAGE 1 =====
+Group members:
+Pritam Tatkari 202401100099  
+Ritesh Gavhane 202401100082  
+Aadesh Khande 202401100090  
+Anurag Kumbhar 202401100109
+PRACTICAL NO.05 Develop Workﬂow and State Models Using UML Activity and State Machine 
+Diagrams for real world application. 
+Activity Diagram:
+
+===== PAGE 2 =====
+State Diagram:
+
+===== PAGE 3 =====

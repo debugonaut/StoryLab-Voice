@@ -1,0 +1,144 @@
+
+
+===== PAGE 1 =====
+Group members:
+Pritam Tatkari 202401100099  
+Ritesh Gavhane 202401100082  
+Aadesh Khande 202401100090  
+Anurag Kumbhar 202401100109
+PRACTICAL NO.06 Understanding and creating sequence diagram and communication 
+diagram for real world application.   
+Sequence diagram:
+
+===== PAGE 2 =====
+Communication Diagram:
+
+===== PAGE 3 =====
+Sequence diagram: voice-guided 
+StoryLearn session
+Purpose. It shows, in time order, how the objects of StoryLab Voice exchange messages when 
+a student learns through a story. It covers the voice pipeline, the adaptive question loop, 
+local saving and the cloud sync.
+Participants (lifelines)
+
+===== PAGE 4 =====
+Lifeline Role
+:Student The actor, who speaks and listens
+:VoiceUI Microphone and speaker interface with the 
+animated avatar and waveform
+:VoiceEngine Speech-to-text (STT) and text-to-speech 
+(TTS)
+:AIVoiceAssistant The central tutor. It interprets requests 
+and routes them.
+:StoryLearn The story engine. It narrates, asks 
+questions and evaluates answers.
+:AdaptiveEngine Adjusts story difficulty
+:LocalStore Offline storage (IndexedDB)
+:SyncEngine Background synchronization
+:CloudServer Cloud server that receives the student's 
+progress
+Flow
+
+===== PAGE 5 =====
+Phase Messages What happens
+Request 1–5 The student speaks a story 
+request. VoiceUI passes the 
+audio to VoiceEngine, 
+which converts it to text. 
+The assistant interprets the 
+intent.
+Story start 6–12 The assistant asks 
+StoryLearn to start a story. 
+StoryLearn loads it from 
+LocalStore. The narration is 
+converted to speech and 
+played to the student.
+Question loop 13–28 StoryLearn asks a question, 
+which is spoken to the 
+student. The student 
+answers by voice, the 
+answer is converted to 
+text, and StoryLearn 
+evaluates it. 
+AdaptiveEngine adjusts the 
+difficulty and returns the 
+new level.
+Feedback 24 or 25 If the answer is correct, 
+StoryLearn sends praise 
+(24). Otherwise it sends a 
+hint with simpler content 
+(25). The feedback is 
+spoken to the student (26–
+28).
+Completion 29–34 StoryLearn saves the score 
+to LocalStore, tells the 
+assistant the story is 
+complete, and the closing 
+message is spoken.
+Sync 35–40 If the internet is available, 
+
+===== PAGE 6 =====
+SyncEngine reads the 
+pending records from 
+LocalStore, posts them to 
+CloudServer over HTTPS, 
+receives an 
+acknowledgement and 
+marks the records as 
+synced.
+Notation
+Solid arrows are calls, and dashed arrows are returns or responses.
+Activation bars on a lifeline show when that object is active.
+Self-arrows are an object calling itself: speechToText() (3, 19), interpretIntent() (5) 
+and detectConnection() (35).
+Fragments:
+loop [until story finished] covers 13–28.
+alt [answer correct] and [wrong answer, confused or long pause] cover 24 
+and 25.
+opt [internet available] covers 35–40.
+Requirements covered: FR-CB-01 and FR-CB-02 (voice conversation), FR-CB-03 (hints when 
+confused), FR-CB-04 (supportive feedback), FR-SL-01 and FR-SL-02 (story narration and 
+questions) and FR-SL-03 (adaptive difficulty). The offline-ﬁrst requirement shows up as the 
+local save followed by an optional sync.
+Communication diagram: the same 
+scenario
+Purpose. It shows the same interaction as the sequence diagram, but the focus is on which 
+objects are linked, not on time order. The message numbers (1–40) are the same, so each 
+message can be matched to the sequence diagram.
+Objects and links. The objects are the same nine as the lifelines above. Seven links connect 
+them along the main path:
+Student – VoiceUI
+VoiceUI – VoiceEngine
+VoiceEngine – AIVoiceAssistant
+AIVoiceAssistant – StoryLearn
+StoryLearn – AdaptiveEngine
+StoryLearn – LocalStore
+LocalStore – SyncEngine
+
+===== PAGE 7 =====
+An eighth link joins SyncEngine and CloudServer.
+What each link carries
+Link Messages (→ and ← show direction)
+Student – VoiceUI 1 → speaks request; 12 ← story audio; 16 ← 
+question; 17 → answer; 28 ← feedback; 34 ← 
+closing message
+VoiceUI – VoiceEngine 2 and 18 → captureAudio(); 11, 15, 27 and 33 
+← playAudio()
+VoiceEngine – AIVoiceAssistant 4 and 20 → request or answer as text; 10, 
+14, 26 and 32 ← textToSpeech()
+AIVoiceAssistant – StoryLearn 6 → startStory; 21 → evaluateAnswer; 9, 13, 
+24, 25 and 31 ← narration, question, praise, 
+hint and completion
+StoryLearn – AdaptiveEngine 22 → adjustDifficulty; 23 ← newLevel
+StoryLearn – LocalStore 7 and 29 ↓ load and save; 8 and 30 ↑ replies
+SyncEngine – LocalStore 36 and 40 → read pending records and 
+mark synced; 37 ← records
+SyncEngine – CloudServer 38 → POST /sync over HTTPS; 39 ← 
+acknowledgement
+Self-calls (speechToText(), interpretIntent(), detectConnection()) are written inside 
+the object boxes with a ↻  symbol. A note at the bottom records the loop (13–28), the 
+alternative (24 or 25) and the optional sync (35–40).
+Sequence vs communication. The sequence diagram emphasizes when each message 
+happens. The communication diagram emphasizes who talks to whom. It makes the 
+architecture visible: the assistant sits in the middle, the voice pipeline runs on its left, and the 
+story, adaptive and storage objects run on its right.

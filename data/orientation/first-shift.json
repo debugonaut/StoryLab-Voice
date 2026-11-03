@@ -1,0 +1,103 @@
+{
+  "id": "first-shift",
+  "title": "First Shift",
+  "version": 1,
+  "steps": [
+    {
+      "id": "welcome",
+      "kind": "briefing",
+      "nav": "Welcome",
+      "kicker": "01 / WELCOME",
+      "title": "This is a learning machine.",
+      "lede": "StoryLab Voice turns one shared classroom tablet into a tutor, a library, and a science lab.",
+      "text": "It runs from this device. No signal. No laboratory. No account. The terminal remembers what you complete and keeps it ready for your teacher.",
+      "points": [
+        "Three learning bays: stories, a voice tutor, and virtual experiments.",
+        "Every panel can be read aloud.",
+        "Everything is stored on this device."
+      ],
+      "note": "If the room goes quiet, the terminal still works.",
+      "art": "terminal",
+      "cue": "This is your learning machine. Everything you need is on this device."
+    },
+    {
+      "id": "voice",
+      "kind": "briefing",
+      "nav": "Voice",
+      "kicker": "02 / THE VOICE BUS",
+      "title": "Talk. It listens.",
+      "lede": "The amber SPEAK control opens the microphone. The waveform tells you what the terminal is doing.",
+      "text": "Amber means the tutor is speaking. Green means it is listening. If the room is too loud, move closer to the tablet and try again.",
+      "points": [
+        "Wait for the green signal before you speak.",
+        "Speak in a normal voice, not a shout.",
+        "You can always tap an answer instead."
+      ],
+      "note": "Voice is the fastest way in. Touch is always there as a backup.",
+      "art": "voice",
+      "cue": "Press the amber control, wait for green, then speak. Touch is always available."
+    },
+    {
+      "id": "bays",
+      "kind": "briefing",
+      "nav": "Bays",
+      "kicker": "03 / THE THREE BAYS",
+      "title": "Stories. A tutor. A lab.",
+      "lede": "Each bay teaches differently. They all feed the same learning record.",
+      "text": "StoryLearn narrates a branching story and asks you questions inside it. The AI Voice Tutor answers what you ask. LabInBox puts apparatus on screen and runs experiments with your voice.",
+      "points": [
+        "BAY 01 — StoryLearn: listen, choose, complete.",
+        "BAY 02 — AI Voice Tutor: ask anything.",
+        "BAY 03 — Lab In Box: pour, react, observe."
+      ],
+      "note": "Start with a story if you are not sure where to begin.",
+      "art": "bays",
+      "cue": "Three bays. Stories, a voice tutor, and a virtual lab."
+    },
+    {
+      "id": "ledger",
+      "kind": "briefing",
+      "nav": "Ledger",
+      "kicker": "04 / THE LOCAL LEDGER",
+      "title": "Your work stays yours.",
+      "lede": "Progress is written to a local ledger on this device. No sign-in is required to learn.",
+      "text": "When the terminal finds a connection, queued records move to the sync archive. If there is no connection, nothing is lost — the queue simply waits.",
+      "points": [
+        "Open RECORD to see sessions, checkpoints, and queued records.",
+        "Close a session before handing the tablet to the next student.",
+        "A facilitator can print or export the learning record."
+      ],
+      "note": "Sync is opportunistic. Learning is not.",
+      "art": "ledger",
+      "cue": "Your progress is stored on this device. When a connection returns, the queue syncs."
+    },
+    {
+      "id": "check",
+      "kind": "check",
+      "nav": "Check",
+      "kicker": "05 / CHECK",
+      "title": "One question before we hand over the keys.",
+      "lede": "There is no time limit. Pick the answer that matches what the terminal does.",
+      "question": "Which control opens the microphone so you can talk to the tutor?",
+      "options": [
+        {
+          "label": "The amber SPEAK control",
+          "correct": true,
+          "feedback": "Correct. Amber is the action colour. Press SPEAK, wait for the green listening light, then talk."
+        },
+        {
+          "label": "The RECORD tab in the header",
+          "correct": false,
+          "feedback": "RECORD opens your learning file. The microphone lives on the amber SPEAK control."
+        },
+        {
+          "label": "The vent slots under the panel",
+          "correct": false,
+          "feedback": "Those are part of the chassis. Look for the amber SPEAK control instead."
+        }
+      ],
+      "art": "check",
+      "cue": "One question. Which control opens the microphone?"
+    }
+  ]
+}

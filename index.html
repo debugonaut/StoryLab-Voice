@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="StoryLab Voice — an offline-first field terminal for voice-guided stories, tutoring, and virtual science labs.">
+  <meta name="theme-color" content="#0a0c0b">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StoryLab">
+
+  <title>Control Deck — StoryLab Voice</title>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+
+  <!-- Design system — tokens first, then shared system, then screens -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/global.css">
+  <link rel="stylesheet" href="styles/screens.css">
+</head>
+
+<body class="has-no-profile">
+  <a class="skip-link" href="#app-root">Skip to main content</a>
+
+  <!-- BOOT / POWER-ON SELF TEST -->
+  <div class="boot-screen" id="boot-screen" aria-hidden="true">
+    <div class="boot-plate">
+      <div class="boot-brand">
+        <span class="boot-brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square">
+            <path d="M3 14v-4M7 17V7M11 20V4M15 16V8M19 13v-2M22 12h-1"/>
+          </svg>
+        </span>
+        <div>
+          <div class="boot-brand__name">STORYLAB <span>VOICE</span></div>
+          <div class="boot-brand__sub">FIELD TERMINAL / OFFLINE-FIRST LEARNING</div>
+        </div>
+      </div>
+      <div class="boot-log" id="boot-log" aria-hidden="true"></div>
+      <div class="boot-bar" aria-hidden="true"><i id="boot-bar-fill"></i></div>
+      <button type="button" class="boot-skip" id="boot-skip">SKIP SELF TEST →</button>
+    </div>
+  </div>
+
+  <!-- OFFLINE STRIP -->
+  <div id="offline-banner" class="offline-banner" role="status" aria-live="polite" hidden>
+    <span class="offline-banner__label">
+      <span class="offline-banner__dot" aria-hidden="true"></span>
+      OFFLINE MODE
+    </span>
+    <span class="offline-banner__text">The terminal keeps working. Progress is saved on this device.</span>
+    <span class="offline-banner__code">SYNC QUEUED</span>
+  </div>
+
+  <div class="app-shell">
+    <header class="app-header" role="banner">
+      <a class="brand" href="#/home" aria-label="StoryLab Voice — Control Deck">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square">
+            <path d="M3 14v-4M7 17V7M11 20V4M15 16V8M19 13v-2M22 12h-1"/>
+          </svg>
+        </span>
+        <span class="brand__type">
+          <strong>STORYLAB</strong>
+          <em>VOICE TERMINAL / v1.0</em>
+        </span>
+      </a>
+
+      <nav class="app-nav" aria-label="Primary navigation">
+        <a class="app-nav__link" data-nav="home" href="#/home">DECK</a>
+        <a class="app-nav__link" data-nav="record" href="#/record">RECORD</a>
+        <a class="app-nav__link" data-nav="guide" href="#/orientation">GUIDE</a>
+      </nav>
+
+      <div class="app-status">
+        <span class="status-chip" id="net-chip" title="Network status">
+          <span class="status-dot status-dot--ok" aria-hidden="true"></span>
+          <span id="net-label">ONLINE</span>
+        </span>
+
+        <a class="sync-chip" id="sync-chip" href="#/record" hidden aria-label="Records waiting to sync">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true">
+            <path d="M20 7v5h-5M4 17v-5h5"/>
+            <path d="M6.2 8A7 7 0 0 1 20 12M4 12a7 7 0 0 0 13.8 4"/>
+          </svg>
+          <span class="sync-chip__count" id="sync-count">0</span>
+        </a>
+
+        <button type="button" class="update-chip" id="update-chip" hidden aria-label="Update available — reload terminal">
+          <span class="led led--ok"></span> UPDATE READY
+        </button>
+
+        <a class="student-chip" id="student-chip" href="#/record" hidden aria-label="Open learning record">
+          <span class="student-chip__avatar" id="student-chip-avatar" aria-hidden="true"></span>
+          <span class="student-chip__meta">
+            <em>STUDENT</em>
+            <strong id="student-chip-name">—</strong>
+          </span>
+        </a>
+
+        <button type="button" class="btn btn-secondary install-btn" id="install-trigger" hidden>
+          INSTALL
+        </button>
+      </div>
+    </header>
+
+    <main id="app-root" class="app-root" role="main" tabindex="-1" aria-label="StoryLab Voice terminal">
+      <div style="padding:64px 0;text-align:center">
+        <p class="mono-label">◈ INITIALIZING TERMINAL…</p>
+      </div>
+    </main>
+
+    <footer class="app-footer" role="contentinfo">
+      <div class="app-footer__inner">
+        <div class="app-footer__brand">
+          <span class="led led--ok" aria-hidden="true"></span>
+          <strong>STORYLAB VOICE</strong>
+          <span>/ FIELD TERMINAL v1.0 / 2026</span>
+        </div>
+        <div class="app-footer__credits" aria-label="Project credits">
+          <span><b>FOUNDATION</b> AADESH KHANDE</span>
+          <span><b>STORYLEARN</b> PRITAM TATKARI</span>
+          <span><b>VOICE CORE</b> RITESH GAVHANE</span>
+          <span><b>LABINBOX</b> ANURAG KUMBHAR</span>
+        </div>
+        <div class="app-footer__meta">LOCAL FIRST / NO ACCOUNT / ≤25 MB</div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast-stack" id="toast-root" role="status" aria-live="polite" aria-atomic="false"></div>
+  <div id="modal-root"></div>
+
+  <noscript>
+    <div style="padding:32px;text-align:center;font-family:system-ui,sans-serif">
+      <h1>JavaScript is required</h1>
+      <p style="color:#b4b6a9;max-width:52ch;margin:12px auto 0">StoryLab Voice is a local-first web terminal. Enable JavaScript to run the learning modules, voice bus, and on-device ledger.</p>
+    </div>
+  </noscript>
+
+  <!-- Shell scripts — order matters -->
+  <script src="src/shell/ui.js"></script>
+  <script src="src/shell/db.js"></script>
+  <script src="src/shell/state.js"></script>
+  <script src="src/shell/onboarding.js"></script>
+  <script src="src/shell/dashboard.js"></script>
+  <script src="src/shell/record.js"></script>
+  <script src="src/shell/offline.js"></script>
+  <script src="src/shell/router.js"></script>
+
+  <!-- Module controllers — owned by the other three team members -->
+  <script src="src/storylearn/storylearn.js"></script>
+  <script src="src/chatbot/chatbot.js"></script>
+  <script src="src/labinbox/labinbox.js"></script>
+</body>
+</html>

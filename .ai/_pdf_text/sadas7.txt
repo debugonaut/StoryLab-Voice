@@ -1,0 +1,40 @@
+
+
+===== PAGE 1 =====
+Group members:
+Pritam Tatkari 202401100099  
+Ritesh Gavhane 202401100082  
+Aadesh Khande 202401100090  
+Anurag Kumbhar 202401100109
+PRACTICAL NO.07 Designing Complex Interactions with Interaction Overview and Timing 
+Diagram  
+Interaction Overview diagram:
+
+===== PAGE 2 =====
+Timing Diagram:
+
+===== PAGE 3 =====
+Interaction overview diagram (storylab_interaction_overview_diagram.drawio)
+ This diagram gives the high-level ﬂow of a whole learning session. It uses activity-diagram 
+notation, but each step is an interaction occurrence (ref frame) that can be expanded into its 
+own sequence diagram.
+The session starts with authentication and mode selection by voice. A decision sends the 
+student to either a StoryLearn session or a LabInBox session, and the two paths merge. A fork 
+then runs two steps in parallel: saving progress locally and updating adaptive difficulty. After 
+the join, a second decision checks the network. If it is available, progress syncs with the 
+cloud. If it is offline, the sync is queued for later. Both paths merge and the session ends.
+Timing diagram (storylab_timing_diagram.drawio)
+ This diagram shows how the state of each part changes over a 10-second voice session. Time 
+runs left to right in seconds. Each lane is one lifeline (Student, Voice Engine, AI Voice 
+Assistant, StoryLearn Engine, Sync Engine and Network), and the step line shows its state at 
+each moment.
+For example, the Student alternates between Silent and Speaking. The Voice Engine moves 
+between Idle, Listening (STT) and Speaking (TTS). The assistant is Processing only brieﬂy 
+before each reply.
+
+===== PAGE 4 =====
+The {≤ 1.8 s} constraint marks the maximum allowed delay between the student ﬁnishing 
+speaking and the assistant starting to reply. The dashed event arrows show causes. Saving 
+progress puts the Sync Engine in the Queued state, and the network coming back online 
+starts the Syncing state. The Network lane stays Offline for most of the session, which shows 
+the offline-ﬁrst design.

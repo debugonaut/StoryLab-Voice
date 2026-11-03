@@ -1,0 +1,49 @@
+{
+  "id": "acid-base",
+  "title": "Acids & Bases",
+  "subject": "Science",
+  "grade": "6-8",
+  "apparatus": [
+    { "id": "beaker-red",  "type": "beaker", "label": "Red Liquid (Acid)",  "color": "#ef4444", "x": 60,  "y": 180 },
+    { "id": "beaker-blue", "type": "beaker", "label": "Blue Liquid (Base)", "color": "#3b82f6", "x": 200, "y": 180 },
+    { "id": "flask",       "type": "flask",  "label": "Reaction Flask",     "color": "#1c1c1c", "x": 130, "y": 290, "contents": [] }
+  ],
+  "steps": [
+    {
+      "id": "step1",
+      "instruction": "Welcome to the Acids and Bases experiment! Look at the two beakers. The red beaker contains an acid. The blue beaker contains a base.",
+      "action": null,
+      "next": "step2"
+    },
+    {
+      "id": "step2",
+      "instruction": "First, we will pour the acid into the flask. Tell me: which liquid is the acid? Say red or acid.",
+      "action": { "type": "wait_voice", "accepts": ["red", "acid"] },
+      "next": "step3"
+    },
+    {
+      "id": "step3",
+      "instruction": "Correct! Pouring the red acid into the flask now.",
+      "action": { "type": "pour", "from": "beaker-red", "into": "flask", "color": "#ef4444" },
+      "next": "step4"
+    },
+    {
+      "id": "step4",
+      "instruction": "Now pour the blue base into the flask. Say pour blue or base.",
+      "action": { "type": "wait_voice", "accepts": ["blue", "base", "pour"] },
+      "next": "step5"
+    },
+    {
+      "id": "step5",
+      "instruction": "Watch carefully! The acid and base are reacting. This is called neutralization. The mixture turns purple!",
+      "action": { "type": "react", "target": "flask", "result_color": "#9333ea" },
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "instruction": "Outstanding! You completed the Acids and Bases experiment. When an acid and a base mix, they neutralize each other!",
+      "action": { "type": "complete" }
+    }
+  ]
+}
+
