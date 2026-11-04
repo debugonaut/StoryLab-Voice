@@ -1,0 +1,72 @@
+
+{
+  "id": "salt-dissolving",
+  "title": "Salt Dissolving in Water",
+  "subject": "Chemistry",
+  "grade": "6-8",
+  "apparatus": [
+    {
+      "id": "salt-beaker",
+      "type": "beaker",
+      "label": "Salt Crystals",
+      "color": "#f8fafc",
+      "x": 65,
+      "y": 170
+    },
+    {
+      "id": "water-flask",
+      "type": "flask",
+      "label": "Water Flask",
+      "color": "#1c1c1c",
+      "display_color": "#60a5fa",
+      "contents": ["#60a5fa"],
+      "x": 220,
+      "y": 250
+    }
+  ],
+  "steps": [
+    {
+      "id": "step1",
+      "instruction": "Welcome to the salt dissolving experiment! This flask contains water and the beaker contains salt.",
+      "action": null,
+      "next": "step2"
+    },
+    {
+      "id": "step2",
+      "instruction": "What should we add to the water to make a salt solution? Say salt.",
+      "action": {
+        "type": "wait_voice",
+        "accepts": ["salt"]
+      },
+      "next": "step3"
+    },
+    {
+      "id": "step3",
+      "instruction": "Correct! We are adding salt to the water. Watch the salt enter the flask.",
+      "action": {
+        "type": "pour",
+        "from": "salt-beaker",
+        "into": "water-flask",
+        "color": "#f8fafc"
+      },
+      "next": "step4"
+    },
+    {
+      "id": "step4",
+      "instruction": "The salt dissolves in the water and forms a solution. The salt particles spread throughout the water and cannot be seen separately.",
+      "action": {
+        "type": "react",
+        "target": "water-flask",
+        "result_color": "#60a5fa"
+      },
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "instruction": "Excellent work! You completed the experiment. Salt is soluble in water and forms a salt solution.",
+      "action": {
+        "type": "complete"
+      }
+    }
+  ]
+}

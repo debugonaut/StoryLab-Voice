@@ -36,6 +36,7 @@ var PRECACHE = [
   './data/stories/science-plants.json',
   './data/labs/index.json',
   './data/labs/acid-base.json',
+  './data/labs/salt-dissolving.json',
   './data/orientation/first-shift.json',
   './icons/icon-192.svg',
   './icons/icon-512.svg',
