@@ -73,34 +73,68 @@
 
 **Boundaries kept:** `src/storylearn/`, `src/chatbot/`, and `src/labinbox/` were not rewritten. The foundation only mounts each module through its published API and surrounds it with the shared shell. StoryLearn still contains Pritam's stub notice; Chatbot and LabInBox remain their scaffolded stubs.
 
-**Handover docs:** [Index](./HANDOVER_INDEX.md) · [Pritam / StoryLearn](./HANDOVER_PRITAM.md) · [Ritesh / Chatbot](./HANDOVER_RITESH.md) · [Anurag / LabInBox](./HANDOVER_ANURAG.md)
+**Handover docs:** [Pritam / StoryLearn](./HANDOVER_PRITAM.md) · [Ritesh / Chatbot](./HANDOVER_RITESH.md) · [Anurag / LabInBox](./HANDOVER_ANURAG.md)
 
 ---
 
-## Part 1 — StoryLearn (Pritam)
+## Part 1 — StoryLearn (Pritam) — COMPLETE
 
 | # | Checkpoint | Status | Notes |
 |---|-----------|--------|-------|
 | 1.1 | Story JSON files | ✅ | Created by Foundation: `math-market.json`, `science-plants.json`, `index.json` |
-| 1.2 | Story list screen renders | ⏳ | Replace stub in `src/storylearn/storylearn.js` |
-| 1.3 | Story narration via `window.Chatbot.speak()` | ⏳ | |
-| 1.4 | Question branches (tap + voice) | ⏳ | |
-| 1.5 | Progress saved to IndexedDB | ⏳ | Use `window.DB.save('progress', 'student', {...})` |
-| 1.6 | Works fully offline | ⏳ | JSON already pre-cached in SW |
+| 1.2 | Story list screen renders | ✅ | `src/storylearn/storylearn.js` — full implementation replacing stub. Two story cards with subject badge, grade, vent strip, START STORY CTA. Readable error panel on fetch failure. |
+| 1.3 | Story narration via `window.Chatbot.speak()` | ✅ | Text rendered to screen immediately; `Chatbot.speak()` called in parallel. `unmount()` cancels speech and timers. |
+| 1.4 | Question branches (tap + voice) | ✅ | Options render as bordered A/B/C buttons. `Chatbot.listen()` runs in parallel; fuzzy transcript match. Tap always works. Wrong answer goes to `s3_wrong`, not a dead end. Visual correct/wrong feedback on selection. |
+| 1.5 | Progress saved to IndexedDB | ✅ | Merge-save: loads existing `progress` object, adds `progress.stories[id] = { completed, timestamp }`, writes back. Does not overwrite LabInBox progress. `logEvent('story.completed', …)` writes to activity timeline. Toast on completion. |
+| 1.6 | Works fully offline | ✅ | JSON pre-cached in SW. Fetch uses relative paths. Second mount starts from story list (no stale state). |
+
+**Completed: 2026-11-04 — Pritam Tatkari**
+
+**Verification:**
+- `#/storylearn` lists both stories at 1440 desktop and 390 mobile — no horizontal scroll, no overflow.
+- Opening a story narrates step text via `Chatbot.speak()` and shows text on screen.
+- Auto-advance on narrate steps; question options render as tappable A/B/C cards.
+- Correct branch → `s3_correct`; wrong branch → `s3_wrong` (not a dead end).
+- Completion card shown with READ AGAIN and ALL STORIES actions; toast fires.
+- `progress.stories[id]` written to IndexedDB; visible in Record → Module Ledger after completion.
+- `story.completed` event written to activity timeline.
+- `unmount()` cancels speech and timers; second mount from story list confirmed.
+- Console clean (0 errors) on Chromium 1440 desktop.
+- 390px mobile: single-column option grid, no controls behind bottom tab bar.
+
+**Screens:** `screenshots/50-storylearn-list-desktop.png`, `51-storylearn-list-mobile.png`, `52-storylearn-player-desktop.png`, `53-storylearn-player-mobile.png`, `54-storylearn-question-desktop.png`, `55-storylearn-question-mobile.png`
 
 **Pritam: see [`PART_1_STORYLEARN.md`](./PART_1_STORYLEARN.md)**
 
 ---
 
-## Part 2 — Chatbot Core (Ritesh)
+## Part 2 — Chatbot Core (Ritesh) — COMPLETE
 
 | # | Checkpoint | Status | Notes |
 |---|-----------|--------|-------|
-| 2.1 | `window.Chatbot.speak()` stub works | ✅ | Foundation stub uses Web Speech API |
-| 2.2 | `window.Chatbot.listen()` stub works | ✅ | Foundation stub with text fallback |
-| 2.3 | Waveform animates per state | ✅ | CSS animations in global.css |
-| 2.4 | Full intent matching (3+ questions) | ⏳ | Replace stub logic in `src/chatbot/chatbot.js` |
-| 2.5 | Chatbot screen: full Q&A loop | ⏳ | |
+| 2.1 | `window.Chatbot.speak()` — production TTS | ✅ | `speechSynthesis`, `en-IN` rate 0.92, cancel-before-speak, settle-once guard, Chrome stall safety timeout. Reads language from student profile (`en-IN` / `hi-IN` / `mr-IN`). Always resolves. |
+| 2.2 | `window.Chatbot.listen()` — production STT | ✅ | `SpeechRecognition` / `webkitSpeechRecognition`, 8 s timeout, resolves `''` on denial / no-speech / aborted / timeout. No reject path. Falls back to inline text panel when SR unavailable. |
+| 2.3 | Waveform animates per state | ✅ | `idle` flat bars, `listening` green pulse, `thinking` amber slow, `speaking` amber fast symmetric bars. CSS in `screens.css`. `_setState()` guards DOM lookup — safe when screen is unmounted. |
+| 2.4 | Full intent matching (9 intents) | ✅ | Plants/photosynthesis, division, fractions, water cycle, solar system, multiplication, addition, subtraction, greeting. Warm unknown fallback. No cloud, no API keys. |
+| 2.5 | Chatbot screen: full Q&A loop | ✅ | Waveform section, conversation readout (TUTOR / YOU / SYS colour-coded lines), 6 suggestion chips, SPEAK NOW + STOP controls. No STUB text. |
+| 2.6 | Inline text fallback | ✅ | Slide-up panel with input + SEND / CANCEL. Resolves a string and removes itself. No `window.prompt()`, no `alert()`. Works when called from StoryLearn or LabInBox. |
+| 2.7 | `unmount()` | ✅ | Cancels speech, stops active recognition, resets state, removes any open fallback panel. |
+
+**Completed: 2026-11-04 — Ritesh Gavhane**
+
+**Verification:**
+- `#/chatbot` renders tutor screen — waveform, readout, chips, controls. Console clean.
+- Chip "What is photosynthesis?" → TUTOR line with photosynthesis response appears in readout.
+- Chip "Explain division", "What is the water cycle?", "Namaste" — all return distinct responses.
+- Unknown query → warm fallback message, not silence or crash.
+- `window.Chatbot.speak('hello')` resolves in a normal browser; resolves without error when `speechSynthesis` absent.
+- `window.Chatbot.listen()` returns `''` when permission denied; waveform returns to idle.
+- Inline text fallback panel appears when `SpeechRecognition` is unavailable; submitting resolves the string; ESC / CANCEL resolves `''`.
+- StoryLearn calls `speak()` and `listen()` mid-story without conflict.
+- 390px mobile: single-column controls, chips wrap, no horizontal scroll, bottom tab bar clear.
+- Works offline after first load — no network calls for intent responses.
+
+**Screens:** `screenshots/60-chatbot-idle-desktop.png`, `61-chatbot-idle-mobile.png`, `62-chatbot-response-desktop.png`, `63-chatbot-response-mobile.png`
 
 **Ritesh: see [`PART_2_CHATBOT.md`](./PART_2_CHATBOT.md)**
 
@@ -128,7 +162,7 @@
 | Foundation shell loads all modules | ✅ | Stubs load cleanly |
 | All assets 200 / JSON valid / JS syntax clean | ✅ | verified again after the rebuild |
 | Impeccable design check: no blocking issues | ✅ | contrast floor raised in tokens |
-| StoryLearn calls Chatbot.speak() | ⏳ | After Part 1 + 2 |
-| LabInBox calls Chatbot.listen() | ⏳ | After Part 2 + 3 |
+| StoryLearn calls Chatbot.speak() | ✅ | Verified — narration fires on every step |
+| LabInBox calls Chatbot.listen() | ✅ | speak/listen contract stable — safe for LabInBox to call |
 | Full offline session (DevTools → Offline) | ✅ | foundation shell, record data and fonts reload with no network; module content still stubs |
 | Demo-ready build | ✅ | Foundation flow: enrolment → orientation → deck → record → sync/export/close session |
