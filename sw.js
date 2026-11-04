@@ -9,7 +9,7 @@
  *   background sync  drain sync_queue into sync_archive
  */
 
-var CACHE_VERSION = 'storylab-v3';
+var CACHE_VERSION = 'storylab-v7';
 var DB_NAME = 'storylab_v1';
 var DB_VERSION = 2;
 
@@ -33,7 +33,23 @@ var PRECACHE = [
   './src/labinbox/labinbox.js',
   './data/stories/index.json',
   './data/stories/math-market.json',
+  './data/stories/math-fractions.json',
+  './data/stories/math-shapes.json',
   './data/stories/science-plants.json',
+  './data/stories/science-water.json',
+  './data/stories/science-solar.json',
+  './data/stories/social-map.json',
+  './data/stories/social-village.json',
+  './data/stories/evs-animals.json',
+  './assets/stories/math-market.jpg',
+  './assets/stories/math-fractions.jpg',
+  './assets/stories/math-shapes.jpg',
+  './assets/stories/science-plants.jpg',
+  './assets/stories/science-water.jpg',
+  './assets/stories/science-solar.jpg',
+  './assets/stories/social-map.jpg',
+  './assets/stories/social-village.jpg',
+  './assets/stories/evs-animals.jpg',
   './data/labs/index.json',
   './data/labs/acid-base.json',
   './data/orientation/first-shift.json',

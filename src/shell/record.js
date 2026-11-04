@@ -64,10 +64,10 @@
       if (disposed) return;
       root.innerHTML =
         '<div class="panel panel--accent" style="padding:32px">' +
-        '<p class="eyebrow">RECORD / FAULT</p>' +
-        '<h1 class="step-title" style="margin-top:10px">The learning record could not be read.</h1>' +
+        '<p class="eyebrow">PROGRESS / PROBLEM</p>' +
+        '<h1 class="step-title" style="margin-top:10px">Your progress could not be loaded.</h1>' +
         '<p class="lede" style="margin-top:12px">' + UI.escape(err.message || String(err)) + '</p>' +
-        '<a class="btn btn-secondary" style="margin-top:18px" href="#/home">← BACK TO DECK</a>' +
+        '<a class="btn btn-secondary" style="margin-top:18px" href="#/home">← BACK TO HOME</a>' +
         '</div>';
     });
 
@@ -84,8 +84,8 @@
     return (
       '<section class="screen record">' +
       '  <div class="panel panel--accent" style="padding:32px">' +
-      '    <p class="eyebrow">LEARNING RECORD / OPENING FILE</p>' +
-      '    <h1 class="deck-title" style="font-size:clamp(2rem,4vw,3rem);margin-top:10px">Pulling the record.</h1>' +
+      '    <p class="eyebrow">PROGRESS</p>' +
+      '    <h1 class="deck-title" style="font-size:clamp(2rem,4vw,3rem);margin-top:10px">Loading…</h1>' +
       '    <div class="meter" style="margin-top:18px;max-width:320px"><div class="meter__fill" style="width:52%"></div></div>' +
       '  </div>' +
       '</section>'
@@ -96,8 +96,8 @@
     var result = { stories: [], labs: [] };
     try {
       var responses = await Promise.all([
-        fetch('data/stories/index.json').then(function (r) { return r.ok ? r.json() : []; }),
-        fetch('data/labs/index.json').then(function (r) { return r.ok ? r.json() : []; })
+        fetch('data/stories/index.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : []; }),
+        fetch('data/labs/index.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : []; })
       ]);
       if (Array.isArray(responses[0])) result.stories = responses[0];
       if (Array.isArray(responses[1])) result.labs = responses[1];
@@ -124,12 +124,12 @@
 
     return (
       '<section class="screen record">' +
-      '  <div class="print-only">STORYLAB VOICE / LEARNING RECORD / ' + UI.escape(profile.id) + ' / PRINTED ' + UI.formatDateTime(new Date()) + '</div>' +
+      '  <div class="print-only">STORYLAB VOICE / MY PROGRESS / ' + UI.escape(profile.id) + ' / PRINTED ' + UI.formatDateTime(new Date()) + '</div>' +
       '  <header class="screen-head record-head">' +
       '    <div>' +
-      '      <p class="eyebrow">STUDENT FILE / ' + UI.escape(profile.id) + '</p>' +
-      '      <h1 class="screen-head__title">Learning record</h1>' +
-      '      <p class="screen-head__sub">Everything the terminal has saved on this device: orientation, sessions, module progress, and the sync ledger.</p>' +
+      '      <p class="eyebrow">STUDENT / ' + UI.escape(profile.id) + '</p>' +
+      '      <h1 class="screen-head__title">My progress</h1>' +
+      '      <p class="screen-head__sub">Everything saved on this tablet: sessions, lessons, and uploads.</p>' +
       '    </div>' +
       '    <div class="record-actions">' +
       '      <button type="button" class="btn btn-secondary" id="export-record">' + UI.icon('download') + ' EXPORT JSON</button>' +
@@ -142,7 +142,7 @@
       '      <div class="id-card__top">' +
       '        <div class="avatar avatar--lg">' + UI.avatar(profile.avatar) + '</div>' +
       '        <div>' +
-      '          <div class="badge ' + (orientationDone ? 'badge--ok' : 'badge--warn') + '"><i class="led ' + (orientationDone ? 'led--ok' : 'led--warn') + '"></i> ' + (orientationDone ? 'COMMISSIONED' : 'PENDING') + '</div>' +
+      '          <div class="badge ' + (orientationDone ? 'badge--ok' : 'badge--warn') + '"><i class="led ' + (orientationDone ? 'led--ok' : 'led--warn') + '"></i> ' + (orientationDone ? 'READY' : 'SETUP') + '</div>' +
       '          <div class="id-card__name">' + UI.escape(profile.name) + '</div>' +
       '          <div class="id-card__id">' + UI.escape(profile.id) + '</div>' +
       '        </div>' +
@@ -156,9 +156,9 @@
       }).join('') +
       '          </select>' +
       '        </strong></div>' +
-      '        <div class="id-card__row"><em>MICROPHONE</em><strong>' + (profile.mic === 'verified' ? 'VERIFIED' : profile.mic === 'touch' ? 'TOUCH MODE' : 'NOT TESTED') + '</strong></div>' +
+      '        <div class="id-card__row"><em>MIC</em><strong>' + (profile.mic === 'verified' ? 'VERIFIED' : profile.mic === 'touch' ? 'TOUCH MODE' : 'NOT TESTED') + '</strong></div>' +
       '        <div class="id-card__row"><em>MEMBER SINCE</em><strong>' + UI.formatDate(profile.createdAt, false) + '</strong></div>' +
-      '        <div class="id-card__row"><em>RECORD</em><strong>LOCAL / DEVICE</strong></div>' +
+      '        <div class="id-card__row"><em>SAVED</em><strong>THIS DEVICE</strong></div>' +
       '      </div>' +
       '      <div class="badge-strip" style="margin-top:14px">' +
       (badges.length
@@ -168,48 +168,48 @@
         : '<span class="badge badge--muted">NO BADGES YET</span>') +
       '      </div>' +
       '      <div class="barcode" aria-hidden="true"></div>' +
-      '      <div class="id-card__foot">This file is stored in IndexedDB on this device. It is not a cloud account. Closing the session does not delete it.</div>' +
+      '      <div class="id-card__foot">Saved on this tablet. Closing a session does not delete it.</div>' +
       '    </aside>' +
 
       '    <div class="record-main">' +
       '      <div class="stat-row">' +
-      '        <div class="stat-tile"><div class="stat-tile__value">' + String(sessionCount).padStart(2, '0') + '</div><div class="stat-tile__label">SESSIONS CLOSED</div><div class="stat-tile__sub">' + (active ? '01 open now' : 'No open session') + '</div></div>' +
+      '        <div class="stat-tile"><div class="stat-tile__value">' + String(sessionCount).padStart(2, '0') + '</div><div class="stat-tile__label">SESSIONS</div><div class="stat-tile__sub">' + (active ? '01 running' : 'None running') + '</div></div>' +
       '        <div class="stat-tile"><div class="stat-tile__value">' + UI.formatMinutes(totalTime) + '</div><div class="stat-tile__label">TIME ON TASK</div><div class="stat-tile__sub">Including the open session</div></div>' +
-      '        <div class="stat-tile"><div class="stat-tile__value is-accent">' + String(checkpoints).padStart(2, '0') + '</div><div class="stat-tile__label">CHECKPOINTS</div><div class="stat-tile__sub">Orientation + modules</div></div>' +
-      '        <div class="stat-tile"><div class="stat-tile__value">' + String(pending).padStart(2, '0') + '</div><div class="stat-tile__label">SYNC QUEUE</div><div class="stat-tile__sub">' + (archiveCount ? archiveCount + ' archived' : 'Nothing archived yet') + '</div></div>' +
+      '        <div class="stat-tile"><div class="stat-tile__value is-accent">' + String(checkpoints).padStart(2, '0') + '</div><div class="stat-tile__label">COMPLETED</div><div class="stat-tile__sub">Intro + lessons</div></div>' +
+      '        <div class="stat-tile"><div class="stat-tile__value">' + String(pending).padStart(2, '0') + '</div><div class="stat-tile__label">TO UPLOAD</div><div class="stat-tile__sub">' + (archiveCount ? archiveCount + ' uploaded' : 'Nothing uploaded yet') + '</div></div>' +
       '      </div>' +
 
       '      <section class="panel record-section">' +
-      '        <div class="panel__header"><span class="panel__label">SESSION CONTROL</span><span class="panel__header-spacer"></span><span class="mono-label">' + (active ? 'OPEN' : 'CLOSED') + '</span></div>' +
+      '        <div class="panel__header"><span class="panel__label">SESSION</span><span class="panel__header-spacer"></span><span class="mono-label">' + (active ? 'OPEN' : 'CLOSED') + '</span></div>' +
       sessionMarkup(snapshot, sessions, active, activeElapsed) +
       '      </section>' +
 
       '      <section class="panel record-section">' +
-      '        <div class="panel__header"><span class="panel__label">MODULE LEDGER / STORYLEARN + LAB IN BOX</span><span class="panel__header-spacer"></span><span class="mono-label">READ-ONLY AGGREGATE</span></div>' +
+      '        <div class="panel__header"><span class="panel__label">LESSONS</span><span class="panel__header-spacer"></span><span class="mono-label">AUTO-SAVED</span></div>' +
       ledgerMarkup(progress, indexes) +
       '      </section>' +
 
       '      <section class="panel record-section">' +
-      '        <div class="panel__header"><span class="panel__label">SYNC CENTRE / LOCAL LEDGER</span><span class="panel__header-spacer"></span><span class="mono-label">' + (window.STORYLAB_SYNC_ENDPOINT ? 'REMOTE ENDPOINT' : 'LOCAL MIRROR') + '</span></div>' +
+      '        <div class="panel__header"><span class="panel__label">UPLOAD</span><span class="panel__header-spacer"></span><span class="mono-label">' + (window.STORYLAB_SYNC_ENDPOINT ? 'SERVER' : 'THIS DEVICE') + '</span></div>' +
       syncMarkup(pending, queue, archiveCount, lastSync) +
       '      </section>' +
 
       '      <section class="panel record-section">' +
-      '        <div class="panel__header"><span class="panel__label">ACTIVITY TIMELINE</span><span class="panel__header-spacer"></span><span class="mono-label">' + events.length + ' LOCAL EVENTS</span></div>' +
+      '        <div class="panel__header"><span class="panel__label">RECENT ACTIVITY</span><span class="panel__header-spacer"></span><span class="mono-label">' + events.length + ' EVENTS</span></div>' +
       timelineMarkup(events) +
       '      </section>' +
 
       '      <details class="panel record-section maintenance">' +
-      '        <summary><span>UNIT CONTROLS / MAINTENANCE</span><span>' + UI.icon('chevron-down') + '</span></summary>' +
+      '        <summary><span>DEVICE SETTINGS</span><span>' + UI.icon('chevron-down') + '</span></summary>' +
       '        <div class="maintenance__body">' +
-      '          <p>These controls affect this device only. Export the learning record before wiping the unit if you need to hand it to a facilitator.</p>' +
+      '          <p>These controls affect this tablet only. Export the record first if you need to hand it to a teacher.</p>' +
       '          <div class="maintenance__row">' +
-      '            <span class="mono-label">Replay the First Shift briefing</span>' +
-      '            <a class="btn btn-secondary btn--sm" href="#/orientation">REPLAY BRIEFING</a>' +
+      '            <span class="mono-label">Replay the intro</span>' +
+      '            <a class="btn btn-secondary btn--sm" href="#/orientation">REPLAY INTRO</a>' +
       '          </div>' +
       '          <div class="maintenance__row">' +
       '            <span class="mono-label">Wipe profile, progress, sessions, and queue</span>' +
-      '            <button type="button" class="btn btn-danger btn--sm" id="reset-unit">' + UI.icon('trash') + ' RESET UNIT</button>' +
+      '            <button type="button" class="btn btn-danger btn--sm" id="reset-unit">' + UI.icon('trash') + ' RESET DEVICE</button>' +
       '          </div>' +
       '        </div>' +
       '      </details>' +
@@ -224,9 +224,9 @@
       return (
         '<div class="session-card">' +
         '  <div class="session-card__main">' +
-        '    <div class="session-kicker"><span class="led led--ok led--pulse"></span> SESSION OPEN / ' + UI.escape(active.id) + '</div>' +
+        '    <div class="session-kicker"><span class="led led--ok led--pulse"></span> SESSION RUNNING' +
         '    <div class="session-clock is-live" id="session-clock">' + UI.formatDuration(activeElapsed) + '</div>' +
-        '    <div class="session-meta">STARTED ' + UI.formatDateTime(active.startedAt) + ' / RECORD WRITES TO LOCAL LEDGER</div>' +
+        '    <div class="session-meta">STARTED ' + UI.formatDateTime(active.startedAt) + ' / SAVED ON THIS DEVICE</div>' +
         '  </div>' +
         '  <div class="session-actions">' +
         '    <button type="button" class="btn btn-primary" id="end-session">' + UI.icon('power') + ' CLOSE SESSION</button>' +
@@ -239,14 +239,13 @@
     return (
       '<div class="session-summary">' +
       '  <div class="session-card__main">' +
-      '    <div class="session-kicker"><span class="led led--off"></span> NO OPEN SESSION</div>' +
+      '    <div class="session-kicker"><span class="led led--off"></span> NO SESSION</div>' +
       '    <div class="session-clock">—</div>' +
       '    <div class="session-meta">' + (last
         ? 'LAST SESSION ' + UI.formatDateTime(last.endedAt || last.startedAt) + ' / ' + UI.formatMinutes(last.durationMs || 0)
-        : 'START A SESSION TO TIME THE NEXT STUDENT') + '</div>' +
+        : 'START A SESSION TO TIME THIS STUDENT') + '</div>' +
       '  </div>' +
-      '  <div class="session-actions">' +
-      '    <button type="button" class="btn btn-primary" id="start-session">' + UI.icon('plus') + ' START NEW SESSION</button>' +
+      '  <div class="session-actions">' +'<button type="button" class="btn btn-primary" id="start-session">' + UI.icon('plus') + ' START SESSION</button>' +
       '  </div>' +
       '</div>'
     );
@@ -297,15 +296,15 @@
     return (
       '<div class="record-section__body record-section__body--flush">' +
       '<table class="ledger-table">' +
-      '<thead><tr><th>Module record</th><th>Subject</th><th>Status</th><th class="is-right">Last touched</th></tr></thead>' +
+      '<thead><tr><th>Lesson</th><th>Subject</th><th>Status</th><th class="is-right">Finished</th></tr></thead>' +
       '<tbody>' +
       (hasRows
         ? storyRows.join('') + labRows.join('')
-        : '<tr><td colspan="4"><span class="text-muted" style="font-size:12px">No module progress has been written to this device yet.</span></td></tr>') +
+        : '<tr><td colspan="4"><span class="text-muted" style="font-size:12px">Nothing finished yet.</span></td></tr>') +
       '</tbody>' +
       '</table>' +
       (hasRows ? '' :
-        '<div class="ledger-empty"><span>Start with StoryLearn, or run a virtual experiment in Lab In Box.</span><a href="#/storylearn">OPEN A BAY →</a></div>') +
+        '<div class="ledger-empty"><span>Start with a story or a virtual experiment.</span><a href="#/storylearn">OPEN STORIES →</a></div>') +
       '</div>'
     );
   }
@@ -321,26 +320,26 @@
           '</div>'
         );
       }).join('')
-      : '<div class="sync-empty"><strong>QUEUE CLEAR</strong>Every local record has been moved to the sync archive.</div>';
+      : '<div class="sync-empty"><strong>ALL UPLOADED</strong>Everything saved here has been uploaded.</div>';
 
     return (
       '<div class="sync-grid">' +
       '  <div class="sync-summary">' +
       '    <div class="sync-big ' + (pending ? '' : 'is-zero') + '">' + String(pending).padStart(2, '0') + '</div>' +
-      '    <div class="sync-big-label">RECORDS WAITING</div>' +
+      '    <div class="sync-big-label">WAITING TO UPLOAD</div>' +
       '    <div class="sync-meta">' +
-      '      <div class="sync-meta__row"><span>NETWORK</span><strong style="color:' + (online ? 'var(--color-ok)' : 'var(--color-error)') + '">' + (online ? 'ONLINE' : 'OFFLINE') + '</strong></div>' +
-      '      <div class="sync-meta__row"><span>LAST FLUSH</span><strong>' + (lastSync ? UI.relativeTime(lastSync) : 'NEVER') + '</strong></div>' +
-      '      <div class="sync-meta__row"><span>ARCHIVED</span><strong>' + archiveCount + '</strong></div>' +
-      '      <div class="sync-meta__row"><span>TARGET</span><strong>' + (window.STORYLAB_SYNC_ENDPOINT ? 'REMOTE' : 'LOCAL MIRROR') + '</strong></div>' +
+      '      <div class="sync-meta__row"><span>INTERNET</span><strong style="color:' + (online ? 'var(--color-ok)' : 'var(--color-error)') + '">' + (online ? 'ONLINE' : 'OFFLINE') + '</strong></div>' +
+      '      <div class="sync-meta__row"><span>LAST UPLOAD</span><strong>' + (lastSync ? UI.relativeTime(lastSync) : 'NEVER') + '</strong></div>' +
+      '      <div class="sync-meta__row"><span>UPLOADED</span><strong>' + archiveCount + '</strong></div>' +
+      '      <div class="sync-meta__row"><span>WHERE</span><strong>' + (window.STORYLAB_SYNC_ENDPOINT ? 'SERVER' : 'THIS DEVICE') + '</strong></div>' +
       '    </div>' +
       '    <div class="sync-actions">' +
-      '      <button type="button" class="btn btn-primary" id="sync-now"' + (!pending || !online ? ' disabled' : '') + '>' + UI.icon('sync') + ' FLUSH LEDGER</button>' +
+      '      <button type="button" class="btn btn-primary" id="sync-now"' + (!pending || !online ? ' disabled' : '') + '>' + UI.icon('sync') + ' UPLOAD NOW</button>' +
       '      <button type="button" class="btn btn-secondary" id="sync-refresh">REFRESH</button>' +
       '    </div>' +
       '    <p class="sync-note">' + (window.STORYLAB_SYNC_ENDPOINT
-        ? 'Queued records are POSTed to the configured endpoint, then archived locally. Failed flushes stay in the queue.'
-        : 'Prototype mode: no cloud endpoint is configured, so flushed records land in a local archive. The queue, retry, and archive pipeline is real.') + '</p>' +
+        ? 'Saved records are sent to the server, then marked uploaded. Anything that fails stays in the queue.'
+        : 'Demo mode: no server is set up, so uploads are kept on this tablet. The queue and retry work the same way.') + '</p>' +
       '  </div>' +
       '  <div class="sync-list">' + items + '</div>' +
       '</div>'
@@ -349,7 +348,7 @@
 
   function timelineMarkup(events) {
     if (!events.length) {
-      return '<div class="empty-state" style="margin:20px"><div class="empty-state__title">No activity recorded.</div><p class="empty-state__text">Enrolment, orientation, sessions, and sync flushes appear here automatically.</p></div>';
+      return '<div class="empty-state" style="margin:20px"><div class="empty-state__title">No activity yet.</div><p class="empty-state__text">Setup, sessions, and finished lessons appear here automatically.</p></div>';
     }
     return (
       '<div class="timeline">' +
@@ -409,8 +408,8 @@
     if (endBtn) {
       endBtn.addEventListener('click', async function () {
         var confirmed = await UI.confirm({
-          title: 'Close this learning session?',
-          message: 'The session timer stops and the record is written to the local ledger. Progress from the learning modules stays intact. Start a new session for the next student.',
+          title: 'Close this session?',
+          message: 'The timer stops and your progress is saved on this tablet. Start a new session for the next student.',
           confirmLabel: 'CLOSE SESSION',
           cancelLabel: 'KEEP OPEN'
         });
@@ -422,7 +421,7 @@
           await window.StoryLabNetwork.refresh();
           UI.toast({
             title: 'Session closed',
-            message: 'Saved locally and queued for the sync ledger.',
+            message: 'Saved on this device. It will upload when internet returns.',
             kind: 'ok'
           });
           refreshRecord();
@@ -432,7 +431,7 @@
           endBtn.textContent = 'CLOSE SESSION';
           UI.toast({
             title: 'Session not closed',
-            message: err.message || 'The local ledger rejected the write.',
+            message: err.message || 'The save failed.',
             kind: 'error'
           });
         }
@@ -447,7 +446,7 @@
         await State.startSession();
         UI.toast({
           title: 'Session open',
-          message: 'The timer is running. Work in any bay.',
+          message: 'The timer is running. Start learning.',
           kind: 'ok'
         });
         refreshRecord();
@@ -464,7 +463,7 @@
           refreshRecord();
         } else {
           syncBtn.disabled = false;
-          syncBtn.innerHTML = UI.icon('sync') + ' FLUSH LEDGER';
+          syncBtn.innerHTML = UI.icon('sync') + ' UPLOAD NOW';
         }
       });
     }
@@ -485,19 +484,19 @@
             language: language,
             languageTag: LANG_TAGS[language] || 'en-IN'
           });
-          await State.logEvent('profile.language', 'Changed terminal language to ' + (LANG_NAMES[language] || language), {
+          await State.logEvent('profile.language', 'Changed language to ' + (LANG_NAMES[language] || language), {
             language: language
           }, { sync: false });
           UI.toast({
             title: 'Language updated',
-            message: 'The terminal will use ' + (LANG_NAMES[language] || language) + ' for voice support.',
+            message: 'The tutor will speak ' + (LANG_NAMES[language] || language) + '.',
             kind: 'ok'
           });
           refreshRecord();
         } catch (err) {
           UI.toast({
             title: 'Language not saved',
-            message: err.message || 'The local ledger rejected the update.',
+            message: err.message || 'The update failed.',
             kind: 'error'
           });
         }
@@ -508,9 +507,9 @@
     if (resetBtn) {
       resetBtn.addEventListener('click', async function () {
         var confirmed = await UI.confirm({
-          title: 'Reset this terminal?',
-          message: 'This wipes the student profile, orientation, module progress, sessions, activity, and sync queue from this device. Export the record first if you need it. This cannot be undone.',
-          confirmLabel: 'WIPE AND RESET',
+          title: 'Reset this device?',
+          message: 'This deletes the student name, progress, sessions, and uploads from this tablet. Export the record first if you need it. This cannot be undone.',
+          confirmLabel: 'DELETE AND RESET',
           cancelLabel: 'KEEP EVERYTHING',
           danger: true
         });
@@ -520,8 +519,8 @@
           window.StoryLabOnboarding.reset();
         }
         UI.toast({
-          title: 'Unit reset',
-          message: 'The terminal is ready for a new student.',
+          title: 'Device reset',
+          message: 'Ready for a new student.',
           kind: 'ok'
         });
         window.StoryLabRouter.navigate('onboarding');

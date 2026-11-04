@@ -1,0 +1,48 @@
+{
+  "id": "social-village",
+  "title": "The Village Meeting",
+  "subject": "Social Studies",
+  "grade": "5-8",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "The village meets under the banyan tree. The well is broken, and everyone has a different idea about how to repair it.",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "What do we call a meeting where everyone gets a turn to speak?",
+      "hint": "It is not a party and nobody wins a prize.",
+      "options": [
+        { "label": "A discussion", "correct": true, "next": "s3_correct" },
+        { "label": "A celebration", "correct": false, "next": "s3_wrong" },
+        { "label": "A competition", "correct": false, "next": "s3_wrong" }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Yes. In a discussion every person is heard before the group decides what to do.",
+      "next": "s4"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Not quite. A celebration is a party, and a competition has winners. A meeting where everyone speaks is a discussion.",
+      "next": "s4"
+    },
+    {
+      "id": "s4",
+      "type": "narrate",
+      "text": "After listening, the village votes. The repair plan with the most votes is chosen, and work begins the next morning.",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "Good work! Listen first, then vote together. That is how a group makes a fair decision."
+    }
+  ]
+}

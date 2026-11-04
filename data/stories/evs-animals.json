@@ -1,0 +1,48 @@
+{
+  "id": "evs-animals",
+  "title": "Neighbours in the Forest",
+  "subject": "EVS",
+  "grade": "3-6",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "A forest has many neighbours. Each animal finds food, water, and a safe place to sleep in a different part of the forest.",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "Where do most birds build their nests?",
+      "hint": "Look up at the branches.",
+      "options": [
+        { "label": "In trees", "correct": true, "next": "s3_correct" },
+        { "label": "Underground", "correct": false, "next": "s3_wrong" },
+        { "label": "In water", "correct": false, "next": "s3_wrong" }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Right! Trees keep nests safe from many animals on the ground, and the branches hold them steady in the wind.",
+      "next": "s4"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Think about the branches above you. Birds build nests in trees, where most animals below cannot reach them.",
+      "next": "s4"
+    },
+    {
+      "id": "s4",
+      "type": "narrate",
+      "text": "Rabbits dig burrows underground. Fish stay in the water. Bees build hives in hollow trunks. Every animal has its own place.",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "Nice work! You matched the birds to the trees, the rabbits to burrows, and the fish to water."
+    }
+  ]
+}

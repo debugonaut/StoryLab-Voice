@@ -1,5 +1,92 @@
 [
-  { "id": "math-market",    "title": "The Market Day",      "subject": "Math",    "grade": "3-5" },
-  { "id": "science-plants", "title": "How Plants Eat Light", "subject": "Science", "grade": "4-6" }
+  {
+    "id": "math-market",
+    "title": "The Market Day",
+    "subject": "Math",
+    "grade": "3-5",
+    "minutes": 4,
+    "summary": "Rani has 50 rupees and a mango stall to beat.",
+    "art": "market",
+    "image": "assets/stories/math-market.jpg"
+  },
+  {
+    "id": "math-fractions",
+    "title": "Pizza for Four",
+    "subject": "Math",
+    "grade": "3-5",
+    "minutes": 4,
+    "summary": "One pizza, eight slices, four hungry friends.",
+    "art": "fractions",
+    "image": "assets/stories/math-fractions.jpg"
+  },
+  {
+    "id": "math-shapes",
+    "title": "The Kite Maker",
+    "subject": "Math",
+    "grade": "2-4",
+    "minutes": 3,
+    "summary": "Sameer needs four equal sides before the wind picks up.",
+    "art": "shapes",
+    "image": "assets/stories/math-shapes.jpg"
+  },
+  {
+    "id": "science-plants",
+    "title": "How Plants Eat Light",
+    "subject": "Science",
+    "grade": "4-6",
+    "minutes": 4,
+    "summary": "A leaf is a food factory that runs on sunlight.",
+    "art": "plants",
+    "image": "assets/stories/science-plants.jpg"
+  },
+  {
+    "id": "science-water",
+    "title": "Where Rain Comes From",
+    "subject": "Science",
+    "grade": "4-6",
+    "minutes": 4,
+    "summary": "Follow one drop of water from the sea to the sky and back.",
+    "art": "water",
+    "image": "assets/stories/science-water.jpg"
+  },
+  {
+    "id": "science-solar",
+    "title": "A Walk Around the Sun",
+    "subject": "Science",
+    "grade": "5-8",
+    "minutes": 5,
+    "summary": "Meet the eight planets in the order they orbit.",
+    "art": "solar",
+    "image": "assets/stories/science-solar.jpg"
+  },
+  {
+    "id": "social-map",
+    "title": "The Lost Bus Route",
+    "subject": "Social Studies",
+    "grade": "4-7",
+    "minutes": 4,
+    "summary": "Read a map and get the school bus there on time.",
+    "art": "map",
+    "image": "assets/stories/social-map.jpg"
+  },
+  {
+    "id": "social-village",
+    "title": "The Village Meeting",
+    "subject": "Social Studies",
+    "grade": "5-8",
+    "minutes": 4,
+    "summary": "Everyone speaks, then the village votes together.",
+    "art": "village",
+    "image": "assets/stories/social-village.jpg"
+  },
+  {
+    "id": "evs-animals",
+    "title": "Neighbours in the Forest",
+    "subject": "EVS",
+    "grade": "3-6",
+    "minutes": 4,
+    "summary": "Find the right home for every forest animal.",
+    "art": "animals",
+    "image": "assets/stories/evs-animals.jpg"
+  }
 ]
-

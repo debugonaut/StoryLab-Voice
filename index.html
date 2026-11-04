@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="StoryLab Voice — an offline-first field terminal for voice-guided stories, tutoring, and virtual science labs.">
+  <meta name="description" content="StoryLab Voice — voice-guided stories, a tutor, and virtual science labs. Works offline on one tablet.">
   <meta name="theme-color" content="#0a0c0b">
   <meta name="color-scheme" content="dark">
   <meta name="mobile-web-app-capable" content="yes">
@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="StoryLab">
 
-  <title>Control Deck — StoryLab Voice</title>
+  <title>StoryLab Voice</title>
 
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
@@ -37,12 +37,12 @@
         </span>
         <div>
           <div class="boot-brand__name">STORYLAB <span>VOICE</span></div>
-          <div class="boot-brand__sub">FIELD TERMINAL / OFFLINE-FIRST LEARNING</div>
+          <div class="boot-brand__sub">LEARNING APP / WORKS OFFLINE</div>
         </div>
       </div>
       <div class="boot-log" id="boot-log" aria-hidden="true"></div>
       <div class="boot-bar" aria-hidden="true"><i id="boot-bar-fill"></i></div>
-      <button type="button" class="boot-skip" id="boot-skip">SKIP SELF TEST →</button>
+      <button type="button" class="boot-skip" id="boot-skip">SKIP →</button>
     </div>
   </div>
 
@@ -52,13 +52,13 @@
       <span class="offline-banner__dot" aria-hidden="true"></span>
       OFFLINE MODE
     </span>
-    <span class="offline-banner__text">The terminal keeps working. Progress is saved on this device.</span>
-    <span class="offline-banner__code">SYNC QUEUED</span>
+    <span class="offline-banner__text">Everything still works. Progress is saved on this device.</span>
+    <span class="offline-banner__code">SAVED · WILL UPLOAD</span>
   </div>
 
   <div class="app-shell">
     <header class="app-header" role="banner">
-      <a class="brand" href="#/home" aria-label="StoryLab Voice — Control Deck">
+      <a class="brand" href="#/home" aria-label="StoryLab Voice — home">
         <span class="brand__mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square">
             <path d="M3 14v-4M7 17V7M11 20V4M15 16V8M19 13v-2M22 12h-1"/>
@@ -66,14 +66,14 @@
         </span>
         <span class="brand__type">
           <strong>STORYLAB</strong>
-          <em>VOICE TERMINAL / v1.0</em>
+          <em>LEARNING APP / v1.0</em>
         </span>
       </a>
 
       <nav class="app-nav" aria-label="Primary navigation">
-        <a class="app-nav__link" data-nav="home" href="#/home">DECK</a>
-        <a class="app-nav__link" data-nav="record" href="#/record">RECORD</a>
-        <a class="app-nav__link" data-nav="guide" href="#/orientation">GUIDE</a>
+        <a class="app-nav__link" data-nav="home" href="#/home">HOME</a>
+        <a class="app-nav__link" data-nav="record" href="#/record">PROGRESS</a>
+        <a class="app-nav__link" data-nav="guide" href="#/orientation">INTRO</a>
       </nav>
 
       <div class="app-status">
@@ -108,7 +108,7 @@
       </div>
     </header>
 
-    <main id="app-root" class="app-root" role="main" tabindex="-1" aria-label="StoryLab Voice terminal">
+    <main id="app-root" class="app-root" role="main" tabindex="-1" aria-label="StoryLab Voice">
       <div style="padding:64px 0;text-align:center">
         <p class="mono-label">◈ INITIALIZING TERMINAL…</p>
       </div>
@@ -119,7 +119,7 @@
         <div class="app-footer__brand">
           <span class="led led--ok" aria-hidden="true"></span>
           <strong>STORYLAB VOICE</strong>
-          <span>/ FIELD TERMINAL v1.0 / 2026</span>
+          <span>/ v1.0 / 2026</span>
         </div>
         <div class="app-footer__credits" aria-label="Project credits">
           <span><b>FOUNDATION</b> AADESH KHANDE</span>
@@ -127,7 +127,7 @@
           <span><b>VOICE CORE</b> RITESH GAVHANE</span>
           <span><b>LABINBOX</b> ANURAG KUMBHAR</span>
         </div>
-        <div class="app-footer__meta">LOCAL FIRST / NO ACCOUNT / ≤25 MB</div>
+        <div class="app-footer__meta">WORKS OFFLINE / NO ACCOUNT</div>
       </div>
     </footer>
   </div>
@@ -138,7 +138,7 @@
   <noscript>
     <div style="padding:32px;text-align:center;font-family:system-ui,sans-serif">
       <h1>JavaScript is required</h1>
-      <p style="color:#b4b6a9;max-width:52ch;margin:12px auto 0">StoryLab Voice is a local-first web terminal. Enable JavaScript to run the learning modules, voice bus, and on-device ledger.</p>
+      <p style="color:#b4b6a9;max-width:52ch;margin:12px auto 0">StoryLab Voice runs in your browser. Enable JavaScript to open the stories, the voice tutor, and your saved progress.</p>
     </div>
   </noscript>
 

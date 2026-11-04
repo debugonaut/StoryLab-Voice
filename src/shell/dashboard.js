@@ -122,7 +122,7 @@
         if (disposed) return;
         State.getPendingCount().then(function (pending) {
           var cell = document.getElementById('station-sync');
-          if (cell) cell.textContent = pending ? String(pending).padStart(2, '0') + ' PENDING' : 'CLEAR';
+          if (cell) cell.textContent = pending ? String(pending).padStart(2, '0') + ' WAITING' : 'ALL SENT';
         });
       };
       window.addEventListener('storylab:state', stateHandler);
@@ -171,8 +171,8 @@
     var result = { stories: 2, labs: 1, storySubjects: 4 };
     try {
       var responses = await Promise.all([
-        fetch('data/stories/index.json').then(function (r) { return r.ok ? r.json() : []; }),
-        fetch('data/labs/index.json').then(function (r) { return r.ok ? r.json() : []; })
+        fetch('data/stories/index.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : []; }),
+        fetch('data/labs/index.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : []; })
       ]);
       if (Array.isArray(responses[0]) && responses[0].length) {
         result.stories = responses[0].length;
@@ -191,8 +191,8 @@
     return (
       '<section class="screen deck">' +
       '  <div class="panel panel--accent" style="padding:34px">' +
-      '    <p class="eyebrow">CONTROL DECK / READING LOCAL LEDGER</p>' +
-      '    <h1 class="deck-title" style="font-size:clamp(2.2rem,4vw,3.4rem);margin-top:12px">Warming the instruments.</h1>' +
+      '    <p class="eyebrow">HOME</p>' +
+      '    <h1 class="deck-title" style="font-size:clamp(2.2rem,4vw,3.4rem);margin-top:12px">Loading…</h1>' +
       '    <div class="meter" style="margin-top:20px;max-width:360px"><div class="meter__fill" style="width:44%"></div></div>' +
       '  </div>' +
       '</section>'
@@ -216,12 +216,12 @@
     var checkpoints = storiesDone + labsDone;
 
     var storyMeta = [
-      indexes.stories + ' BRIEFINGS',
+      indexes.stories + ' STORIES',
       indexes.storySubjects + ' SUBJECTS',
       storiesDone ? storiesDone + ' DONE' : 'NEW'
     ];
     var labMeta = [
-      indexes.labs + ' PROTOCOLS',
+      indexes.labs + ' EXPERIMENTS',
       'CANVAS 2D',
       labsDone ? labsDone + ' DONE' : 'NEW'
     ];
@@ -255,29 +255,29 @@
       '<section class="screen deck">' +
       '  <header class="deck-head">' +
       '    <div class="deck-head__main">' +
-      '      <p class="eyebrow">STUDENT STATION / ' + UI.escape(profile.id || 'LOCAL') + '</p>' +
+      '      <p class="eyebrow">STUDENT / ' + UI.escape(profile.id || 'LOCAL') + '</p>' +
       '      <h1 class="deck-title">' + greeting + ',<br><span>' + UI.escape(profile.name) + '.</span></h1>' +
       '      <p class="deck-sub">' + (orientationDone
-        ? 'The terminal is stocked and listening. Pick a learning bay, or review what you have already saved.'
-        : 'The terminal is stocked and listening. Pick a learning bay, review your record, or finish the First Shift when you are ready.') + '</p>' +
+        ? 'Pick up where you left off, or open something new.'
+        : 'Start with a story, ask the tutor, or finish the short intro first.') + '</p>' +
       '      <div class="deck-tags">' +
-      '        <span class="deck-tag"><span class="led led--ok"></span> LOCAL LEDGER ACTIVE</span>' +
-      '        <span class="deck-tag">' + UI.escape(String(sessionActive ? 'SESSION OPEN' : 'NO SESSION')) + '</span>' +
+      '        <span class="deck-tag"><span class="led led--ok"></span> SAVED ON THIS DEVICE</span>' +
+      '        <span class="deck-tag">' + UI.escape(String(sessionActive ? 'TIMER RUNNING' : 'NO TIMER')) + '</span>' +
       '        <span class="deck-tag">' + UI.escape(language.toUpperCase()) + '</span>' +
       '      </div>' +
       '    </div>' +
       '    <aside class="station-panel" aria-label="Station status">' +
       '      <div class="station-panel__top">' +
-      '        <span class="station-panel__label">LOCAL TIME / STATION 01</span>' +
+      '        <span class="station-panel__label">LOCAL TIME</span>' +
       '        <span class="led led--ok led--pulse"></span>' +
       '      </div>' +
       '      <div class="station-clock" id="station-clock">' + UI.formatClock(new Date()) + '</div>' +
       '      <div class="station-date" id="station-date">' + dateLabel + '</div>' +
       '      <div class="station-grid">' +
-      '        <div class="station-cell"><em>NETWORK</em><strong id="station-net">' + (navigator.onLine ? 'ONLINE' : 'OFFLINE') + '</strong></div>' +
-      '        <div class="station-cell"><em>SESSION</em><strong class="is-live" id="station-session">' + UI.formatDuration(elapsed) + '</strong></div>' +
-      '        <div class="station-cell"><em>SYNC QUEUE</em><strong id="station-sync">' + (pending ? String(pending).padStart(2, '0') + ' PENDING' : 'CLEAR') + '</strong></div>' +
-      '        <div class="station-cell"><em>MICROPHONE</em><strong>' + (profile.mic === 'verified' ? 'VERIFIED' : profile.mic === 'touch' ? 'TOUCH MODE' : 'NOT TESTED') + '</strong></div>' +
+      '        <div class="station-cell"><em>INTERNET</em><strong id="station-net">' + (navigator.onLine ? 'ONLINE' : 'OFFLINE') + '</strong></div>' +
+      '        <div class="station-cell"><em>TIMER</em><strong class="is-live" id="station-session">' + UI.formatDuration(elapsed) + '</strong></div>' +
+      '        <div class="station-cell"><em>TO UPLOAD</em><strong id="station-sync">' + (pending ? String(pending).padStart(2, '0') + ' WAITING' : 'ALL SENT') + '</strong></div>' +
+      '        <div class="station-cell"><em>MIC</em><strong>' + (profile.mic === 'verified' ? 'VERIFIED' : profile.mic === 'touch' ? 'TOUCH MODE' : 'NOT TESTED') + '</strong></div>' +
       '      </div>' +
       '    </aside>' +
       '  </header>' +
@@ -285,7 +285,7 @@
       '  <section class="directive" aria-label="Next directive">' +
       '    <div class="directive__glyph">' + UI.icon(next.icon) + '</div>' +
       '    <div class="directive__body">' +
-      '      <p class="directive__tag">NEXT DIRECTIVE / ' + next.code + '</p>' +
+      '      <p class="directive__tag">NEXT / ' + next.code + '</p>' +
       '      <h2>' + UI.escape(next.title) + '</h2>' +
       '      <p>' + UI.escape(next.desc) + '</p>' +
       '    </div>' +
@@ -295,24 +295,24 @@
       '  </section>' +
 
       '  <div class="section-head">' +
-      '    <h2 class="section-title">Learning bays</h2>' +
-      '    <span class="section-head__meta">03 BAYS / LOCAL MODULES</span>' +
+      '    <h2 class="section-title">Learn</h2>' +
+      '    <span class="section-head__meta">3 MODULES / WORKS OFFLINE</span>' +
       '  </div>' +
 
       '  <div class="bay-grid" id="bays">' +
-      bayCard('story', '01', 'StoryLearn', 'Voice-guided branching stories across Math, Science, Social Studies and EVS.', storyMeta, '#/storylearn', 'ENTER BAY', bayArt('story')) +
-      bayCard('tutor', '02', 'AI Voice Tutor', 'Ask anything. A patient tutor answers out loud, from the local knowledge map.', tutorMeta, '#/chatbot', 'ENTER BAY', bayArt('tutor')) +
-      bayCard('lab', '03', 'Lab In Box', 'Voice-guided virtual experiments on a 2D canvas. No apparatus required.', labMeta, '#/labinbox', 'ENTER BAY', bayArt('lab')) +
+      bayCard('story', '01', 'Stories', 'Voice-guided stories with one question inside.', storyMeta, '#/storylearn', 'OPEN', bayArt('story')) +
+      bayCard('tutor', '02', 'Voice Tutor', 'Ask anything. Answers out loud, without internet.', tutorMeta, '#/chatbot', 'OPEN', bayArt('tutor')) +
+      bayCard('lab', '03', 'Virtual Lab', 'Try science experiments on screen. No apparatus needed.', labMeta, '#/labinbox', 'OPEN', bayArt('lab')) +
       '  </div>' +
 
       '  <div class="section-head">' +
-      '    <h2 class="section-title">Station dossier</h2>' +
+      '    <h2 class="section-title">Your progress</h2>' +
       '    <a class="section-head__link" href="#/record">OPEN FULL RECORD ' + UI.icon('arrow-right') + '</a>' +
       '  </div>' +
 
       '  <div class="dossier-grid">' +
       '    <section class="dossier-card">' +
-      '      <div class="dossier-card__head"><h3>Student file</h3><span class="mono-label">LOCAL / 001</span></div>' +
+      '      <div class="dossier-card__head"><h3>Student</h3><span class="mono-label">ON THIS DEVICE</span></div>' +
       '      <div class="student-file">' +
       '        <div class="avatar avatar--lg">' + UI.avatar(profile.avatar) + '</div>' +
       '        <div class="student-file__info">' +
@@ -320,8 +320,8 @@
       '          <div class="student-file__id">' + UI.escape(profile.id) + '</div>' +
       '          <div class="student-file__badge">' +
       (orientationDone
-        ? '<span class="badge badge--ok"><i class="led led--ok"></i> FIRST SHIFT COMPLETE</span>'
-        : '<span class="badge badge--warn"><i class="led led--warn"></i> ORIENTATION PENDING</span>') +
+        ? '<span class="badge badge--ok"><i class="led led--ok"></i> GETTING STARTED DONE</span>'
+        : '<span class="badge badge--warn"><i class="led led--warn"></i> GETTING STARTED</span>') +
       '          </div>' +
       '        </div>' +
       '      </div>' +
@@ -335,31 +335,31 @@
       '    </section>' +
 
       '    <section class="dossier-card">' +
-      '      <div class="dossier-card__head"><h3>Telemetry</h3><span class="mono-label">SESSION LIVE</span></div>' +
+      '      <div class="dossier-card__head"><h3>Numbers</h3><span class="mono-label">LIVE</span></div>' +
       '      <div class="telemetry-grid">' +
-      '        <div class="telemetry-tile"><div class="telemetry-tile__value' + (orientationDone ? ' is-accent' : '') + '">' + (orientationDone ? 'DONE' : '—') + '</div><div class="telemetry-tile__label">FIRST SHIFT</div><div class="telemetry-tile__sub">' + (orientationDone ? 'Briefing signed off' : 'Not yet completed') + '</div></div>' +
-      '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + String(checkpoints).padStart(2, '0') + '</div><div class="telemetry-tile__label">CHECKPOINTS</div><div class="telemetry-tile__sub">Stories + labs</div></div>' +
+      '        <div class="telemetry-tile"><div class="telemetry-tile__value' + (orientationDone ? ' is-accent' : '') + '">' + (orientationDone ? 'DONE' : '—') + '</div><div class="telemetry-tile__label">GETTING STARTED</div><div class="telemetry-tile__sub">' + (orientationDone ? 'Done' : 'Not done yet') + '</div></div>' +
+      '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + String(checkpoints).padStart(2, '0') + '</div><div class="telemetry-tile__label">COMPLETED</div><div class="telemetry-tile__sub">Stories + labs</div></div>' +
       '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + UI.formatMinutes(totalTime) + '</div><div class="telemetry-tile__label">TIME ON TASK</div><div class="telemetry-tile__sub">Across ' + Math.max(1, sessionsCount) + ' session' + (sessionsCount === 1 ? '' : 's') + '</div></div>' +
       '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + String(badges.length).padStart(2, '0') + '</div><div class="telemetry-tile__label">BADGES</div><div class="telemetry-tile__sub">' + (badges.length ? 'Earned locally' : 'Earn your first') + '</div></div>' +
       '      </div>' +
       '    </section>' +
 
       '    <section class="dossier-card">' +
-      '      <div class="dossier-card__head"><h3>System health</h3><span class="mono-label">SELF TEST</span></div>' +
+      '      <div class="dossier-card__head"><h3>Status</h3><span class="mono-label">ON THIS DEVICE</span></div>' +
       '      <div class="system-list">' +
-      '        <div class="system-item"><span class="led led--ok"></span><span class="system-item__label">Local ledger</span><span class="system-item__value is-ok">READY</span></div>' +
-      '        <div class="system-item"><span class="led ' + (navigator.onLine ? 'led--ok' : 'led--error') + '"></span><span class="system-item__label">Network</span><span class="system-item__value ' + (navigator.onLine ? 'is-ok' : 'is-error') + '">' + (navigator.onLine ? 'ONLINE' : 'OFFLINE') + '</span></div>' +
-      '        <div class="system-item"><span class="led ' + (('speechSynthesis' in window) ? 'led--ok' : 'led--warn') + '"></span><span class="system-item__label">Voice bus</span><span class="system-item__value">' + (('speechSynthesis' in window) ? 'READY' : 'TEXT MODE') + '</span></div>' +
-      '        <div class="system-item"><span class="led led--ok"></span><span class="system-item__label">Offline cache</span><span class="system-item__value" id="cache-chip">' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'READY' : 'STARTING') + '</span></div>' +
+      '        <div class="system-item"><span class="led led--ok"></span><span class="system-item__label">Saved data</span><span class="system-item__value is-ok">READY</span></div>' +
+      '        <div class="system-item"><span class="led ' + (navigator.onLine ? 'led--ok' : 'led--error') + '"></span><span class="system-item__label">Internet</span><span class="system-item__value ' + (navigator.onLine ? 'is-ok' : 'is-error') + '">' + (navigator.onLine ? 'ONLINE' : 'OFFLINE') + '</span></div>' +
+      '        <div class="system-item"><span class="led ' + (('speechSynthesis' in window) ? 'led--ok' : 'led--warn') + '"></span><span class="system-item__label">Voice</span><span class="system-item__value">' + (('speechSynthesis' in window) ? 'READY' : 'TEXT MODE') + '</span></div>' +
+      '        <div class="system-item"><span class="led led--ok"></span><span class="system-item__label">Offline files</span><span class="system-item__value" id="cache-chip">' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'READY' : 'STARTING') + '</span></div>' +
       '      </div>' +
       '      <div class="storage-line">' +
-      '        <div class="storage-line__labels"><span>LOCAL FOOTPRINT</span><span id="storage-value">READING…</span></div>' +
+      '        <div class="storage-line__labels"><span>STORAGE USED</span><span id="storage-value">READING…</span></div>' +
       '        <div class="meter"><div class="meter__fill" id="storage-fill" style="width:6%"></div></div>' +
       '      </div>' +
       '    </section>' +
 
       '    <section class="dossier-card">' +
-      '      <div class="dossier-card__head"><h3>Activity log</h3><a class="dossier-card__link" href="#/record">VIEW ALL →</a></div>' +
+      '      <div class="dossier-card__head"><h3>Recent activity</h3><a class="dossier-card__link" href="#/record">VIEW ALL →</a></div>' +
       '      <div class="activity-list">' + activity + '</div>' +
       '    </section>' +
       '  </div>' +
@@ -371,7 +371,7 @@
     return (
       '<a class="bay bay--' + tone + '" href="' + href + '" aria-label="Open ' + title + '">' +
       '  <div class="bay__top">' +
-      '    <span class="bay__index">BAY ' + index + '</span>' +
+      '    <span class="bay__index">' + index + '</span>' +
       '    <span class="bay__status"><span class="led"></span> READY</span>' +
       '  </div>' +
       '  <div class="bay__art">' + art + '</div>' +
@@ -399,33 +399,33 @@
     if (!orientation.completed) {
       var step = (orientation.lastStep || 0) + 1;
       return {
-        code: '01 / COMMISSION',
+        code: '01 / START',
         icon: 'compass',
-        title: orientation.lastStep ? 'Resume your First Shift' : 'Complete your First Shift',
-        desc: 'A five-panel briefing, one check, and the terminal is yours. Reopen at panel ' + Math.min(step, 5) + ' of 5.',
+        title: orientation.lastStep ? 'Continue getting started' : 'Finish getting started',
+        desc: 'Five short screens and one question, then you are ready.',
         href: '#/orientation',
-        cta: orientation.lastStep ? 'RESUME BRIEFING' : 'START BRIEFING'
+        cta: orientation.lastStep ? 'CONTINUE' : 'START'
       };
     }
 
     if (completed === 0) {
       return {
-        code: '02 / FIRST LESSON',
+        code: '02 / FIRST STORY',
         icon: 'book',
-        title: 'Open your first learning bay',
-        desc: 'StoryLearn is the gentlest start: listen to a story, answer inside it, and watch the record fill up.',
+        title: 'Open your first story',
+        desc: 'Listen, answer one question, and your progress is saved.',
         href: '#/storylearn',
-        cta: 'OPEN STORYLEARN'
+        cta: 'OPEN STORIES'
       };
     }
 
     return {
-      code: '03 / CONTINUE',
+      code: '03 / KEEP GOING',
       icon: 'flag',
-      title: 'Keep the session moving',
-      desc: 'You have ' + completed + ' completed checkpoint' + (completed === 1 ? '' : 's') + ' on this device. Open another bay, or close the session from your record.',
+      title: 'Keep going',
+      desc: 'You have ' + completed + ' finished item' + (completed === 1 ? '' : 's') + ' on this device. Open something new, or review your progress.',
       href: '#/record',
-      cta: 'OPEN LEARNING RECORD'
+      cta: 'OPEN PROGRESS'
     };
   }
 
@@ -454,13 +454,13 @@
     return (
       '<section class="screen deck">' +
       '  <div class="panel panel--accent" style="padding:32px;border-left:2px solid var(--color-error)">' +
-      '    <p class="eyebrow">CONTROL DECK / LEDGER FAULT</p>' +
-      '    <h1 class="deck-title" style="font-size:clamp(2.2rem,4vw,3.4rem);margin-top:12px">The local ledger did not answer.</h1>' +
-      '    <p class="lede" style="margin-top:12px">The shell is running, but the student record could not be read. Check that this browser allows site storage, then reload the terminal.</p>' +
-      '    <div class="onboard-error" style="margin-top:16px">' + UI.escape(err && (err.message || String(err)) || 'Unknown ledger error') + '</div>' +
+      '    <p class="eyebrow">HOME / PROBLEM</p>' +
+      '    <h1 class="deck-title" style="font-size:clamp(2.2rem,4vw,3.4rem);margin-top:12px">Your saved work could not be loaded.</h1>' +
+      '    <p class="lede" style="margin-top:12px">The app is running, but the student record could not be read. Check that this browser allows storage, then reload.</p>' +
+      '    <div class="onboard-error" style="margin-top:16px">' + UI.escape(err && (err.message || String(err)) || 'Unknown storage error') + '</div>' +
       '    <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">' +
-      '      <button class="btn btn-primary" onclick="location.reload()">RELOAD TERMINAL</button>' +
-      '      <a class="btn btn-secondary" href="#/record">OPEN RECORD DIAGNOSTICS</a>' +
+      '      <button class="btn btn-primary" onclick="location.reload()">RELOAD</button>' +
+      '      <a class="btn btn-secondary" href="#/record">OPEN PROGRESS</a>' +
       '    </div>' +
       '  </div>' +
       '</section>'

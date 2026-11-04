@@ -56,9 +56,9 @@
   var _speaking = false;
 
   var STEPS = [
-    { id: 'identity', label: 'Identity', sub: 'Name, class, callsign' },
-    { id: 'language', label: 'Language', sub: 'Voice + interface' },
-    { id: 'microphone', label: 'Microphone', sub: 'Input signal check' }
+    { id: 'identity', label: 'Your name', sub: 'Name, class, avatar' },
+    { id: 'language', label: 'Language', sub: 'Voice and screens' },
+    { id: 'microphone', label: 'Microphone', sub: 'Quick check' }
   ];
 
   var LANGUAGES = [
@@ -90,18 +90,18 @@
 
   var FALLBACK_ORIENTATION = {
     id: 'first-shift',
-    title: 'First Shift',
+    title: 'Getting started',
     steps: [
       {
         id: 'welcome',
         kind: 'briefing',
         nav: 'Welcome',
         kicker: '01 / WELCOME',
-        title: 'This is a learning machine.',
+        title: 'This is your learning tablet.',
         lede: 'StoryLab Voice turns one shared classroom tablet into a tutor, a library, and a science lab.',
         text: 'It runs from this device. No signal. No laboratory. No account. The terminal remembers what you complete and keeps it ready for your teacher.',
         points: [
-          'Three learning bays: stories, a voice tutor, and virtual experiments.',
+          'Three ways to learn: stories, a voice tutor, and virtual experiments.',
           'Every panel can be read aloud.',
           'Everything is stored on this device.'
         ],
@@ -113,7 +113,7 @@
         id: 'voice',
         kind: 'briefing',
         nav: 'Voice',
-        kicker: '02 / THE VOICE BUS',
+        kicker: '02 / VOICE',
         title: 'Talk. It listens.',
         lede: 'The amber SPEAK control opens the microphone. The waveform tells you what the terminal is doing.',
         text: 'Amber means the tutor is speaking. Green means it is listening. If the room is too loud, move closer to the tablet and try again.',
@@ -130,14 +130,14 @@
         id: 'bays',
         kind: 'briefing',
         nav: 'Bays',
-        kicker: '03 / THE THREE BAYS',
+        kicker: '03 / THREE WAYS TO LEARN',
         title: 'Stories. A tutor. A lab.',
         lede: 'Each bay teaches differently. They all feed the same learning record.',
         text: 'StoryLearn narrates a branching story and asks you questions inside it. The AI Voice Tutor answers what you ask. LabInBox puts apparatus on screen and runs experiments with your voice.',
         points: [
-          'BAY 01 — StoryLearn: listen, choose, complete.',
-          'BAY 02 — AI Voice Tutor: ask anything.',
-          'BAY 03 — Lab In Box: pour, react, observe.'
+          'Stories — listen, choose, finish.',
+          'Voice tutor — ask anything.',
+          'Virtual lab — try experiments safely.'
         ],
         note: 'Start with a story if you are not sure where to begin.',
         art: 'bays',
@@ -147,9 +147,9 @@
         id: 'ledger',
         kind: 'briefing',
         nav: 'Ledger',
-        kicker: '04 / THE LOCAL LEDGER',
+        kicker: '04 / YOUR PROGRESS',
         title: 'Your work stays yours.',
-        lede: 'Progress is written to a local ledger on this device. No sign-in is required to learn.',
+        lede: 'Your progress is saved on this tablet. No sign-in needed.',
         text: 'When the terminal finds a connection, queued records move to the sync archive. If there is no connection, nothing is lost — the queue simply waits.',
         points: [
           'Open RECORD to see sessions, checkpoints, and queued records.',
@@ -213,7 +213,7 @@
 
     if (name === 'bays') {
       return (
-        '<svg viewBox="0 0 640 214" role="img" aria-label="Three learning bays schematic">' +
+        '<svg viewBox="0 0 640 214" role="img" aria-label="Three ways to learn">' +
         '<g stroke="#4a534b" stroke-opacity=".4" stroke-width="1"><path d="M0 184h640"/></g>' +
         '<g fill="#101411" stroke="#4a534b">' +
         '<rect x="64" y="32" width="150" height="124"/>' +
@@ -234,13 +234,13 @@
         '<path d="M484 116h32"/>' +
         '</g>' +
         '<g font-family="Google Sans Code, monospace" font-size="8" letter-spacing="1.4" fill="#8b8f83">' +
-        '<text x="64" y="22">BAY 01 / STORYLEARN</text>' +
-        '<text x="245" y="22">BAY 02 / VOICE TUTOR</text>' +
-        '<text x="426" y="22">BAY 03 / LAB IN BOX</text>' +
+        '<text x="64" y="22">STORIES</text>' +
+        '<text x="245" y="22">VOICE TUTOR</text>' +
+        '<text x="426" y="22">VIRTUAL LAB</text>' +
         '<text x="139" y="180" text-anchor="middle" fill="#75d99a">LISTEN</text>' +
         '<text x="320" y="180" text-anchor="middle" fill="#8db4ff">ASK</text>' +
         '<text x="501" y="180" text-anchor="middle" fill="#f5a524">TRY</text>' +
-        '<text x="320" y="202" text-anchor="middle">ONE LEARNING RECORD</text>' +
+        '<text x="320" y="202" text-anchor="middle">ONE PROGRESS PAGE</text>' +
         '</g>' +
         '<g stroke="#f59e0b" stroke-width="1" stroke-dasharray="2 5" fill="none">' +
         '<path d="M214 94h31M395 94h31"/>' +
@@ -251,7 +251,7 @@
 
     if (name === 'ledger') {
       return (
-        '<svg viewBox="0 0 640 214" role="img" aria-label="Local ledger and sync schematic">' +
+        '<svg viewBox="0 0 640 214" role="img" aria-label="Saved work and upload">' +
         '<g stroke="#4a534b" stroke-opacity=".4" stroke-width="1"><path d="M0 184h640M0 38h640"/></g>' +
         '<g fill="none" stroke="#ece9dd" stroke-width="1.4">' +
         '<ellipse cx="196" cy="70" rx="58" ry="16"/>' +
@@ -271,8 +271,8 @@
         '<path d="M470 96l10 10 24-25"/>' +
         '</g>' +
         '<g font-family="Google Sans Code, monospace" font-size="8" letter-spacing="1.4" fill="#8b8f83">' +
-        '<text x="138" y="158">LOCAL LEDGER / DEVICE</text>' +
-        '<text x="432" y="158">SYNC ARCHIVE / OPTIONAL</text>' +
+        '<text x="138" y="158">SAVED ON THIS DEVICE</text>' +
+        '<text x="432" y="158">UPLOAD / OPTIONAL</text>' +
         '<text x="320" y="196" text-anchor="middle">QUEUE WAITS. NOTHING IS LOST.</text>' +
         '</g>' +
         '</svg>'
@@ -306,13 +306,13 @@
       '<circle cx="108" cy="54" r="3" fill="#f59e0b"/>' +
       '<circle cx="120" cy="54" r="3" fill="#4a534b"/>' +
       '<circle cx="132" cy="54" r="3" fill="#4a534b"/>' +
-      '<text x="528" y="57" text-anchor="end" font-family="Google Sans Code, monospace" font-size="7" letter-spacing="1.2" fill="#8b8f83">SLV / FIELD TERMINAL</text>' +
+      '<text x="528" y="57" text-anchor="end" font-family="Google Sans Code, monospace" font-size="7" letter-spacing="1.2" fill="#8b8f83">STORYLAB / LEARNING APP</text>' +
       '<g stroke="#f59e0b" stroke-width="2" stroke-linecap="square">' +
       '<path d="M142 106v-12M158 116V92M174 124V84M190 110V98M206 120V88M222 104v-8"/>' +
       '</g>' +
       '<g font-family="Google Sans Flex, sans-serif" fill="#ece9dd">' +
       '<text x="270" y="98" font-size="17" font-weight="500">StoryLab Voice</text>' +
-      '<text x="270" y="117" font-size="8.5" fill="#8b8f83" letter-spacing="1.5">LEARNING TERMINAL / OFFLINE</text>' +
+      '<text x="270" y="117" font-size="8.5" fill="#8b8f83" letter-spacing="1.5">LEARNING APP / OFFLINE</text>' +
       '</g>' +
       '<g fill="#1b201c" stroke="#4a534b">' +
       '<rect x="270" y="128" width="70" height="16"/>' +
@@ -381,8 +381,8 @@
     root.innerHTML =
       '<section class="screen onboard">' +
       '  <aside class="onboard__rail">' +
-      '    <p class="eyebrow">ENROLMENT / UNIT 001</p>' +
-      '    <h2 class="onboard__rail-title">Commission<br>your terminal.</h2>' +
+      '    <p class="eyebrow">SETUP / 3 STEPS</p>' +
+      '    <h2 class="onboard__rail-title">Set up this<br>tablet.</h2>' +
       '    <ol class="onboard-steps" aria-label="Enrolment steps">' +
       STEPS.map(function (step, index) {
         return (
@@ -396,19 +396,19 @@
       }).join('') +
       '    </ol>' +
       '    <div class="rail-note">' +
-      '      <span class="mono-label">FIELD NOTE</span>' +
-      '      <p>This terminal keeps one local student record. No account, no cloud, no password.</p>' +
+      '      <span class="mono-label">NOTE</span>' +
+      '      <p>One student record on this tablet. No account and no password.</p>' +
       '    </div>' +
       '  </aside>' +
       '  <div class="onboard__plate panel">' +
       '    <header class="plate-head">' +
-      '      <span class="plate-head__serial">FORM SLV-01 / STUDENT ENROLMENT</span>' +
+      '      <span class="plate-head__serial">STUDENT SETUP</span>' +
       '      <span class="plate-head__status"><i class="led led--warn led--pulse"></i> OPEN</span>' +
       '    </header>' +
       '    <div class="plate-body" id="enrol-body"></div>' +
       '    <footer class="plate-foot">' +
       '      <button type="button" class="btn btn-ghost" id="enrol-back">← BACK</button>' +
-      '      <span class="plate-foot__hint" id="enrol-hint">STEP 01 / 03 · LOCAL ONLY</span>' +
+      '      <span class="plate-foot__hint" id="enrol-hint">STEP 1 OF 3</span>' +
       '      <button type="button" class="btn btn-primary" id="enrol-next">CONTINUE →</button>' +
       '    </footer>' +
       '  </div>' +
@@ -508,10 +508,10 @@
     if (back) back.style.visibility = enrolment.step === 0 ? 'hidden' : 'visible';
     if (next) {
       next.disabled = false;
-      next.textContent = enrolment.step === STEPS.length - 1 ? 'COMMISSION UNIT →' : 'CONTINUE →';
+      next.textContent = enrolment.step === STEPS.length - 1 ? 'FINISH SETUP →' : 'CONTINUE →';
     }
     if (hint) {
-      hint.textContent = 'STEP ' + String(enrolment.step + 1).padStart(2, '0') + ' / 03 · LOCAL ONLY';
+      hint.textContent = 'STEP ' + (enrolment.step + 1) + ' OF 3';
     }
 
     if (enrolment.step === 0) renderIdentity();
@@ -523,9 +523,9 @@
     var selectedAvatar = enrolment.avatar;
     _enrolBody.innerHTML =
       '<div class="step-head">' +
-      '  <p class="eyebrow eyebrow--muted">STEP 01 / IDENTITY</p>' +
-      '  <h1 class="step-title">Who is operating<br>this terminal?</h1>' +
-      '  <p class="step-lede">The learning record belongs to one student at a time. Use the name your teacher will recognise.</p>' +
+      '  <p class="eyebrow eyebrow--muted">STEP 1 / YOUR NAME</p>' +
+      '  <h1 class="step-title">What\'s your<br>name?</h1>' +
+      '  <p class="step-lede">Use the name your teacher will recognise.</p>' +
       '</div>' +
       '<div class="step-layout">' +
       '  <div class="step-col">' +
@@ -533,11 +533,11 @@
       '      <label class="field__label" for="enrol-name">Student name <small>2–28 characters</small></label>' +
       '      <input class="input-field input-field--lg" id="enrol-name" type="text" autocomplete="name" maxlength="28" ' +
       '        placeholder="Type your name" value="' + UI.escape(enrolment.name) + '" aria-describedby="name-error">' +
-      '      <p class="field__hint">This stays on the tablet. It is never sent without teacher approval.</p>' +
+      '      <p class="field__hint">Saved on this tablet only.</p>' +
       '      <p class="field__error" id="name-error" hidden>Enter a name with at least two characters.</p>' +
       '    </div>' +
       '    <div class="field">' +
-      '      <span class="field__label">Choose a callsign <small>Tap one</small></span>' +
+      '      <span class="field__label">Pick an avatar <small>Tap one</small></span>' +
       '      <div class="avatar-picker" role="group" aria-label="Choose an avatar">' +
       UI.avatars.map(function (item) {
         var selected = item.id === selectedAvatar;
@@ -565,7 +565,7 @@
       '  </div>' +
       '  <aside class="step-aside">' +
       renderPreview() +
-      '    <div class="micro-note"><strong>One student, one record.</strong> Finish a session and close it from RECORD before the next student takes over.</div>' +
+      '    <div class="micro-note"><strong>One student per session.</strong> Close the session from PROGRESS before the next student starts.</div>' +
       '  </aside>' +
       '</div>';
 
@@ -586,9 +586,9 @@
       '  <div class="preview-card__meta" id="preview-meta">GRADE ' + UI.escape(enrolment.grade) + ' / ' + language.code + '</div>' +
       '  <div class="preview-card__rule"></div>' +
       '  <div class="preview-card__rows">' +
-      '    <div class="preview-card__row"><span>RECORD</span><strong>LOCAL ONLY</strong></div>' +
-      '    <div class="preview-card__row"><span>CALLSIGN</span><strong id="preview-callsign">' + findAvatar(enrolment.avatar) + '</strong></div>' +
-      '    <div class="preview-card__row"><span>STATUS</span><strong>UNCOMMISSIONED</strong></div>' +
+      '    <div class="preview-card__row"><span>SAVED</span><strong>THIS DEVICE</strong></div>' +
+      '    <div class="preview-card__row"><span>AVATAR</span><strong id="preview-callsign">' + findAvatar(enrolment.avatar) + '</strong></div>' +
+      '    <div class="preview-card__row"><span>STATUS</span><strong>SETTING UP</strong></div>' +
       '  </div>' +
       '  <div class="barcode" aria-hidden="true"></div>' +
       '</div>'
@@ -610,9 +610,9 @@
   function renderLanguage() {
     _enrolBody.innerHTML =
       '<div class="step-head">' +
-      '  <p class="eyebrow eyebrow--muted">STEP 02 / LANGUAGE</p>' +
-      '  <h1 class="step-title">Choose the voice<br>of the terminal.</h1>' +
-      '  <p class="step-lede">This sets the language for narration and recognition. You can change it later from your learning record.</p>' +
+      '  <p class="eyebrow eyebrow--muted">STEP 2 / LANGUAGE</p>' +
+      '  <h1 class="step-title">Which language<br>should it speak?</h1>' +
+      '  <p class="step-lede">Used for reading aloud and listening. You can change it later from PROGRESS.</p>' +
       '</div>' +
       '<div class="lang-list" role="radiogroup" aria-label="Preferred language">' +
       LANGUAGES.map(function (language) {
@@ -631,7 +631,7 @@
         );
       }).join('') +
       '</div>' +
-      '<div class="onboard-callout"><strong>What this changes:</strong> the language the tutor speaks and recognises. All screens use plain English with clear labels; the voice layer follows this choice in supported modules.</div>';
+      '<div class="onboard-callout"><strong>What this changes:</strong> the tutor will speak and listen in this language.</div>';
 
     var selected = document.querySelector('.lang-card.is-selected');
     if (selected) {
@@ -641,26 +641,26 @@
 
   function renderMicrophone() {
     var micLabel = {
-      idle: 'STANDBY',
-      requesting: 'REQUESTING',
-      live: 'LIVE INPUT',
-      verified: 'SIGNAL LOCKED',
-      denied: 'PERMISSION DENIED',
-      unavailable: 'NO INPUT API',
-      touch: 'TOUCH MODE'
-    }[enrolment.mic] || 'STANDBY';
+      idle: 'READY',
+      requesting: 'ASKING…',
+      live: 'LISTENING',
+      verified: 'MIC WORKS',
+      denied: 'MIC BLOCKED',
+      unavailable: 'NO MIC',
+      touch: 'TOUCH ONLY'
+    }[enrolment.mic] || 'READY';
 
     var micClass = enrolMicClass();
 
     _enrolBody.innerHTML =
       '<div class="step-head">' +
-      '  <p class="eyebrow eyebrow--muted">STEP 03 / MICROPHONE</p>' +
-      '  <h1 class="step-title">Can the terminal<br>hear this room?</h1>' +
-      '  <p class="step-lede">A quick input check. Arm the microphone and say your name at a normal volume. Nothing is recorded or uploaded.</p>' +
+      '  <p class="eyebrow eyebrow--muted">STEP 3 / MICROPHONE</p>' +
+      '  <h1 class="step-title">Can we use<br>your microphone?</h1>' +
+      '  <p class="step-lede">Say your name at a normal volume. Nothing is recorded.</p>' +
       '</div>' +
       '<div class="mic-box">' +
       '  <div class="mic-box__head">' +
-      '    <span class="mono-label">INPUT / MICROPHONE</span>' +
+      '    <span class="mono-label">MICROPHONE</span>' +
       '    <span class="mic-status ' + micClass + '" id="mic-status"><i class="led"></i><span id="mic-status-label">' + micLabel + '</span></span>' +
       '  </div>' +
       '  <div class="mic-meter" id="mic-meter" aria-hidden="true">' +
@@ -673,10 +673,10 @@
       '    <strong id="mic-readout-level">—</strong>' +
       '  </div>' +
       '  <div class="mic-actions" id="mic-actions">' + micActions() + '</div>' +
-      '  <p class="mic-hint">Microphone access is handled by the browser. If it is denied, every learning path still works with touch and keyboard.</p>' +
+      '  <p class="mic-hint">If you block the microphone, everything still works by tapping.</p>' +
       '</div>' +
       '<div id="mic-result" class="mic-result' + micResultClass() + '">' + micResult() + '</div>' +
-      '<div class="onboard-callout"><strong>Privacy:</strong> audio is analysed live for signal level only. No audio clips are stored, and progress stays on this device.</div>';
+      '<div class="onboard-callout"><strong>Privacy:</strong> audio is only checked for volume. Nothing is stored.</div>';
 
     mic.bars = Array.prototype.slice.call(_enrolBody.querySelectorAll('[data-mic-bar]'));
     updateMicUI();
@@ -694,15 +694,15 @@
 
   function micActions() {
     if (mic.stream) {
-      return '<button type="button" class="btn btn-primary" id="mic-arm">STOP CHECK</button>' +
-        '<button type="button" class="btn btn-secondary" id="mic-skip">USE TOUCH MODE</button>';
+      return '<button type="button" class="btn btn-primary" id="mic-arm">STOP</button>' +
+        '<button type="button" class="btn btn-secondary" id="mic-skip">USE TOUCH</button>';
     }
     if (enrolment.mic === 'verified') {
       return '<button type="button" class="btn btn-secondary" id="mic-arm">TEST AGAIN</button>' +
-        '<button type="button" class="btn btn-primary" id="mic-skip">USE TOUCH MODE</button>';
+        '<button type="button" class="btn btn-primary" id="mic-skip">USE TOUCH</button>';
     }
-    return '<button type="button" class="btn btn-primary" id="mic-arm">ARM MICROPHONE</button>' +
-      '<button type="button" class="btn btn-secondary" id="mic-skip">SKIP — USE TOUCH</button>';
+    return '<button type="button" class="btn btn-primary" id="mic-arm">TEST MICROPHONE</button>' +
+      '<button type="button" class="btn btn-secondary" id="mic-skip">SKIP</button>';
   }
 
   function micReadout() {
@@ -964,7 +964,7 @@
         if (existing) existing.remove();
         var box = document.createElement('div');
         box.className = 'onboard-error';
-        box.textContent = 'The local ledger could not be written: ' + (err.message || err) + '. Check that this browser allows site storage, then try again.';
+        box.textContent = 'Progress could not be saved: ' + (err.message || err) + '. Check that this browser allows storage, then try again.';
         body.appendChild(box);
       }
     }
@@ -1018,7 +1018,7 @@
     root.innerHTML =
       '<section class="screen briefing">' +
       '  <div class="panel panel--accent" style="padding:28px">' +
-      '    <p class="mono-label">LOADING BRIEFING / LOCAL CACHE</p>' +
+      '    <p class="mono-label">LOADING…</p>' +
       '    <div class="meter" style="margin-top:12px"><div class="meter__fill" style="width:36%"></div></div>' +
       '  </div>' +
       '</section>';
@@ -1041,7 +1041,7 @@
       if (startIndex > 0) {
         UI.toast({
           title: 'Briefing resumed',
-          message: 'Continuing your First Shift at panel ' + String(startIndex + 1).padStart(2, '0') + '.',
+          message: 'Continuing at step ' + (startIndex + 1) + ' of 5.',
           kind: 'info'
         });
       }
@@ -1050,10 +1050,10 @@
       if (!_orientationRoot) return;
       _orientationRoot.innerHTML =
         '<div class="panel panel--accent" style="padding:32px">' +
-        '<p class="eyebrow">BRIEFING / FAULT</p>' +
-        '<h1 class="step-title" style="margin-top:10px">The briefing could not be loaded.</h1>' +
+        '<p class="eyebrow">GETTING STARTED / PROBLEM</p>' +
+        '<h1 class="step-title" style="margin-top:10px">This intro could not be loaded.</h1>' +
         '<p class="lede" style="margin-top:12px">Reload the terminal to try again. This does not affect your enrolment.</p>' +
-        '<a class="btn btn-secondary" style="margin-top:18px" href="#/home">← BACK TO DECK</a>' +
+        '<a class="btn btn-secondary" style="margin-top:18px" href="#/home">← BACK TO HOME</a>' +
         '</div>';
     });
 
@@ -1085,11 +1085,11 @@
       '<section class="screen briefing">' +
       '  <header class="briefing__head">' +
       '    <div>' +
-      '      <p class="eyebrow">FIRST SHIFT / ORIENTATION</p>' +
-      '      <h1 class="briefing-title">Welcome to the floor, <span>' + UI.escape(profile.name) + '.</span></h1>' +
+      '      <p class="eyebrow">GETTING STARTED</p>' +
+      '      <h1 class="briefing-title">Welcome, <span>' + UI.escape(profile.name) + '.</span></h1>' +
       '    </div>' +
       '    <div class="briefing-meter">' +
-      '      <span class="mono-label">BRIEFING PROGRESS</span>' +
+      '      <span class="mono-label">STEPS</span>' +
       '      <div class="segments" id="briefing-segments"></div>' +
       '      <span class="briefing-meter__count" id="briefing-count">PANEL 01 / ' + String(data.steps.length).padStart(2, '0') + '</span>' +
       '    </div>' +
@@ -1102,9 +1102,7 @@
       '  <footer class="briefing-nav">' +
       '    <button type="button" class="btn btn-secondary btn--sm" id="brief-back">← BACK</button>' +
       '    <div class="briefing-dots" id="briefing-dots" hidden></div>' +
-      '    <div style="display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap">' +
-      '      <button type="button" class="btn btn-ghost btn--sm" id="brief-skip">SKIP TO DECK</button>' +
-      '      <button type="button" class="btn btn-primary" id="brief-next">NEXT PANEL →</button>' +
+      '    <div style="display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap">' +'<button type="button" class="btn btn-ghost btn--sm" id="brief-skip">SKIP</button>' +'<button type="button" class="btn btn-primary" id="brief-next">NEXT →</button>' +
       '    </div>' +
       '  </footer>' +
       '</section>';
@@ -1172,10 +1170,10 @@
     if (aside) {
       aside.innerHTML =
         '<div class="note-card">' +
-        '  <span class="mono-label">SESSION RULES</span>' +
+        '  <span class="mono-label">HOW THIS WORKS</span>' +
         '  <p>Your place is saved after every panel. Replay this briefing from the learning record whenever you need it.</p>' +
         '</div>' +
-        '<button type="button" class="btn btn-secondary btn--sm" id="brief-listen">' + UI.icon('volume') + ' LISTEN TO PANEL</button>' +
+        '<button type="button" class="btn btn-secondary btn--sm" id="brief-listen">' + UI.icon('volume') + ' LISTEN</button>' +
         '<div class="voice-feed" id="voice-feed">' +
         '  <span class="led led--ok" id="voice-led"></span>' +
         '  <span id="voice-feed-label">VOICE FEED / READY</span>' +
@@ -1185,7 +1183,7 @@
         '    <span class="waveform__bar"></span>' +
         '  </div>' +
         '</div>' +
-        '<div class="word-count mono-label">' + (step.kind === 'check' ? 'CHECK / ' + (step.options ? step.options.length : 3) + ' OPTIONS' : 'PANEL ' + String(orientation.index + 1).padStart(2, '0') + ' / LOCAL') + '</div>';
+        '<div class="word-count mono-label">' + (step.kind === 'check' ? 'CHECK / ' + (step.options ? step.options.length : 3) + ' OPTIONS' : 'STEP ' + (orientation.index + 1) + ' OF 5') + '</div>';
 
       var listen = document.getElementById('brief-listen');
       if (listen) listen.addEventListener('click', function () { speakStep(step); });
@@ -1226,7 +1224,7 @@
       }).join('') +
       '  </ul>' +
       '  <div class="briefing-note">' +
-      '    <span class="mono-label">FIELD NOTE</span>' +
+      '    <span class="mono-label">NOTE</span>' +
       '    <p>' + UI.escape(step.note || '') + '</p>' +
       '  </div>' +
       '</div>'
@@ -1376,7 +1374,7 @@
       console.error('[Orientation] Completion could not be saved:', err);
       UI.toast({
         title: 'Completion not saved',
-        message: 'The certificate is visible, but the local ledger rejected the record.',
+        message: 'The certificate is showing, but progress could not be saved.',
         kind: 'error'
       });
     }
@@ -1387,7 +1385,7 @@
 
     renderCompletion(profile, score, total, durationMs);
     UI.toast({
-      title: 'First Shift complete',
+      title: 'Getting started complete',
       message: 'Your learning record is updated. One sync record is queued.',
       kind: 'ok'
     });
@@ -1403,34 +1401,33 @@
       '    <div class="certificate__stamp">COMMISSIONED</div>' +
       '    <div class="certificate__inner">' +
       '      <div class="certificate__seal">' + UI.brandMark() + '</div>' +
-      '      <p class="eyebrow">FIRST SHIFT / RECORD OF COMPLETION</p>' +
-      '      <h1 class="certificate__title">You are on the floor,<br><span>' + UI.escape(profile.name) + '.</span></h1>' +
-      '      <p class="lede">The terminal is yours. Start with a learning bay, or open the record to see what is already saved.</p>' +
+      '      <p class="eyebrow">GETTING STARTED / COMPLETE</p>' +
+      '      <h1 class="certificate__title">You are ready,<br><span>' + UI.escape(profile.name) + '.</span></h1>' +
+      '      <p class="lede">You are all set. Open a story, or check your progress.</p>' +
       '      <div class="certificate__stats">' +
       '        <div class="certificate-stat"><div class="certificate-stat__value">' + score + ' / ' + total + '</div><div class="certificate-stat__label">Knowledge check</div></div>' +
       '        <div class="certificate-stat"><div class="certificate-stat__value">' + UI.formatMinutes(durationMs) + '</div><div class="certificate-stat__label">Briefing time</div></div>' +
       '        <div class="certificate-stat"><div class="certificate-stat__value">01</div><div class="certificate-stat__label">Badge earned</div></div>' +
       '      </div>' +
       '      <div class="certificate__actions">' +
-      '        <a class="btn btn-primary btn--lg" href="#/home">ENTER CONTROL DECK ' + UI.icon('arrow-right') + '</a>' +
-      '        <button type="button" class="btn btn-secondary" id="replay-briefing">REPLAY BRIEFING</button>' +
+      '        <a class="btn btn-primary btn--lg" href="#/home">GO TO HOME ' + UI.icon('arrow-right') + '</a>' +'<button type="button" class="btn btn-secondary" id="replay-briefing">REPLAY INTRO</button>' +
       '      </div>' +
-      '      <p class="certificate__foot">RECORD ' + UI.escape(profile.id) + ' / ' + UI.escape(profile.name.toUpperCase()) + ' / GR ' + UI.escape(profile.grade) + ' / ' + date + '<br>LOCAL LEDGER / ' + (journey.orientation.attempts || 1) + ' COMPLETION' + ((journey.orientation.attempts || 1) === 1 ? '' : 'S') + ' / QUEUED FOR SYNC</p>' +
+      '      <p class="certificate__foot">RECORD ' + UI.escape(profile.id) + ' / ' + UI.escape(profile.name.toUpperCase()) + ' / GR ' + UI.escape(profile.grade) + ' / ' + date + '<br>SAVED ON THIS DEVICE / ' + (journey.orientation.attempts || 1) + ' COMPLETION' + ((journey.orientation.attempts || 1) === 1 ? '' : 'S') + ' / NOT YET UPLOADED</p>' +
       '    </div>' +
       '  </div>' +
       '  <aside class="completion-side">' +
       '    <div class="panel">' +
-      '      <div class="panel__header"><span class="panel__label">WHAT HAPPENS NOW</span></div>' +
+      '      <div class="panel__header"><span class="panel__label">NEXT</span></div>' +
       '      <div class="panel__body">' +
       '        <div class="completion-list">' +
-      '          <div class="completion-item"><b>01</b><span>Open a learning bay. StoryLearn is the gentlest first stop.</span></div>' +
+      '          <div class="completion-item"><b>01</b><span>Open a story to start.</span></div>' +
       '          <div class="completion-item"><b>02</b><span>Work until you finish a story, an experiment, or a conversation.</span></div>' +
       '          <div class="completion-item"><b>03</b><span>Close the session from RECORD before the next student takes the tablet.</span></div>' +
       '        </div>' +
       '      </div>' +
       '    </div>' +
       '    <div class="note-card">' +
-      '      <span class="mono-label">SESSION STATUS</span>' +
+      '      <span class="mono-label">SESSION</span>' +
       '      <p>An open session is running. It will be saved when you close it — even with no connection.</p>' +
       '    </div>' +
       '  </aside>' +

@@ -1,0 +1,48 @@
+{
+  "id": "social-map",
+  "title": "The Lost Bus Route",
+  "subject": "Social Studies",
+  "grade": "4-7",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "A school bus is waiting at the village stop. On the map, north is at the top, and the school is drawn above the bus stop.",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "Which direction should the bus drive to reach the school?",
+      "hint": "On a map, the top of the page is north.",
+      "options": [
+        { "label": "North", "correct": true, "next": "s3_correct" },
+        { "label": "South", "correct": false, "next": "s3_wrong" },
+        { "label": "East", "correct": false, "next": "s3_wrong" }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Correct. Up on a map is north, so the bus drives north along the road and reaches the school gates on time.",
+      "next": "s4"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Look at the compass rose: up is north, down is south, right is east. The school sits above the stop, so the bus must go north.",
+      "next": "s4"
+    },
+    {
+      "id": "s4",
+      "type": "narrate",
+      "text": "A map needs three things to be useful: a compass rose for direction, a scale for distance, and symbols for places like schools and wells.",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "Well done! You used the compass rose to send the bus north, and now everyone reaches school on time."
+    }
+  ]
+}

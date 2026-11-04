@@ -155,6 +155,30 @@
 
 ---
 
+## Integration Pass — Demo Readiness (Aadesh) — 2026-11-04
+
+> Review of the merged Part 1/Part 2 PR. Both modules are content-complete;
+> this pass fixed defects and voice-engine timing that would have shown up in
+> the 80% demo. LabInBox remains Part 3 (Anurag) and was deliberately untouched.
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| I.1 | StoryLearn: READ AGAIN crash | ✅ Fixed | `_resetPlayer()` nulled `_story` and `_stepIndex`, then the handler read both. Replay now keeps the story, re-indexes steps, and re-renders the shell. |
+| I.2 | StoryLearn: tap-first questions | ✅ Fixed | Options used to appear only after TTS finished — with a silent or stalled voice engine the question had no buttons. Options now render immediately; narration and listening run in parallel. |
+| I.3 | StoryLearn: narration can block | ✅ Added | Narration steps expose a `CONTINUE` button next to auto-advance, so a pending safety timeout never stalls the demo. |
+| I.4 | StoryLearn: stale transcript | ✅ Fixed | A step token now invalidates late `listen()`/`speak()` callbacks, so an answer captured on question 1 cannot select an option on question 2. |
+| I.5 | StoryLearn: voice indicator | ✅ Fixed | The waveform carried no `data-state`, so it never animated. It now reports `listening` / `idle`. |
+| I.6 | Chatbot: stale safety timer | ✅ Fixed | `speak()` left its safety timeout running; a late timer could flip a newer utterance back to idle. Cleared on settle, and state is only reset for the current utterance. |
+| I.7 | Chatbot: answer race | ✅ Fixed | Chips + STOP now share a query token, so a superseded 380 ms answer cannot speak over a newer one or re-enable controls mid-speech. Chips are ignored while the mic is open. |
+| I.8 | Sub-path hosting | ✅ Fixed | StoryLearn used absolute `/data/...` URLs; now relative, matching the dashboard, so a Pages-style sub-path deploy works. |
+| I.9 | Service worker | ✅ Bumped | Cache v3 → **v4** so installed devices pick up the fixed module JS/CSS instead of stale-while-revalidate serving the old copy first. |
+
+**Verified:** `node --check` clean on all shell + module JS; `#/storylearn` lists both stories, question buttons render before narration ends, CONTINUE advances, correct/wrong branches reach the completion card, replay survives, and `progress.stories` + `story.completed` land in the ledger; `#/chatbot` answers chips and unknown queries with no console errors.
+
+**Still outstanding for 100%:** Part 3 / LabInBox (`src/labinbox/labinbox.js` is still the scaffold stub with `alert()` and visible STUB copy) and its canvas styles.
+
+---
+
 ## Integration Milestone
 
 | Milestone | Status | Notes |
@@ -166,3 +190,24 @@
 | LabInBox calls Chatbot.listen() | ✅ | speak/listen contract stable — safe for LabInBox to call |
 | Full offline session (DevTools → Offline) | ✅ | foundation shell, record data and fonts reload with no network; module content still stubs |
 | Demo-ready build | ✅ | Foundation flow: enrolment → orientation → deck → record → sync/export/close session |
+
+## Content Simplification Pass (Demo)
+
+- Plain-English terminology across home, progress, setup and intro: DECK → HOME, RECORD → PROGRESS, BAY → module name, LEDGER → saved on this device, STATION → student, FIRST SHIFT → getting started, SYNC QUEUE → to upload, FLUSH LEDGER → upload now.
+- StoryLearn: subject filters (All / Math / Science / Social Studies / EVS), inline SVG art per story, grade + minutes + summary, step progress bar. 9 stories total (7 new).
+- Voice tutor: 22 topics in 5 tab groups, each with an icon; answers still spoken aloud.
+- Data fetches revalidate and are versioned (`?v=6`) so edited JSON is not served from the browser cache; SW cache bumped to `storylab-v5` with every story precached.
+
+### Story photos
+
+- Story cards and the player now use open-licensed photographs from Wikimedia Commons, downloaded into `assets/stories/` so the app still works offline.
+- Licences and authors are recorded in `assets/stories/CREDITS.md` (CC0 / CC BY / CC BY-SA). Inline SVG art stays as the fallback when a story has no photo.
+- Photos are precached in `storylab-v6`; story data version bumped to `?v=7`.
+
+### Speech detection + multi-language tutor
+
+- `Chatbot.listenLive(onInterim)` streams recognition results: interim transcripts render in a live "HEARD" strip, silence is detected after 1.3 s, and the call resolves with `{ text, confidence, reason }` (`no-speech`, `denied`, `network`, `unsupported`).
+- `Chatbot.listen()` still returns a plain string, so StoryLearn is unchanged, and it falls back to the typed dialog when the browser has no recognition at all.
+- Tutor answers, questions, category labels and status text now exist in English, हिंदी and मराठी, switchable in the tutor header. The choice is saved to the student profile and drives both recognition (`hi-IN` / `mr-IN`) and speech output.
+- Devanagari keywords are matched alongside English ones, so a spoken Hindi question finds the right topic.
+- Story narration stays on `en-IN` because the story text itself is English.

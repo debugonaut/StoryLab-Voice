@@ -3,22 +3,147 @@
  * Owner: Pritam Tatkari (Part 1)
  *
  * Exports: window.StoryLearn
- *   .mount(root)   → void   – Render story list or active player inside root.
- *   .unmount()     → void   – Cancel speech / timers when route changes away.
+ *   .mount(root)   → void   – Render the story library or the active player.
+ *   .unmount()     → void   – Cancel speech / timers when the route changes.
+ *
+ * Demo pass: category filters, illustrated cards, per-story metadata,
+ * step progress, tap-first questions, and a stale-callback guard.
  */
 ;(function () {
   'use strict';
 
+  var _root = null;
+  var _stories = [];
+  var _filter = 'All';
+  var _story = null;
+  var _stepIndex = null;
+  var _stepToken = 0;
+  var _listening = false;
+  var _unmounted = false;
+  var _speakTimer = null;
+
   /* ─────────────────────────────────────────────
-   * Module state
+   * Illustrations — inline SVG scenes per story
    * ───────────────────────────────────────────── */
-  var _root = null;            // current mount point
-  var _story = null;           // loaded story JSON
-  var _stepIndex = null;       // map: stepId → step object
-  var _advancing = false;      // prevent double-advance
-  var _listening = false;      // prevent double-listen call
-  var _unmounted = false;      // flag set on unmount()
-  var _speakTimer = null;      // handle for any scheduled speech
+  var ART = {
+    market:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120M282 0v120"/></g>' +
+      '<path d="M62 52h132l-10-18H72L62 52Z"/>' +
+      '<path d="M72 34v18M96 34v18M120 34v18M144 34v18M168 34v18" stroke-opacity=".45"/>' +
+      '<path d="M68 52v46h120V52" stroke-opacity=".7"/>' +
+      '<circle cx="92" cy="78" r="9"/><circle cx="120" cy="78" r="9"/><circle cx="148" cy="78" r="9"/>' +
+      '<path d="M92 60v6M120 60v6M148 60v6" stroke-opacity=".5"/>' +
+      '<g stroke-opacity=".4"><path d="M232 98V62M232 62l20-10M232 70l-16-8"/></g>' +
+      '<path d="M244 30c10 0 18 8 18 18" stroke-opacity=".35"/>' +
+      '</svg>',
+    fractions:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120M282 0v120"/></g>' +
+      '<circle cx="92" cy="62" r="34"/>' +
+      '<path d="M92 28v68M58 62h68M68 38l48 48M68 86l48-48" stroke-opacity=".55"/>' +
+      '<path d="M92 62V28a34 34 0 0 1 24 10L92 62Z" fill="currentColor" fill-opacity=".28" stroke="none"/>' +
+      '<path d="M196 40l54 54H196V40Z" stroke-opacity=".8"/>' +
+      '<path d="M196 40v54h54" stroke-opacity=".45"/>' +
+      '<g fill="currentColor" stroke="none" fill-opacity=".5"><circle cx="222" cy="70" r="3"/><circle cx="236" cy="82" r="2.4"/></g>' +
+      '<path d="M64 106h64" stroke-opacity=".3"/>' +
+      '</svg>',
+    shapes:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120M282 0v120"/></g>' +
+      '<path d="M150 18l44 44-44 44-44-44 44-44Z"/>' +
+      '<path d="M150 18v88M106 62h88" stroke-opacity=".45"/>' +
+      '<path d="M150 106c8 8 4 14 12 14s6-6 14-6" stroke-opacity=".7"/>' +
+      '<g stroke-opacity=".4"><path d="M60 98h34M60 72h20M60 46h28"/></g>' +
+      '<circle cx="242" cy="62" r="30" stroke-opacity=".45" stroke-dasharray="3 5"/>' +
+      '</svg>',
+    plants:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120M282 0v120"/></g>' +
+      '<circle cx="238" cy="34" r="16"/>' +
+      '<g stroke-opacity=".55"><path d="M238 10v-6M238 58v6M214 34h-6M262 34h6M221 17l-4-4M255 51l4 4M255 17l4-4M221 51l-4 4"/></g>' +
+      '<path d="M132 98V44"/>' +
+      '<path d="M132 58c-18 0-28-10-28-22 14 0 28 8 28 22Z" fill="currentColor" fill-opacity=".22"/>' +
+      '<path d="M132 72c18 0 28-10 28-22-14 0-28 8-28 22Z" fill="currentColor" fill-opacity=".14"/>' +
+      '<path d="M104 98h56" stroke-opacity=".5"/>' +
+      '</svg>',
+    water:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120M282 0v120"/></g>' +
+      '<path d="M104 44a18 18 0 0 1 36-4 16 16 0 0 1 24 12 14 14 0 0 1-6 26h-54a16 16 0 0 1 0-34Z"/>' +
+      '<g stroke-opacity=".65"><path d="M124 74v10M148 74v14M172 74v10"/></g>' +
+      '<path d="M80 104c14 0 14-8 28-8s14 8 28 8 14-8 28-8 14 8 28 8" stroke-opacity=".4"/>' +
+      '<circle cx="244" cy="40" r="14" stroke-opacity=".4"/>' +
+      '</svg>',
+    solar:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120"/></g>' +
+      '<circle cx="66" cy="62" r="18"/>' +
+      '<g stroke-opacity=".45" stroke-dasharray="3 5"><ellipse cx="66" cy="62" rx="70" ry="34"/><ellipse cx="66" cy="62" rx="116" ry="52"/></g>' +
+      '<circle cx="104" cy="46" r="6"/><circle cx="150" cy="88" r="8"/><circle cx="182" cy="34" r="5"/>' +
+      '<circle cx="238" cy="70" r="11"/>' +
+      '<path d="M232 60c6 2 6 18 0 20" stroke-opacity=".5"/>' +
+      '</svg>',
+    map:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120M282 0v120"/></g>' +
+      '<path d="M70 92c26 0 22-24 44-24s20-28 46-28 22 18 44 18" stroke-dasharray="4 5" stroke-opacity=".8"/>' +
+      '<g><path d="M70 84c0-6 4-10 9-10s9 4 9 10c0 7-9 14-9 14s-9-7-9-14Z"/><circle cx="79" cy="84" r="2.4"/></g>' +
+      '<g transform="translate(158 16)"><path d="M0 10c0-6 4-10 9-10s9 4 9 10c0 7-9 14-9 14S0 17 0 10Z"/><circle cx="9" cy="10" r="2.4"/></g>' +
+      '<g stroke-opacity=".55"><circle cx="246" cy="56" r="22"/><path d="M246 38v36M228 56h36M246 42l5 8h-10l5-8Z" fill="currentColor" fill-opacity=".4" stroke="none"/></g>' +
+      '<text x="246" y="94" text-anchor="middle" font-family="Google Sans Code, monospace" font-size="7" letter-spacing="1.2" fill="currentColor" fill-opacity=".55" stroke="none">NORTH</text>' +
+      '</svg>',
+    village:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120M282 0v120"/></g>' +
+      '<path d="M62 98V62l30-18 30 18v36" />' +
+      '<path d="M78 80h12v18H78zM104 80h12v18h-12z" stroke-opacity=".5"/>' +
+      '<path d="M172 98V70l26-16 26 16v28"/>' +
+      '<path d="M186 82h10v16h-10z" stroke-opacity=".5"/>' +
+      '<path d="M246 98V58" stroke-opacity=".7"/>' +
+      '<path d="M246 46c-14 0-22 8-22 18 12 0 22-6 22-18Z" fill="currentColor" fill-opacity=".18"/>' +
+      '<path d="M246 54c14 0 22 8 22 18-12 0-22-6-22-18Z" fill="currentColor" fill-opacity=".26"/>' +
+      '<path d="M56 104h206" stroke-opacity=".3"/>' +
+      '</svg>',
+    animals:
+      '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<g stroke-opacity=".22"><path d="M0 98h320M40 0v120M282 0v120"/></g>' +
+      '<path d="M96 98V58" stroke-opacity=".7"/>' +
+      '<path d="M96 44c-16 0-24 10-24 22 14 0 24-8 24-22Z" fill="currentColor" fill-opacity=".2"/>' +
+      '<path d="M96 52c16 0 24 10 24 22-14 0-24-8-24-22Z" fill="currentColor" fill-opacity=".12"/>' +
+      '<path d="M120 34l8-6M126 42l10-2" stroke-opacity=".7"/>' +
+      '<path d="M196 98c0-10 10-16 22-16s22 6 22 16" stroke-opacity=".8"/>' +
+      '<path d="M206 98v-6M230 98v-6" stroke-opacity=".45"/>' +
+      '<circle cx="252" cy="46" r="12" stroke-opacity=".45"/>' +
+      '<path d="M252 34v-6M252 58v6M240 46h-6M264 46h6" stroke-opacity=".45"/>' +
+      '<path d="M64 104h192" stroke-opacity=".28"/>' +
+      '</svg>'
+  };
+
+  var DATA_VERSION = '7';
+
+  var SUBJECT_CLASS = {
+    math: 'math',
+    science: 'science',
+    'social studies': 'social',
+    social: 'social',
+    evs: 'evs'
+  };
+
+  function subjectClass(subject) {
+    return SUBJECT_CLASS[String(subject || '').toLowerCase()] || 'science';
+  }
+
+  function artFor(story) {
+    var key = (story && story.art) || 'plants';
+    if (story && story.image) {
+      return '<img src="' + window.StoryLabUI.escape(story.image) + '" alt="" loading="lazy" decoding="async">';
+    }
+    return ART[key] || ART.plants;
+  }
+
+  function show(el) { if (el) el.removeAttribute('hidden'); }
+  function hide(el) { if (el) el.setAttribute('hidden', ''); }
 
   /* ─────────────────────────────────────────────
    * Public API
@@ -27,81 +152,113 @@
     _root = root;
     _unmounted = false;
     _resetPlayer();
-    _showList();
+    _showLibrary();
   }
 
   function unmount() {
     _unmounted = true;
-    _advancing = false;
+    _stepToken += 1;
     _listening = false;
     if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
-    if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
 
   /* ─────────────────────────────────────────────
-   * Story list
+   * Library
    * ───────────────────────────────────────────── */
-  function _showList() {
+  function _showLibrary() {
     if (!_root) return;
-    _root.innerHTML = _loadingHTML('LOADING STORIES…');
+    _root.innerHTML = _loadingHTML('Loading stories…');
 
-    fetch('/data/stories/index.json')
+    fetch('data/stories/index.json?v=' + DATA_VERSION, { cache: 'no-cache' })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
       .then(function (stories) {
         if (_unmounted) return;
-        _renderList(stories);
+        _stories = Array.isArray(stories) ? stories : [];
+        _renderLibrary();
       })
       .catch(function (err) {
         if (_unmounted) return;
         console.error('[StoryLearn] index load error:', err);
-        _renderError('Could not load the story list. Make sure you are online or the app is cached.');
+        _renderError('Stories could not be loaded. Check that you are online or the app is cached.');
       });
   }
 
-  function _renderList(stories) {
+  function _renderLibrary() {
     var esc = window.StoryLabUI.escape;
     var icon = window.StoryLabUI.icon;
+    if (!_root) return;
 
-    var cards = stories.map(function (s) {
+    var subjects = [];
+    _stories.forEach(function (s) {
+      if (s.subject && subjects.indexOf(s.subject) === -1) subjects.push(s.subject);
+    });
+
+    var filters = [{ id: 'All', label: 'All', count: _stories.length }].concat(
+      subjects.map(function (subject) {
+        return {
+          id: subject,
+          label: subject,
+          count: _stories.filter(function (s) { return s.subject === subject; }).length
+        };
+      })
+    );
+
+    var filterHTML = filters.map(function (item) {
+      var active = item.id === _filter;
+      return '<button type="button" class="story-filter' + (active ? ' is-active' : '') + '"' +
+        ' role="tab" aria-selected="' + (active ? 'true' : 'false') + '" data-filter="' + esc(item.id) + '">' +
+        esc(item.label) + '<span class="story-filter__count">' + item.count + '</span></button>';
+    }).join('');
+
+    var visible = _filter === 'All'
+      ? _stories
+      : _stories.filter(function (s) { return s.subject === _filter; });
+
+    var cards = visible.map(function (story) {
+      var tone = subjectClass(story.subject);
       return [
-        '<button class="module-card story-card" data-story-id="' + esc(s.id) + '"',
-        '  tabindex="0" aria-label="Start story: ' + esc(s.title) + '">',
-        '  <div class="story-card__badge">',
-        '    <span class="badge badge--' + esc(s.subject.toLowerCase()) + '">' + esc(s.subject) + '</span>',
-        '    <span class="story-card__grade text-mono">GR ' + esc(s.grade) + '</span>',
-        '  </div>',
-        '  <h3 class="story-card__title">' + esc(s.title) + '</h3>',
-        '  <div class="vent" aria-hidden="true"></div>',
-        '  <div class="story-card__cta">',
-        '    ' + icon('book') + '<span>START STORY</span>' + icon('arrow-right'),
-        '  </div>',
+        '<button type="button" class="story-card" data-story-id="' + esc(story.id) + '"',
+        '  aria-label="Open story: ' + esc(story.title) + '">',
+        '  <span class="story-card__art art--' + tone + '">' + artFor(story) + '</span>',
+        '  <span class="story-card__body">',
+        '    <span class="story-card__meta">',
+        '      <span class="badge badge--' + tone + '">' + esc(story.subject) + '</span>',
+        '      <span>GR ' + esc(story.grade || '3-8') + '</span>',
+        '      <span>' + esc(story.minutes || 4) + ' MIN</span>',
+        '    </span>',
+        '    <span class="story-card__title">' + esc(story.title) + '</span>',
+        '    <span class="story-card__summary">' + esc(story.summary || '') + '</span>',
+        '    <span class="story-card__foot"><span>OPEN STORY</span>' + icon('arrow-right') + '</span>',
+        '  </span>',
         '</button>'
       ].join('\n');
     }).join('\n');
 
     _root.innerHTML = [
-      '<div class="panel story-list-panel" style="margin-top:var(--sp-6)">',
-      '  <div class="panel__header">',
-      '    <span class="panel__label">STORY LEARN / MODULE 01 / SELECT STORY</span>',
-      '    <span class="led led--ok" aria-hidden="true"></span>',
-      '  </div>',
-      '</div>',
-      '<div class="module-grid" style="margin-top:var(--sp-4)">' + cards + '</div>'
+      '<section class="story-hero">',
+      '  <p class="eyebrow">STORYLEARN</p>',
+      '  <h1 class="story-hero__title">Pick a story</h1>',
+      '  <p class="story-hero__sub">' + _stories.length + ' stories · ' + subjects.length + ' subjects · works offline</p>',
+      '</section>',
+      '<div class="story-filters" role="tablist" aria-label="Filter stories by subject">' + filterHTML + '</div>',
+      '<div class="story-grid">' + cards + '</div>'
     ].join('\n');
 
-    /* Wire card clicks */
-    var buttons = _root.querySelectorAll('[data-story-id]');
-    for (var i = 0; i < buttons.length; i++) {
-      buttons[i].addEventListener('click', _onCardClick);
-      buttons[i].addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          event.currentTarget.click();
-        }
+    var filterButtons = _root.querySelectorAll('[data-filter]');
+    for (var i = 0; i < filterButtons.length; i++) {
+      filterButtons[i].addEventListener('click', function (event) {
+        _filter = event.currentTarget.getAttribute('data-filter') || 'All';
+        _renderLibrary();
       });
+    }
+
+    var cardsEls = _root.querySelectorAll('[data-story-id]');
+    for (var j = 0; j < cardsEls.length; j++) {
+      cardsEls[j].addEventListener('click', _onCardClick);
     }
   }
 
@@ -111,67 +268,81 @@
   }
 
   /* ─────────────────────────────────────────────
-   * Story loader
+   * Story loader + player
    * ───────────────────────────────────────────── */
   function _loadStory(id) {
     if (!_root) return;
     _resetPlayer();
-    _root.innerHTML = _loadingHTML('LOADING STORY…');
+    _root.innerHTML = _loadingHTML('Opening story…');
 
-    fetch('/data/stories/' + id + '.json')
+    fetch('data/stories/' + id + '.json?v=' + DATA_VERSION, { cache: 'no-cache' })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
       .then(function (story) {
         if (_unmounted) return;
-        _story = story;
-        _stepIndex = {};
-        for (var i = 0; i < story.steps.length; i++) {
-          _stepIndex[story.steps[i].id] = story.steps[i];
+        var meta = null;
+        for (var m = 0; m < _stories.length; m++) {
+          if (_stories[m].id === id) { meta = _stories[m]; break; }
         }
+        if (meta) {
+          if (!story.image) story.image = meta.image;
+          if (!story.art) story.art = meta.art;
+        }
+        _story = story;
+        _indexSteps(story);
         _renderPlayerShell(story);
         _playStep(story.steps[0].id);
       })
       .catch(function (err) {
         if (_unmounted) return;
         console.error('[StoryLearn] story load error:', err);
-        _renderError('Could not load this story. Please try again.');
+        _renderError('This story could not be opened. Please try again.');
       });
   }
 
-  /* ─────────────────────────────────────────────
-   * Player shell
-   * ───────────────────────────────────────────── */
+  function _indexSteps(story) {
+    _stepIndex = {};
+    for (var i = 0; i < story.steps.length; i++) {
+      _stepIndex[story.steps[i].id] = story.steps[i];
+    }
+  }
+
   function _renderPlayerShell(story) {
     var esc = window.StoryLabUI.escape;
     var icon = window.StoryLabUI.icon;
+    var tone = subjectClass(story.subject);
 
     _root.innerHTML = [
-      '<div class="panel story-player" id="sl-player" style="margin-top:var(--sp-6)">',
+      '<div class="panel story-player" id="sl-player">',
       '  <div class="panel__header">',
       '    <button class="btn story-back-btn" id="sl-back-btn" aria-label="Back to all stories">',
-      '      ' + icon('arrow-left') + ' ALL STORIES',
+      '      ' + icon('arrow-left') + ' STORIES',
       '    </button>',
       '    <span class="panel__label" style="margin-left:auto">',
-      '      <span class="badge badge--' + esc(story.subject.toLowerCase()) + '">' + esc(story.subject) + '</span>',
+      '      <span class="badge badge--' + tone + '">' + esc(story.subject) + '</span>',
       '      &nbsp;' + esc(story.title),
       '    </span>',
       '  </div>',
       '  <div class="story-player__body" id="sl-body">',
+      '    <div class="story-player__art art--' + tone + '">' + artFor(story) + '</div>',
+      '    <div class="story-progress">',
+      '      <span id="sl-progress-label">STEP 1 OF ' + story.steps.length + '</span>',
+      '      <span class="story-progress__track"><span class="story-progress__fill" id="sl-progress-fill"></span></span>',
+      '    </div>',
       '    <div class="story-step" id="sl-step" aria-live="polite" aria-atomic="true">',
       '      <div class="story-step__text" id="sl-text"></div>',
       '      <div class="story-step__options" id="sl-options" hidden></div>',
+      '      <div class="story-advance" id="sl-advance" hidden></div>',
       '    </div>',
       '    <div class="story-voice-indicator" id="sl-voice" aria-live="polite" hidden>',
-      '      <span class="waveform" aria-hidden="true">',
-      '        <span class="waveform__bar"></span>',
-      '        <span class="waveform__bar"></span>',
-      '        <span class="waveform__bar"></span>',
-      '        <span class="waveform__bar"></span>',
+      '      <span class="waveform" data-state="listening" aria-hidden="true">',
+      '        <span class="waveform__bar"></span><span class="waveform__bar"></span>',
+      '        <span class="waveform__bar"></span><span class="waveform__bar"></span>',
       '        <span class="waveform__bar"></span>',
       '      </span>',
-      '      <span class="story-voice-indicator__label" id="sl-voice-label">LISTENING…</span>',
+      '      <span class="story-voice-indicator__label" id="sl-voice-label">Listening…</span>',
       '    </div>',
       '  </div>',
       '</div>'
@@ -181,8 +352,20 @@
       unmount();
       _resetPlayer();
       _unmounted = false;
-      _showList();
+      _renderLibrary();
     });
+  }
+
+  function _setProgress(stepId) {
+    if (!_story) return;
+    var index = 0;
+    for (var i = 0; i < _story.steps.length; i++) {
+      if (_story.steps[i].id === stepId) { index = i; break; }
+    }
+    var label = document.getElementById('sl-progress-label');
+    var fill = document.getElementById('sl-progress-fill');
+    if (label) label.textContent = 'STEP ' + (index + 1) + ' OF ' + _story.steps.length;
+    if (fill) fill.style.width = Math.round(((index + 1) / _story.steps.length) * 100) + '%';
   }
 
   /* ─────────────────────────────────────────────
@@ -190,81 +373,71 @@
    * ───────────────────────────────────────────── */
   function _playStep(stepId) {
     if (_unmounted) return;
-    if (_advancing) return;
-    _advancing = true;
+    if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
 
-    var step = _stepIndex[stepId];
+    var step = _stepIndex ? _stepIndex[stepId] : null;
     if (!step) {
       console.error('[StoryLearn] unknown step:', stepId);
-      _advancing = false;
       return;
     }
 
+    var token = ++_stepToken;
+    _listening = false;
+
+    _setProgress(stepId);
     _showStepText(step.text);
     _hideOptions();
+    _hideAdvance();
     _hideVoice();
 
-    /* Speak text immediately; do not wait before showing it on screen */
-    var speakPromise = window.Chatbot.speak(step.text);
+    var speakPromise = window.Chatbot.speak(step.text, 'en-IN');
 
     if (step.type === 'narrate') {
+      _showAdvance(function () { _goTo(step.next, token); });
       speakPromise.then(function () {
-        if (_unmounted) return;
-        _advancing = false;
-        /* Short pause so the student can absorb the text before advancing */
-        _speakTimer = setTimeout(function () {
-          if (_unmounted) return;
-          _playStep(step.next);
-        }, 600);
-      }).catch(function () {
-        _advancing = false;
-      });
-
-    } else if (step.type === 'question') {
-      speakPromise.then(function () {
-        if (_unmounted) return;
-        _advancing = false;
-        _renderQuestion(step);
-      }).catch(function () {
-        _advancing = false;
-        _renderQuestion(step);
-      });
-
-    } else if (step.type === 'complete') {
-      speakPromise.then(function () {
-        if (_unmounted) return;
-        _advancing = false;
-        _handleCompletion(step);
-      }).catch(function () {
-        _advancing = false;
-        _handleCompletion(step);
-      });
-
-    } else {
-      /* Unknown type — advance if next is defined */
-      _advancing = false;
-      if (step.next) _playStep(step.next);
+        if (_unmounted || token !== _stepToken) return;
+        _speakTimer = setTimeout(function () { _goTo(step.next, token); }, 700);
+      }).catch(function () {});
+      return;
     }
+
+    if (step.type === 'question') {
+      _renderQuestion(step, token, speakPromise);
+      return;
+    }
+
+    if (step.type === 'complete') {
+      _handleCompletion(step, token);
+      return;
+    }
+
+    if (step.next) _goTo(step.next, token);
+  }
+
+  function _goTo(nextId, token) {
+    if (_unmounted) return;
+    if (token !== undefined && token !== _stepToken) return;
+    if (!nextId) return;
+    if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    _playStep(nextId);
   }
 
   /* ─────────────────────────────────────────────
-   * Question rendering + voice input
+   * Question + voice
    * ───────────────────────────────────────────── */
-  function _renderQuestion(step) {
-    if (_unmounted) return;
+  function _renderQuestion(step, token, speakPromise) {
+    if (_unmounted || token !== _stepToken) return;
     var esc = window.StoryLabUI.escape;
     var icon = window.StoryLabUI.icon;
 
     var optionsEl = document.getElementById('sl-options');
     if (!optionsEl) return;
 
-    optionsEl.innerHTML = '';
-    optionsEl.removeAttribute('hidden');
-
-    var hintHTML = step.hint
+    optionsEl.innerHTML = step.hint
       ? '<p class="story-step__hint">' + icon('info') + ' ' + esc(step.hint) + '</p>'
       : '';
-    optionsEl.innerHTML = hintHTML;
+    show(optionsEl);
 
     var buttonsWrap = document.createElement('div');
     buttonsWrap.className = 'story-options-grid';
@@ -272,59 +445,63 @@
     step.options.forEach(function (opt, i) {
       var btn = document.createElement('button');
       btn.className = 'btn story-option-btn';
-      btn.setAttribute('aria-label', esc(opt.label));
       btn.innerHTML = '<span class="story-option-btn__num">' + String.fromCharCode(65 + i) + '</span>' +
                       '<span class="story-option-btn__label">' + esc(opt.label) + '</span>';
       btn.addEventListener('click', function () {
-        if (_advancing) return;
-        _selectOption(step, opt, btn);
+        _selectOption(step, opt, btn, token);
       });
       buttonsWrap.appendChild(btn);
     });
 
     optionsEl.appendChild(buttonsWrap);
 
-    /* Kick off voice listening in parallel — tap is always primary fallback */
-    if (!_listening) {
-      _listening = true;
-      _showVoice('LISTENING…');
-      window.Chatbot.listen().then(function (transcript) {
-        _listening = false;
-        _hideVoice();
-        if (_unmounted || _advancing) return;
-        if (!transcript) return; /* tap remains available */
-        var match = _matchTranscript(transcript, step.options);
-        if (match) {
-          var matchedBtn = _findOptionButton(match.label);
-          _selectOption(step, match, matchedBtn);
-        }
-      }).catch(function () {
-        _listening = false;
-        _hideVoice();
-      });
+    if (speakPromise && typeof speakPromise.then === 'function') {
+      speakPromise.then(function () { _startVoiceAnswer(step, token); })
+        .catch(function () { _startVoiceAnswer(step, token); });
+    } else {
+      _startVoiceAnswer(step, token);
     }
+  }
+
+  function _startVoiceAnswer(step, token) {
+    if (_unmounted || token !== _stepToken || _listening) return;
+    if (!window.Chatbot || typeof window.Chatbot.listen !== 'function') return;
+
+    _listening = true;
+    _showVoice('Listening…');
+
+    window.Chatbot.listen().then(function (transcript) {
+      if (token !== _stepToken) return;
+      _listening = false;
+      _hideVoice();
+      if (_unmounted || !transcript) return;
+      var match = _matchTranscript(transcript, step.options);
+      if (match) _selectOption(step, match, _findOptionButton(match.label), token);
+    }).catch(function () {
+      if (token !== _stepToken) return;
+      _listening = false;
+      _hideVoice();
+    });
   }
 
   function _matchTranscript(transcript, options) {
     var lower = transcript.toLowerCase();
-    /* Exact label first */
     for (var i = 0; i < options.length; i++) {
       if (lower === options[i].label.toLowerCase()) return options[i];
     }
-    /* First word of label */
     for (var j = 0; j < options.length; j++) {
       var firstWord = options[j].label.toLowerCase().split(' ')[0];
-      if (lower.includes(firstWord)) return options[j];
+      if (lower.indexOf(firstWord) !== -1) return options[j];
     }
-    /* Any word match */
     for (var k = 0; k < options.length; k++) {
-      if (lower.includes(options[k].label.toLowerCase())) return options[k];
+      if (lower.indexOf(options[k].label.toLowerCase()) !== -1) return options[k];
     }
     return null;
   }
 
   function _findOptionButton(label) {
-    var btns = document.querySelectorAll('.story-option-btn');
+    if (!_root) return null;
+    var btns = _root.querySelectorAll('.story-option-btn');
     for (var i = 0; i < btns.length; i++) {
       var labelEl = btns[i].querySelector('.story-option-btn__label');
       if (labelEl && labelEl.textContent === label) return btns[i];
@@ -332,13 +509,15 @@
     return null;
   }
 
-  function _selectOption(step, opt, btn) {
-    if (_advancing) return;
-    _advancing = true;
-    _listening = false; /* stop any pending voice branch */
+  function _selectOption(step, opt, btn, token) {
+    if (_unmounted || token !== _stepToken) return;
 
-    /* Visual feedback */
-    var allBtns = document.querySelectorAll('.story-option-btn');
+    _stepToken += 1;
+    _listening = false;
+    if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+    var allBtns = _root ? _root.querySelectorAll('.story-option-btn') : [];
     for (var i = 0; i < allBtns.length; i++) {
       allBtns[i].disabled = true;
       allBtns[i].classList.remove('story-option-btn--chosen', 'story-option-btn--correct', 'story-option-btn--wrong');
@@ -348,9 +527,9 @@
       btn.classList.add(opt.correct ? 'story-option-btn--correct' : 'story-option-btn--wrong');
     }
     _hideVoice();
+    _hideAdvance();
 
     _speakTimer = setTimeout(function () {
-      _advancing = false;
       if (_unmounted) return;
       _playStep(opt.next);
     }, 500);
@@ -359,84 +538,85 @@
   /* ─────────────────────────────────────────────
    * Completion
    * ───────────────────────────────────────────── */
-  function _handleCompletion(step) {
-    if (_unmounted) return;
-    _saveProgress(_story.id).then(function () {
-      if (_unmounted) return;
+  function _handleCompletion(step, token) {
+    if (_unmounted || token !== _stepToken || !_story) return;
+    _hideAdvance();
+    _hideVoice();
+
+    _saveProgress(_story.id, _story.title, _story.subject).then(function () {
+      if (_unmounted || token !== _stepToken) return;
       _renderCompletionCard(step);
     }).catch(function (err) {
       console.error('[StoryLearn] progress save error:', err);
-      if (!_unmounted) _renderCompletionCard(step);
+      if (!_unmounted && token === _stepToken) _renderCompletionCard(step);
     });
   }
 
-  function _saveProgress(storyId) {
+  function _saveProgress(storyId, title, subject) {
     return window.DB.load('progress', 'student').then(function (all) {
       var data = all || {};
       data.stories = data.stories || {};
       data.stories[storyId] = { completed: true, timestamp: Date.now() };
       return window.DB.save('progress', 'student', data);
     }).then(function () {
-      /* Log the event to the activity timeline */
-      return window.StoryLabState.logEvent(
-        'story.completed',
-        'Completed ' + _story.title,
-        { storyId: _story.id, subject: _story.subject }
-      );
+      return window.StoryLabState.logEvent('story.completed', 'Completed ' + title, {
+        storyId: storyId,
+        subject: subject
+      });
     });
   }
 
   function _renderCompletionCard(step) {
     var esc = window.StoryLabUI.escape;
     var icon = window.StoryLabUI.icon;
-
     var bodyEl = document.getElementById('sl-body');
-    if (!bodyEl) return;
+    if (!bodyEl || !_story) return;
+
+    var tone = subjectClass(_story.subject);
 
     bodyEl.innerHTML = [
       '<div class="story-complete-card" role="status" aria-live="polite">',
-      '  <div class="story-complete-card__icon" aria-hidden="true">',
-      '    ' + icon('check'),
-      '  </div>',
-      '  <h2 class="story-complete-card__title">STORY COMPLETE</h2>',
+      '  <div class="story-complete-card__icon" aria-hidden="true">' + icon('check') + '</div>',
+      '  <h2 class="story-complete-card__title">Story complete</h2>',
       '  <p class="story-complete-card__text">' + esc(step.text) + '</p>',
       '  <div class="story-complete-card__meta text-mono">',
-      '    <span class="badge badge--' + esc(_story.subject.toLowerCase()) + '">' + esc(_story.subject) + '</span>',
+      '    <span class="badge badge--' + tone + '">' + esc(_story.subject) + '</span>',
       '    <span>' + esc(_story.title) + '</span>',
       '  </div>',
       '  <div class="story-complete-card__actions">',
-      '    <button class="btn btn-secondary" id="sl-read-again">',
-      '      ' + icon('book') + ' READ AGAIN',
-      '    </button>',
-      '    <button class="btn btn-primary" id="sl-all-stories">',
-      '      ' + icon('arrow-left') + ' ALL STORIES',
-      '    </button>',
+      '    <button class="btn btn-secondary" id="sl-read-again">' + icon('book') + ' READ AGAIN</button>',
+      '    <button class="btn btn-primary" id="sl-all-stories">' + icon('arrow-left') + ' MORE STORIES</button>',
       '  </div>',
       '</div>'
     ].join('\n');
 
+    var story = _story;
+
     document.getElementById('sl-read-again').addEventListener('click', function () {
+      if (_unmounted) return;
       _resetPlayer();
-      _renderPlayerShell(_story);
-      _playStep(_story.steps[0].id);
+      _story = story;
+      _indexSteps(story);
+      _renderPlayerShell(story);
+      _playStep(story.steps[0].id);
     });
 
     document.getElementById('sl-all-stories').addEventListener('click', function () {
       unmount();
       _resetPlayer();
       _unmounted = false;
-      _showList();
+      _renderLibrary();
     });
 
     window.StoryLabUI.toast({
       kind: 'ok',
       title: 'Story complete',
-      message: _story.title + ' — saved to your record.'
+      message: _story.title + ' — saved to your progress.'
     });
   }
 
   /* ─────────────────────────────────────────────
-   * UI helpers
+   * Helpers
    * ───────────────────────────────────────────── */
   function _showStepText(text) {
     var el = document.getElementById('sl-text');
@@ -448,25 +628,42 @@
     if (el) { el.setAttribute('hidden', ''); el.innerHTML = ''; }
   }
 
+  function _showAdvance(onClick) {
+    var el = document.getElementById('sl-advance');
+    if (!el) return;
+    el.innerHTML =
+      '<button type="button" class="btn btn-secondary story-advance__btn" id="sl-advance-btn">' +
+      '<span>CONTINUE</span>' + window.StoryLabUI.icon('arrow-right') + '</button>';
+    show(el);
+    var btn = document.getElementById('sl-advance-btn');
+    if (btn) btn.addEventListener('click', onClick);
+  }
+
+  function _hideAdvance() {
+    var el = document.getElementById('sl-advance');
+    if (el) { el.setAttribute('hidden', ''); el.innerHTML = ''; }
+  }
+
   function _showVoice(label) {
     var el = document.getElementById('sl-voice');
     var lblEl = document.getElementById('sl-voice-label');
-    if (el) el.removeAttribute('hidden');
+    var wave = el ? el.querySelector('.waveform') : null;
+    show(el);
     if (lblEl && label) lblEl.textContent = label;
+    if (wave) wave.setAttribute('data-state', 'listening');
   }
 
   function _hideVoice() {
     var el = document.getElementById('sl-voice');
-    if (el) el.setAttribute('hidden', '');
+    hide(el);
+    var wave = el ? el.querySelector('.waveform') : null;
+    if (wave) wave.setAttribute('data-state', 'idle');
   }
 
   function _loadingHTML(label) {
     var esc = window.StoryLabUI ? window.StoryLabUI.escape : function (s) { return s; };
-    return [
-      '<div class="panel" style="margin-top:var(--sp-6);padding:var(--sp-6)">',
-      '  <p class="mono-label" style="text-align:center">' + esc(label || 'LOADING…') + '</p>',
-      '</div>'
-    ].join('\n');
+    return '<div class="panel" style="margin-top:var(--sp-6);padding:var(--sp-6)">' +
+      '<p class="mono-label" style="text-align:center">' + esc(label || 'Loading…') + '</p></div>';
   }
 
   function _renderError(msg) {
@@ -477,39 +674,30 @@
       '<div class="panel" style="margin-top:var(--sp-6);padding:var(--sp-6)">',
       '  <div class="panel__header">',
       '    <span class="led led--error" aria-hidden="true"></span>',
-      '    <span class="panel__label">STORY LEARN / ERROR</span>',
+      '    <span class="panel__label">STORIES / ERROR</span>',
       '  </div>',
       '  <p class="text-secondary" style="margin-top:var(--sp-4)">' + esc(msg) + '</p>',
-      '  <div style="margin-top:var(--sp-4);display:flex;gap:var(--sp-3)">',
-      '    <button class="btn btn-secondary" id="sl-err-back">',
-      '      ' + icon('arrow-left') + ' BACK',
-      '    </button>',
+      '  <div style="margin-top:var(--sp-4)">',
+      '    <button class="btn btn-secondary" id="sl-err-back">' + icon('arrow-left') + ' BACK</button>',
       '  </div>',
       '</div>'
     ].join('\n');
 
     document.getElementById('sl-err-back').addEventListener('click', function () {
       _resetPlayer();
-      _showList();
+      _showLibrary();
     });
   }
 
   function _resetPlayer() {
     _story = null;
     _stepIndex = null;
-    _advancing = false;
+    _stepToken += 1;
     _listening = false;
     if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
-    if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
 
-  /* ─────────────────────────────────────────────
-   * Export
-   * ───────────────────────────────────────────── */
-  window.StoryLearn = {
-    mount: mount,
-    unmount: unmount
-  };
-
+  window.StoryLearn = { mount: mount, unmount: unmount };
   console.log('[StoryLearn] window.StoryLearn ready');
 })();

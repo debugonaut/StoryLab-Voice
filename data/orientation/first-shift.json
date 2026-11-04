@@ -1,103 +1,103 @@
 {
   "id": "first-shift",
-  "title": "First Shift",
-  "version": 1,
+  "title": "Getting started",
+  "version": 2,
   "steps": [
     {
       "id": "welcome",
       "kind": "briefing",
       "nav": "Welcome",
       "kicker": "01 / WELCOME",
-      "title": "This is a learning machine.",
-      "lede": "StoryLab Voice turns one shared classroom tablet into a tutor, a library, and a science lab.",
-      "text": "It runs from this device. No signal. No laboratory. No account. The terminal remembers what you complete and keeps it ready for your teacher.",
+      "title": "This is your learning tablet.",
+      "lede": "StoryLab Voice turns one tablet into a library, a tutor, and a science lab.",
+      "text": "It works without internet, without a lab, and without an account. Everything you finish is saved on this tablet.",
       "points": [
-        "Three learning bays: stories, a voice tutor, and virtual experiments.",
-        "Every panel can be read aloud.",
-        "Everything is stored on this device."
+        "Three ways to learn: stories, a voice tutor, and virtual experiments.",
+        "Every screen can be read aloud.",
+        "Your progress stays on this device."
       ],
-      "note": "If the room goes quiet, the terminal still works.",
+      "note": "No internet? It still works.",
       "art": "terminal",
-      "cue": "This is your learning machine. Everything you need is on this device."
+      "cue": "This is your learning tablet. Everything you need is already on it."
     },
     {
       "id": "voice",
       "kind": "briefing",
       "nav": "Voice",
-      "kicker": "02 / THE VOICE BUS",
-      "title": "Talk. It listens.",
-      "lede": "The amber SPEAK control opens the microphone. The waveform tells you what the terminal is doing.",
-      "text": "Amber means the tutor is speaking. Green means it is listening. If the room is too loud, move closer to the tablet and try again.",
+      "kicker": "02 / VOICE",
+      "title": "Talk, or tap.",
+      "lede": "Press SPEAK to use the microphone. The bars show what the tutor is doing.",
+      "text": "Amber means it is speaking. Green means it is listening. If the room is loud, move closer and try again.",
       "points": [
-        "Wait for the green signal before you speak.",
-        "Speak in a normal voice, not a shout.",
+        "Wait for green, then speak.",
+        "Use a normal voice, not a shout.",
         "You can always tap an answer instead."
       ],
-      "note": "Voice is the fastest way in. Touch is always there as a backup.",
+      "note": "Voice is quick. Touching always works.",
       "art": "voice",
-      "cue": "Press the amber control, wait for green, then speak. Touch is always available."
+      "cue": "Press SPEAK, wait for green, then talk. You can always tap instead."
     },
     {
       "id": "bays",
       "kind": "briefing",
-      "nav": "Bays",
-      "kicker": "03 / THE THREE BAYS",
+      "nav": "Learn",
+      "kicker": "03 / THREE WAYS TO LEARN",
       "title": "Stories. A tutor. A lab.",
-      "lede": "Each bay teaches differently. They all feed the same learning record.",
-      "text": "StoryLearn narrates a branching story and asks you questions inside it. The AI Voice Tutor answers what you ask. LabInBox puts apparatus on screen and runs experiments with your voice.",
+      "lede": "Each one teaches differently, and all of them save to the same progress page.",
+      "text": "Stories ask you questions as they go. The voice tutor answers whatever you ask. The virtual lab lets you run experiments safely on screen.",
       "points": [
-        "BAY 01 — StoryLearn: listen, choose, complete.",
-        "BAY 02 — AI Voice Tutor: ask anything.",
-        "BAY 03 — Lab In Box: pour, react, observe."
+        "Stories — listen, choose, finish.",
+        "Voice tutor — ask anything.",
+        "Virtual lab — try experiments safely."
       ],
-      "note": "Start with a story if you are not sure where to begin.",
+      "note": "Not sure where to start? Pick a story.",
       "art": "bays",
-      "cue": "Three bays. Stories, a voice tutor, and a virtual lab."
+      "cue": "Three ways to learn: stories, a voice tutor, and a virtual lab."
     },
     {
       "id": "ledger",
       "kind": "briefing",
-      "nav": "Ledger",
-      "kicker": "04 / THE LOCAL LEDGER",
+      "nav": "Progress",
+      "kicker": "04 / YOUR PROGRESS",
       "title": "Your work stays yours.",
-      "lede": "Progress is written to a local ledger on this device. No sign-in is required to learn.",
-      "text": "When the terminal finds a connection, queued records move to the sync archive. If there is no connection, nothing is lost — the queue simply waits.",
+      "lede": "Progress is saved on this tablet. You do not need an account to learn.",
+      "text": "When the tablet finds internet, saved records are uploaded. Without internet nothing is lost — they simply wait.",
       "points": [
-        "Open RECORD to see sessions, checkpoints, and queued records.",
-        "Close a session before handing the tablet to the next student.",
-        "A facilitator can print or export the learning record."
+        "Open PROGRESS to see what you finished.",
+        "Close the session before the next student uses the tablet.",
+        "A teacher can print or export the record."
       ],
-      "note": "Sync is opportunistic. Learning is not.",
+      "note": "Learning works with or without internet.",
       "art": "ledger",
-      "cue": "Your progress is stored on this device. When a connection returns, the queue syncs."
+      "cue": "Your progress is saved on this tablet and uploads when internet returns."
     },
     {
       "id": "check",
       "kind": "check",
       "nav": "Check",
-      "kicker": "05 / CHECK",
-      "title": "One question before we hand over the keys.",
-      "lede": "There is no time limit. Pick the answer that matches what the terminal does.",
-      "question": "Which control opens the microphone so you can talk to the tutor?",
+      "kicker": "05 / QUICK CHECK",
+      "title": "One question before you start.",
+      "lede": "There is no time limit. Choose the answer that matches this tablet.",
+      "question": "Which button turns on the microphone so you can talk to the tutor?",
       "options": [
         {
-          "label": "The amber SPEAK control",
+          "label": "The amber SPEAK button",
           "correct": true,
-          "feedback": "Correct. Amber is the action colour. Press SPEAK, wait for the green listening light, then talk."
+          "feedback": "Correct. Press SPEAK, wait for the green bars, then talk."
         },
         {
-          "label": "The RECORD tab in the header",
+          "label": "The PROGRESS tab",
           "correct": false,
-          "feedback": "RECORD opens your learning file. The microphone lives on the amber SPEAK control."
+          "feedback": "PROGRESS shows your saved work. The microphone is on the SPEAK button."
         },
         {
-          "label": "The vent slots under the panel",
+          "label": "The slots on the side",
           "correct": false,
-          "feedback": "Those are part of the chassis. Look for the amber SPEAK control instead."
+          "feedback": "Those are just vents. Look for the amber SPEAK button."
         }
       ],
       "art": "check",
-      "cue": "One question. Which control opens the microphone?"
+      "cue": "One question. Which button turns on the microphone?"
     }
   ]
 }

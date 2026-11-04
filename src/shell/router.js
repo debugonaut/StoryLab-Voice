@@ -17,13 +17,13 @@
   'use strict';
 
   var ROUTES = {
-    home: { title: 'Control Deck', nav: 'home' },
-    record: { title: 'Learning Record', nav: 'record' },
-    onboarding: { title: 'Enrolment', nav: '' },
-    orientation: { title: 'First Shift', nav: 'guide' },
-    storylearn: { title: 'StoryLearn', nav: 'home' },
-    chatbot: { title: 'AI Voice Tutor', nav: 'home' },
-    labinbox: { title: 'Lab In Box', nav: 'home' }
+    home: { title: 'Home', nav: 'home' },
+    record: { title: 'My Progress', nav: 'record' },
+    onboarding: { title: 'Student setup', nav: '' },
+    orientation: { title: 'Getting started', nav: 'guide' },
+    storylearn: { title: 'Stories', nav: 'home' },
+    chatbot: { title: 'Voice Tutor', nav: 'home' },
+    labinbox: { title: 'Virtual Lab', nav: 'home' }
   };
 
   var currentRoute = null;
@@ -88,7 +88,7 @@
       }
     }
 
-    var title = ROUTES[route] ? ROUTES[route].title : 'Control Deck';
+    var title = ROUTES[route] ? ROUTES[route].title : 'Home';
     document.title = title + ' — StoryLab Voice';
   }
 
@@ -152,22 +152,22 @@
   function renderModule(route, root) {
     var config = {
       storylearn: {
-        label: 'BAY 01 / STORYLEARN',
-        title: 'StoryLearn',
+        label: 'STORIES',
+        title: 'Stories',
         index: 'StoryLearn module',
         owner: 'Pritam Tatkari',
         api: window.StoryLearn
       },
       chatbot: {
-        label: 'BAY 02 / AI VOICE TUTOR',
-        title: 'AI Voice Tutor',
+        label: 'VOICE TUTOR',
+        title: 'Voice Tutor',
         index: 'Voice module',
         owner: 'Ritesh Gavhane',
         api: window.Chatbot
       },
       labinbox: {
-        label: 'BAY 03 / LAB IN BOX',
-        title: 'Lab In Box',
+        label: 'VIRTUAL LAB',
+        title: 'Virtual Lab',
         index: 'Virtual lab module',
         owner: 'Anurag Kumbhar',
         api: window.LabInBox
@@ -183,12 +183,12 @@
       '<section class="module-stage screen">' +
       '  <header class="module-stage__head">' +
       '    <div class="module-stage__crumb">' +
-      '      <a href="#/home" aria-label="Back to control deck">' + window.StoryLabUI.icon('arrow-left') + ' DECK</a>' +
+      '      <a href="#/home" aria-label="Back to home">' + window.StoryLabUI.icon('arrow-left') + ' HOME</a>' +
       '      <span>/</span><span>' + config.label + '</span>' +
       '    </div>' +
       '    <span class="module-stage__meta">' +
       '      <span class="status-dot status-dot--ok"></span>' +
-      '      <span class="mono-label">MODULE LIVE</span>' +
+      '      <span class="mono-label">READY</span>' +
       '    </span>' +
       '  </header>' +
       '  <div class="module-stage__body" id="module-mount"></div>' +
@@ -213,13 +213,12 @@
   function renderModuleFault(config, error) {
     return (
       '<div class="panel panel--accent" style="padding:32px">' +
-      '  <p class="eyebrow">MODULE UNAVAILABLE</p>' +
-      '  <h2 class="step-title" style="font-size:32px;margin-top:10px">' + config.title + ' is not responding.</h2>' +
-      '  <p class="lede" style="margin-top:12px">The bay is installed, but its controller did not load. ' +
-      'Refresh the terminal, or return to the control deck.</p>' +
+      '  <p class="eyebrow">NOT AVAILABLE</p>' +
+      '  <h2 class="step-title" style="font-size:32px;margin-top:10px">' + config.title + ' did not load.</h2>' +
+      '  <p class="lede" style="margin-top:12px">Refresh the page, or go back home.</p>' +
       (error ? '<div class="onboard-error" style="margin-top:16px">' + window.StoryLabUI.escape(error.message || String(error)) + '</div>' : '') +
       '  <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">' +
-      '    <a class="btn btn-primary" href="#/home">RETURN TO DECK</a>' +
+      '    <a class="btn btn-primary" href="#/home">BACK TO HOME</a>' +
       '    <button class="btn btn-secondary" onclick="location.reload()">REFRESH</button>' +
       '  </div>' +
       '</div>'
@@ -279,11 +278,11 @@
     bootStarted = true;
 
     var checks = [
-      { label: 'CORE SHELL', detail: 'GOOGLE SANS / v1.0' },
-      { label: 'LOCAL LEDGER', detail: 'INDEXEDDB v2' },
-      { label: 'OFFLINE CACHE', detail: 'SERVICE WORKER' },
-      { label: 'STUDENT RECORD', detail: 'LOCAL PROFILE' },
-      { label: 'VOICE BUS', detail: 'WEB SPEECH API' }
+      { label: 'APP', detail: 'v1.0' },
+      { label: 'SAVED DATA', detail: 'ON DEVICE' },
+      { label: 'OFFLINE FILES', detail: 'CACHED' },
+      { label: 'STUDENT', detail: 'LOCAL' },
+      { label: 'VOICE', detail: 'READY' }
     ];
     buildBootLog(checks);
     setBootBar(12);
@@ -296,7 +295,7 @@
     }
 
     await delay(120);
-    markBootLine(0, 'OK', 'SHELL ONLINE');
+    markBootLine(0, 'OK', 'READY');
     setBootBar(28);
 
     var initError = null;
@@ -305,21 +304,21 @@
     } catch (err) {
       initError = err;
     }
-    markBootLine(1, initError ? 'FAULT' : 'OK', initError ? 'CHECK STORAGE' : 'LEDGER READY');
+    markBootLine(1, initError ? 'FAULT' : 'OK', initError ? 'CHECK STORAGE' : 'DATA READY');
     setBootBar(52);
 
     await delay(180);
     var swReady = 'serviceWorker' in navigator;
-    markBootLine(2, swReady ? 'OK' : 'WAIT', swReady ? 'CACHE ARMED' : 'NOT SUPPORTED');
+    markBootLine(2, swReady ? 'OK' : 'WAIT', swReady ? 'CACHED' : 'NOT AVAILABLE');
     setBootBar(68);
 
     await delay(120);
     var profile = window.StoryLabState ? window.StoryLabState.getProfile() : null;
-    markBootLine(3, 'OK', profile ? 'STUDENT FOUND' : 'NEW UNIT');
+    markBootLine(3, 'OK', profile ? 'FOUND' : 'NEW');
     setBootBar(82);
 
     await delay(120);
-    var voice = ('speechSynthesis' in window) ? 'READY' : 'TEXT MODE';
+    var voice = ('speechSynthesis' in window) ? 'READY' : 'TEXT ONLY';
     markBootLine(4, 'OK', voice);
     setBootBar(100);
 

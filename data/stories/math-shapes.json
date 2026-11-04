@@ -1,0 +1,48 @@
+{
+  "id": "math-shapes",
+  "title": "The Kite Maker",
+  "subject": "Math",
+  "grade": "2-4",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "Sameer is making a kite for the harvest festival. He needs a shape with four equal sides and four corners.",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "Which shape has four equal sides and four corners?",
+      "hint": "Count the sides and the corners.",
+      "options": [
+        { "label": "A square", "correct": true, "next": "s3_correct" },
+        { "label": "A triangle", "correct": false, "next": "s3_wrong" },
+        { "label": "A circle", "correct": false, "next": "s3_wrong" }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Right! A square has four equal sides and four corners. Sameer cuts two sticks to the same length and ties them at the corners.",
+      "next": "s4"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Let us count. A triangle has three sides and a circle has none. A square has four equal sides and four corners.",
+      "next": "s4"
+    },
+    {
+      "id": "s4",
+      "type": "narrate",
+      "text": "He covers the frame with paper, ties a string at the centre, and the kite is ready for the wind.",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "Nice work! Four equal sides, four corners. Sameer's square kite is ready to fly."
+    }
+  ]
+}

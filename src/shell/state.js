@@ -178,7 +178,7 @@
     if (!badgeExists) {
       journey.badges.push({
         id: 'first-shift',
-        label: 'First Shift',
+        label: 'Getting started',
         detail: 'Completed terminal orientation',
         awardedAt: now()
       });

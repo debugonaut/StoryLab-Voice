@@ -1,0 +1,48 @@
+{
+  "id": "science-water",
+  "title": "Where Rain Comes From",
+  "subject": "Science",
+  "grade": "4-6",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "The sun heats the sea. Water rises into the sky as an invisible gas called water vapour. This is evaporation.",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "What is it called when water vapour cools and forms clouds?",
+      "hint": "It starts with the letter C.",
+      "options": [
+        { "label": "Condensation", "correct": true, "next": "s3_correct" },
+        { "label": "Evaporation", "correct": false, "next": "s3_wrong" },
+        { "label": "Precipitation", "correct": false, "next": "s3_wrong" }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Exactly. Cooling turns the vapour back into tiny drops, and those drops make clouds. This is condensation.",
+      "next": "s4"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Close. Evaporation is water rising, and precipitation is rain falling. When vapour cools into cloud drops, that is condensation.",
+      "next": "s4"
+    },
+    {
+      "id": "s4",
+      "type": "narrate",
+      "text": "When the drops grow heavy, they fall as rain. The rain soaks the ground, reaches the rivers, and flows back to the sea.",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "You finished the water cycle: evaporation, condensation, precipitation, and back to the sea."
+    }
+  ]
+}

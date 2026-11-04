@@ -1,0 +1,42 @@
+{
+  "id": "math-fractions",
+  "title": "Pizza for Four",
+  "subject": "Math",
+  "grade": "3-5",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "Four friends order one pizza. It is cut into 8 equal slices. Rani wants to know how much each friend gets.",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "If 4 friends share 8 slices equally, how many slices does each friend get?",
+      "hint": "Share 8 slices between 4 friends.",
+      "options": [
+        { "label": "2 slices", "correct": true, "next": "s3_correct" },
+        { "label": "4 slices", "correct": false, "next": "s3_wrong" },
+        { "label": "1 slice", "correct": false, "next": "s3_wrong" }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Yes! 8 shared by 4 is 2. Each friend gets 2 slices. Two slices out of eight is the same as one quarter of the pizza.",
+      "next": "end"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Let us share again. 8 slices, 4 friends: 8 shared by 4 is 2. Each friend gets 2 slices, which is one quarter of the pizza.",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "Well done! Eight slices shared by four friends means two each, and two out of eight is one quarter."
+    }
+  ]
+}

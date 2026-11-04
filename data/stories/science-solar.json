@@ -1,0 +1,48 @@
+{
+  "id": "science-solar",
+  "title": "A Walk Around the Sun",
+  "subject": "Science",
+  "grade": "5-8",
+  "steps": [
+    {
+      "id": "s1",
+      "type": "narrate",
+      "text": "Eight planets travel around the Sun. Mercury is closest, then Venus, then Earth, then Mars.",
+      "next": "s2"
+    },
+    {
+      "id": "s2",
+      "type": "question",
+      "text": "Which planet is third from the Sun?",
+      "hint": "Count Mercury, Venus, then the next one.",
+      "options": [
+        { "label": "Earth", "correct": true, "next": "s3_correct" },
+        { "label": "Mars", "correct": false, "next": "s3_wrong" },
+        { "label": "Venus", "correct": false, "next": "s3_wrong" }
+      ]
+    },
+    {
+      "id": "s3_correct",
+      "type": "narrate",
+      "text": "Yes, Earth is third. That distance gives us the right amount of light and heat for water and life.",
+      "next": "s4"
+    },
+    {
+      "id": "s3_wrong",
+      "type": "narrate",
+      "text": "Let us count outwards: Mercury first, Venus second, Earth third, Mars fourth. Earth is the third planet.",
+      "next": "s4"
+    },
+    {
+      "id": "s4",
+      "type": "narrate",
+      "text": "After Mars come Jupiter, Saturn, Uranus, and Neptune. Jupiter is the largest of them all.",
+      "next": "end"
+    },
+    {
+      "id": "end",
+      "type": "complete",
+      "text": "Great work! You know the order of the planets: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune."
+    }
+  ]
+}
