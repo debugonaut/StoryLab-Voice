@@ -847,11 +847,25 @@
 
   function _refreshAIStatus() {
     if (!window.fetch) { _setAIBadge('offline'); return; }
-    fetch('/api/tutor/health', { cache: 'no-store' }).then(function (response) {
-      return response.ok ? response.json() : null;
-    }).then(function (data) {
-      _setAIBadge(data && data.configured ? 'online' : 'offline');
-    }).catch(function () { _setAIBadge('offline'); });
+    var attempts = 0;
+
+    /* The demo server may still be starting when the screen mounts, so retry a
+     * couple of times before telling the student the tutor is offline. */
+    function check() {
+      attempts += 1;
+      fetch('/api/tutor/health', { cache: 'no-store' }).then(function (response) {
+        return response.ok ? response.json() : null;
+      }).then(function (data) {
+        if (data && data.configured) { _setAIBadge('online'); return; }
+        if (attempts < 3) { setTimeout(check, 2000); return; }
+        _setAIBadge('offline');
+      }).catch(function () {
+        if (attempts < 3) { setTimeout(check, 2000); return; }
+        _setAIBadge('offline');
+      });
+    }
+
+    check();
   }
 
   function _setAIBadge(state) {
