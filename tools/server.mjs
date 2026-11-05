@@ -55,7 +55,19 @@ const PORT = Number(process.env.PORT || 8123);
 const HOST = process.env.HOST || '127.0.0.1';
 const API_KEY = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || '';
 const API_BASE = (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, '');
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const MODEL = process.env.GROQ_MODEL || '';
+/* Groq retires model ids without much notice, so try the configured one first
+ * and fall back through current ids. Whichever answers is reused afterwards. */
+const MODEL_CANDIDATES = Array.from(new Set([
+  MODEL,
+  'llama-3.1-8b-instant',
+  'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b',
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+  'qwen/qwen3-32b',
+  'llama-3.3-70b-versatile'
+].filter(Boolean)));
+let activeModel = MODEL_CANDIDATES[0];
 const MAX_BODY = 8 * 1024;
 const RATE_LIMIT = 30;          // requests
 const RATE_WINDOW = 60 * 1000;  // per minute, per client
@@ -174,38 +186,52 @@ async function handleTutor(req, res) {
     return;
   }
 
-  let upstream;
-  try {
-    upstream = await fetch(API_BASE + '/chat/completions', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: 'Bearer ' + API_KEY
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPTS[language] },
-          { role: 'user', content: question }
-        ],
-        temperature: 0.4,
-        max_tokens: 320
-      }),
-      signal: AbortSignal.timeout(20000)
-    });
-  } catch (error) {
-    console.warn('[server] Tutor request failed:', error.name, error.message);
-    sendJson(res, 504, { error: 'upstream_unreachable', message: 'The tutor service could not be reached. Check the connection.' });
-    return;
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPTS[language] },
+    { role: 'user', content: question }
+  ];
+
+  let upstream = null;
+  let upstreamStatus = 0;
+  let lastDetail = '';
+  const order = [activeModel].concat(MODEL_CANDIDATES.filter(function (m) { return m !== activeModel; }));
+
+  for (let i = 0; i < order.length; i += 1) {
+    const model = order[i];
+    let attempt;
+    try {
+      attempt = await fetch(API_BASE + '/chat/completions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer ' + API_KEY
+        },
+        body: JSON.stringify({ model: model, messages: messages, temperature: 0.4, max_tokens: 320 }),
+        signal: AbortSignal.timeout(20000)
+      });
+    } catch (error) {
+      console.warn('[server] Tutor request failed:', error.name, error.message);
+      sendJson(res, 504, { error: 'upstream_unreachable', message: 'The tutor service could not be reached. Check the connection.' });
+      return;
+    }
+
+    if (attempt.ok) { upstream = attempt; activeModel = model; break; }
+
+    upstreamStatus = attempt.status;
+    lastDetail = await attempt.text().catch(function () { return ''; });
+    const modelGone = attempt.status === 404 && /model_not_found|does not exist|do not have access/i.test(lastDetail);
+    if (!modelGone) break;
+    console.warn('[server] Model unavailable, trying the next one:', model);
   }
 
-  if (!upstream.ok) {
-    const detail = await upstream.text().catch(function () { return ''; });
-    console.warn('[server] Tutor upstream', upstream.status, detail.slice(0, 200).replace(/[\r\n]+/g, ' '));
-    const status = upstream.status === 401 || upstream.status === 403 ? 502 : upstream.status === 429 ? 429 : 502;
+  if (!upstream) {
+    console.warn('[server] Tutor upstream', upstreamStatus, lastDetail.slice(0, 200).replace(/[\r\n]+/g, ' '));
+    const status = upstreamStatus === 429 ? 429 : 502;
     sendJson(res, status, {
       error: status === 429 ? 'busy' : 'upstream_error',
-      message: status === 429 ? 'The tutor is busy right now. Try again in a moment.' : 'The tutor could not answer that. Try again.'
+      message: status === 429
+        ? 'The tutor is busy right now. Try again in a moment.'
+        : 'The tutor could not answer that. Check the key and model, then try again.'
     });
     return;
   }
@@ -224,7 +250,7 @@ async function handleTutor(req, res) {
     return;
   }
 
-  sendJson(res, 200, { answer: answer, model: data.model || MODEL, language: language });
+  sendJson(res, 200, { answer: answer, model: activeModel, language: language });
 }
 
 async function serveStatic(req, res) {
@@ -276,7 +302,7 @@ const server = createServer(function (req, res) {
 
   const pathname = (req.url || '/').split('?')[0];
   if (pathname === '/api/tutor/health') {
-    sendJson(res, 200, { ok: true, configured: Boolean(API_KEY), provider: 'groq', model: MODEL });
+    sendJson(res, 200, { ok: true, configured: Boolean(API_KEY), provider: 'groq', model: activeModel });
     return;
   }
   if (pathname === '/api/tutor') {
@@ -307,5 +333,5 @@ server.on('error', function (error) {
 
 server.listen(PORT, HOST, function () {
   console.log('[server] StoryLab running at http://' + HOST + ':' + PORT);
-  console.log('[server] AI tutor: ' + (API_KEY ? 'connected (' + MODEL + ')' : 'no key — add GROQ_API_KEY to .env'));
+  console.log('[server] AI tutor: ' + (API_KEY ? 'connected (model ' + activeModel + ')' : 'no key — add GROQ_API_KEY to .env'));
 });
