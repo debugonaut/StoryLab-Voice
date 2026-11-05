@@ -17,7 +17,7 @@
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,7 +30,7 @@ function loadDotEnv() {
   if (!existsSync(file)) return;
   let raw = '';
   try {
-    raw = require('node:fs').readFileSync(file, 'utf8');
+    raw = readFileSync(file, 'utf8');
   } catch (error) {
     console.warn('[server] Could not read .env:', error.message);
     return;
