@@ -1,5 +1,4 @@
 [
-  { "id": "acid-base", "title": "Acids & Bases", "subject": "Science", "grade": "6-8" },
-  { "id": "salt-dissolving", "title": "Salt Dissolving in Water", "subject": "Science", "grade": "6-8" }
+  { "id": "acid-base", "title": "Acids & Bases", "subject": "Science", "grade": "6-8", "image": "assets/labs/acid-base.jpg" },
+  { "id": "salt-dissolving", "title": "Salt Dissolving in Water", "subject": "Science", "grade": "6-8", "image": "assets/labs/salt-dissolving.jpg" }
 ]
-

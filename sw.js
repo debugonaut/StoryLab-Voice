@@ -9,7 +9,7 @@
  *   background sync  drain sync_queue into sync_archive
  */
 
-var CACHE_VERSION = 'storylab-v8';
+var CACHE_VERSION = 'storylab-v9';
 var DB_NAME = 'storylab_v1';
 var DB_VERSION = 2;
 
@@ -52,6 +52,9 @@ var PRECACHE = [
   './assets/stories/evs-animals.jpg',
   './data/labs/index.json',
   './data/labs/acid-base.json',
+  './data/labs/salt-dissolving.json',
+  './assets/labs/acid-base.jpg',
+  './assets/labs/salt-dissolving.jpg',
   './data/labs/salt-dissolving.json',
   './data/orientation/first-shift.json',
   './icons/icon-192.svg',

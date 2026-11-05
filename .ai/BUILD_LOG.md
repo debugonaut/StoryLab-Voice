@@ -211,3 +211,11 @@
 - Tutor answers, questions, category labels and status text now exist in English, हिंदी and मराठी, switchable in the tutor header. The choice is saved to the student profile and drives both recognition (`hi-IN` / `mr-IN`) and speech output.
 - Devanagari keywords are matched alongside English ones, so a spoken Hindi question finds the right topic.
 - Story narration stays on `en-IN` because the story text itself is English.
+
+### Lab thumbnails + site-wide language audit
+
+- Virtual Lab cards now carry open-licensed photographs (`assets/labs/`), with authors and licences recorded in `assets/labs/CREDITS.md`. Lab data is versioned (`?v=9`) and the photos are precached in `storylab-v9`.
+- Verified on screen: both images load at full natural size and fill the card art area (398x132 inside a 400px card).
+- Language audit with the profile set to हिंदी: only the Voice Tutor renders localized copy (~471 Devanagari characters on screen). Home, Stories, Virtual Lab, Progress and onboarding stay English (0 Devanagari characters), and every lesson and lab instruction is English-only.
+- The plumbing exists (`StoryLabState.setLanguage`, `en-IN` / `hi-IN` / `mr-IN` tags, `Chatbot.listen(lang)`), but the `STRINGS` / `I18N` tables live only in `src/chatbot/chatbot.js`.
+- Approximate user-facing English strings still hardcoded elsewhere: onboarding ~82, progress ~39, router chrome ~27, home ~24, virtual lab ~22, plus all story and lab content.

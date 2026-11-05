@@ -27,6 +27,8 @@
         '.lb-wrap{margin-top:var(--sp-6);padding-bottom:calc(var(--sp-8) + 100px)}',
         '.lb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:var(--sp-4);margin-top:var(--sp-5)}',
         '.lb-card{min-width:0;border:1px solid var(--color-border);background:var(--color-panel);padding:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-3)}',
+        '.lb-card__art{display:block;margin:calc(var(--sp-5) * -1) calc(var(--sp-5) * -1) 0;border-bottom:1px solid var(--color-border);background:var(--color-bg-inset);overflow:hidden}',
+        '.lb-card__art img{display:block;width:100%;height:150px;object-fit:cover;filter:saturate(.9) contrast(1.02)}',
         '.lb-meta{font:var(--text-xs) var(--font-mono);letter-spacing:.1em;color:var(--color-text-muted);text-transform:uppercase}',
         '.lb-card h3{font-size:var(--text-xl);margin:0;color:var(--color-text-primary)}',
         '.lb-card p{margin:0;color:var(--color-text-secondary);line-height:1.6}',
@@ -48,7 +50,7 @@
         '.lb-complete h3{margin:0 0 var(--sp-2);color:var(--color-accent)}',
         '.lb-status{display:flex;align-items:center;gap:var(--sp-2);font:var(--text-xs) var(--font-mono);color:var(--color-text-muted)}',
         '.lb-status:before{content:"";width:7px;height:7px;background:var(--color-accent);border-radius:50%;display:inline-block}',
-        '@media(max-width:760px){.lb-stage{grid-template-columns:1fr;padding:var(--sp-3)}.lb-canvas{max-height:none}.lb-wrap{padding-bottom:130px}.lb-readout{min-height:0}}',
+        '@media(max-width:760px){.lb-stage{grid-template-columns:1fr;padding:var(--sp-3)}.lb-canvas{max-height:none}.lb-wrap{padding-bottom:130px}.lb-readout{min-height:0}.lb-card__art img{height:132px}}',
         '@media(prefers-reduced-motion:reduce){.lb-progress span{transition:none}}'
       ].join('\n');
       document.head.appendChild(style);
@@ -66,6 +68,7 @@
   function renderList(root, labs, error) {
     var cards = (labs || []).map(function (lab) {
       return '<article class="lb-card">' +
+        (lab.image ? '<div class="lb-card__art"><img src="' + escapeHtml(lab.image) + '" alt="" loading="lazy" decoding="async"></div>' : '') +
         '<div class="lb-meta">' + escapeHtml(lab.subject || 'Science') + ' / GRADE ' + escapeHtml(lab.grade || '—') + '</div>' +
         '<h3>' + escapeHtml(lab.title) + '</h3>' +
         '<p>Watch the apparatus, follow the steps and finish the experiment.</p>' +
@@ -91,7 +94,7 @@
   }
 
   function loadList(root) {
-    fetchJson('/data/labs/index.json?v=8').then(function (labs) {
+    fetchJson('/data/labs/index.json?v=9').then(function (labs) {
       if (!isMounted(root)) return;
       renderList(root, Array.isArray(labs) ? labs : [], null);
     }).catch(function (error) {
@@ -289,7 +292,7 @@
     cleanupActive();
     var token = { root: root, cancelled: false, timers: [], engine: null, onClick: null, busy: false, stepId: null, stepMap: {}, currentLab: null };
     active = token;
-    fetchJson('/data/labs/' + encodeURIComponent(id) + '.json?v=8').then(function (lab) {
+    fetchJson('/data/labs/' + encodeURIComponent(id) + '.json?v=9').then(function (lab) {
       if (token.cancelled || !isMounted(root)) return;
       if (!lab || !Array.isArray(lab.steps) || !Array.isArray(lab.apparatus)) throw new Error('This experiment has an invalid data file.');
       token.currentLab = lab;
