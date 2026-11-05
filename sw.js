@@ -9,7 +9,7 @@
  *   background sync  drain sync_queue into sync_archive
  */
 
-var CACHE_VERSION = 'storylab-v7';
+var CACHE_VERSION = 'storylab-v8';
 var DB_NAME = 'storylab_v1';
 var DB_VERSION = 2;
 

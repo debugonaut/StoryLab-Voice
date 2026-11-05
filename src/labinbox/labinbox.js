@@ -57,7 +57,7 @@
   }
 
   function fetchJson(path) {
-    return fetch(path).then(function (response) {
+    return fetch(path, { cache: 'no-cache' }).then(function (response) {
       if (!response.ok) throw new Error('Could not load ' + path + ' (' + response.status + ').');
       return response.json();
     });
@@ -68,14 +68,14 @@
       return '<article class="lb-card">' +
         '<div class="lb-meta">' + escapeHtml(lab.subject || 'Science') + ' / GRADE ' + escapeHtml(lab.grade || '—') + '</div>' +
         '<h3>' + escapeHtml(lab.title) + '</h3>' +
-        '<p>Explore the apparatus, follow guided instructions and complete this interactive experiment.</p>' +
+        '<p>Watch the apparatus, follow the steps and finish the experiment.</p>' +
         '<div class="lb-toolbar"><span class="lb-status">' + escapeHtml(lab.duration || 'Guided experiment') + '</span>' +
         '<button class="btn btn-primary" type="button" data-start-lab="' + escapeHtml(lab.id) + '">START EXPERIMENT →</button></div>' +
         '</article>';
     }).join('');
 
     root.innerHTML = '<div class="lb-wrap">' +
-      '<section class="panel"><div class="panel__header"><span class="panel__label">LAB IN BOX / MODULE 03 / SELECT EXPERIMENT</span><span class="status-dot status-dot--ok" style="margin-left:auto"></span></div>' +
+      '<section class="panel"><div class="panel__header"><span class="panel__label">VIRTUAL LAB / CHOOSE AN EXPERIMENT</span><span class="status-dot status-dot--ok" style="margin-left:auto"></span></div>' +
       '<div class="panel__body" style="padding:var(--sp-5)"><p style="margin:0;color:var(--color-text-secondary);line-height:1.6">A guided virtual laboratory. Follow each instruction, identify the materials and observe the reaction.</p></div></section>' +
       (error ? '<div class="panel" role="alert" style="margin-top:var(--sp-4);padding:var(--sp-5)"><p class="text-secondary">' + escapeHtml(error) + '</p><button class="btn btn-secondary" type="button" data-retry-labs>RETRY</button></div>' : '') +
       (cards ? '<div class="lb-grid">' + cards + '</div>' : '<div class="panel" style="margin-top:var(--sp-4);padding:var(--sp-5)"><p class="text-secondary">No experiments are available yet.</p></div>') +
@@ -91,7 +91,7 @@
   }
 
   function loadList(root) {
-    fetchJson('/data/labs/index.json').then(function (labs) {
+    fetchJson('/data/labs/index.json?v=8').then(function (labs) {
       if (!isMounted(root)) return;
       renderList(root, Array.isArray(labs) ? labs : [], null);
     }).catch(function (error) {
@@ -289,7 +289,7 @@
     cleanupActive();
     var token = { root: root, cancelled: false, timers: [], engine: null, onClick: null, busy: false, stepId: null, stepMap: {}, currentLab: null };
     active = token;
-    fetchJson('/data/labs/' + encodeURIComponent(id) + '.json').then(function (lab) {
+    fetchJson('/data/labs/' + encodeURIComponent(id) + '.json?v=8').then(function (lab) {
       if (token.cancelled || !isMounted(root)) return;
       if (!lab || !Array.isArray(lab.steps) || !Array.isArray(lab.apparatus)) throw new Error('This experiment has an invalid data file.');
       token.currentLab = lab;
@@ -307,15 +307,15 @@
   }
 
   function renderRunner(root, lab, token) {
-    root.innerHTML = '<div class="lb-wrap"><div class="lb-toolbar"><button class="btn btn-secondary" type="button" data-back-list>← ALL EXPERIMENTS</button><span class="lb-status">GUIDED SIMULATION / ' + escapeHtml(lab.grade || 'ALL GRADES') + '</span></div>' +
-      '<section class="panel lb-screen"><div class="panel__header"><span class="panel__label">LAB IN BOX / ' + escapeHtml(lab.title.toUpperCase()) + '</span><span class="status-dot status-dot--ok" style="margin-left:auto"></span></div>' +
-      '<div class="lb-stage"><div class="lb-canvas-shell"><canvas class="lb-canvas" data-lab-canvas role="img" aria-label="Virtual laboratory showing two beakers and a reaction flask"></canvas></div>' +
-      '<div class="lb-side"><div class="lb-toolbar"><span class="lb-meta" data-step-count>PREPARING EXPERIMENT</span><span class="lb-meta">LIVE SIMULATION</span></div>' +
+    root.innerHTML = '<div class="lb-wrap"><div class="lb-toolbar"><button class="btn btn-secondary" type="button" data-back-list>← ALL EXPERIMENTS</button><span class="lb-status">GUIDED EXPERIMENT / GRADE ' + escapeHtml(lab.grade || 'ALL') + '</span></div>' +
+      '<section class="panel lb-screen"><div class="panel__header"><span class="panel__label">EXPERIMENT / ' + escapeHtml(lab.title.toUpperCase()) + '</span><span class="status-dot status-dot--ok" style="margin-left:auto"></span></div>' +
+      '<div class="lb-stage"><div class="lb-canvas-shell"><canvas class="lb-canvas" data-lab-canvas role="img" aria-label="Virtual lab showing the experiment apparatus and its result"></canvas></div>' +
+      '<div class="lb-side"><div class="lb-toolbar"><span class="lb-meta" data-step-count>PREPARING EXPERIMENT</span><span class="lb-meta">LIVE</span></div>' +
       '<div class="lb-progress" aria-label="Experiment progress"><span data-progress style="width:0%"></span></div>' +
       '<div class="lb-readout" aria-live="polite" aria-atomic="true"><div class="lb-step" data-step-label>INSTRUCTION</div><p class="lb-instruction" data-instruction>Preparing your laboratory…</p></div>' +
       '<p class="lb-hint" data-hint>Listen to the instruction, then choose an answer or use the microphone.</p>' +
-      '<div class="lb-actions" data-choices></div><div class="lb-actions"><button class="btn btn-primary" type="button" data-listen>◉ SPEAK COMMAND</button><button class="btn btn-secondary" type="button" data-repeat>↻ REPEAT</button></div>' +
-      '<p class="lb-hint" data-voice-status>Voice interaction is optional. You can complete every step using the answer buttons.</p></div></div></section>' +
+      '<div class="lb-actions" data-choices></div><div class="lb-actions"><button class="btn btn-primary" type="button" data-listen>◉ SPEAK</button><button class="btn btn-secondary" type="button" data-repeat>↻ REPEAT</button></div>' +
+      '<p class="lb-hint" data-voice-status>You can also tap an answer instead of speaking.</p></div></div></section>' +
       '<div data-completion></div></div>';
     root.querySelector('[data-back-list]').addEventListener('click', function () { showList(root); });
     root.querySelector('[data-repeat]').addEventListener('click', function () {
@@ -327,7 +327,7 @@
   function speak(text, token) {
     if (token.cancelled) return Promise.resolve();
     if (window.Chatbot && typeof window.Chatbot.speak === 'function') {
-      try { return Promise.resolve(window.Chatbot.speak(text)).catch(function () {}); }
+      try { return Promise.resolve(window.Chatbot.speak(text, 'en-IN')).catch(function () {}); }
       catch (error) { console.warn('[LabInBox] Narration unavailable:', error); }
     }
     return Promise.resolve();
@@ -337,13 +337,13 @@
     var root = token.root;
     token.currentStep = step;
     root.querySelector('[data-step-label]').textContent = 'STEP ' + index + ' / ' + total;
-    root.querySelector('[data-step-count]').textContent = 'EXPERIMENT IN PROGRESS';
+    root.querySelector('[data-step-count]').textContent = 'IN PROGRESS';
     root.querySelector('[data-instruction]').textContent = step.instruction;
     root.querySelector('[data-progress]').style.width = Math.max(4, ((index - 1) / total) * 100) + '%';
     root.querySelector('[data-choices]').innerHTML = '';
     root.querySelector('[data-hint]').textContent = 'Listen to the instruction, then choose an answer or use the microphone.';
     root.querySelector('[data-listen]').disabled = false;
-    root.querySelector('[data-voice-status]').textContent = 'Voice interaction is optional. You can complete every step using the answer buttons.';
+    root.querySelector('[data-voice-status]').textContent = 'You can also tap an answer instead of speaking.';
   }
 
   async function runStep(token, stepId) {
@@ -404,7 +404,7 @@
     container.querySelectorAll('[data-answer]').forEach(function (button) {
       button.addEventListener('click', function () { submitAnswer(token, button.getAttribute('data-answer'), 'tap'); });
     });
-    token.root.querySelector('[data-hint]').textContent = 'Choose one of the answers below, or tap SPEAK COMMAND and say your answer.';
+    token.root.querySelector('[data-hint]').textContent = 'Choose an answer below, or tap SPEAK and say it.';
   }
 
   function rootDisableControls(token, disabled) {
@@ -413,7 +413,11 @@
   }
 
   function matchesAnswer(transcript, accepts) {
-    var normalized = String(transcript || '').toLowerCase().replace(/[^a-z\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+    var raw = String(transcript || '').toLowerCase();
+    var letters;
+    try { letters = raw.replace(/[^\p{L}\p{N}\s-]/gu, ' '); }
+    catch (error) { letters = raw.replace(/[^a-z0-9\s-]/g, ' '); }
+    var normalized = letters.replace(/\s+/g, ' ').trim();
     if (!normalized) return false;
     return accepts.some(function (answer) {
       var term = String(answer).toLowerCase().trim();
@@ -450,7 +454,7 @@
     rootDisableControls(token, true);
     token.root.querySelector('[data-voice-status]').textContent = 'Listening… speak clearly into your microphone.';
     var transcript = '';
-    try { transcript = await window.Chatbot.listen(); }
+    try { transcript = await window.Chatbot.listen('en-IN'); }
     catch (error) { console.warn('[LabInBox] Voice input failed:', error); }
     if (token.cancelled) return;
     rootDisableControls(token, false);

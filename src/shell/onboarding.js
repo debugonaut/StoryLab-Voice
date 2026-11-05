@@ -133,7 +133,7 @@
         kicker: '03 / THREE WAYS TO LEARN',
         title: 'Stories. A tutor. A lab.',
         lede: 'Each bay teaches differently. They all feed the same learning record.',
-        text: 'StoryLearn narrates a branching story and asks you questions inside it. The AI Voice Tutor answers what you ask. LabInBox puts apparatus on screen and runs experiments with your voice.',
+        text: 'StoryLearn narrates a branching story and asks you questions inside it. The AI Voice Tutor answers what you ask. The virtual lab puts apparatus on screen and runs experiments with your voice.',
         points: [
           'Stories — listen, choose, finish.',
           'Voice tutor — ask anything.',

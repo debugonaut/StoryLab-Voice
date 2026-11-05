@@ -273,7 +273,7 @@
       var meta = labTitles[id] || {};
       return row(
         meta.title || id,
-        meta.subject || 'LabInBox',
+        meta.subject || 'Virtual Lab',
         entry.completed ? 'COMPLETE' : 'IN PROGRESS',
         entry.timestamp || entry.completedAt || null
       );

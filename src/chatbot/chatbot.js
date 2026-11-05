@@ -256,7 +256,7 @@
   /* ─────────────────────────────────────────────────────────
    * listen() — STT with inline text fallback
    * ───────────────────────────────────────────────────────── */
-  function listenLive(onInterim) {
+  function listenLive(onInterim, lang) {
     return new Promise(function (resolve) {
       var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -270,7 +270,7 @@
       _setState('listening');
 
       var rec = new SR();
-      rec.lang = _getLanguageTag();
+      rec.lang = lang || _getLanguageTag();
       rec.interimResults = true;
       rec.continuous = false;
       rec.maxAlternatives = 3;
@@ -344,8 +344,8 @@
     });
   }
 
-  function listen() {
-    return listenLive().then(function (result) { return result.text || ''; });
+  function listen(lang) {
+    return listenLive(undefined, lang).then(function (result) { return result.text || ''; });
   }
 
   /* ─────────────────────────────────────────────────────────
