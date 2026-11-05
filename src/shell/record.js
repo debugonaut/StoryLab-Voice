@@ -296,7 +296,8 @@
     return (
       '<div class="record-section__body record-section__body--flush">' +
       '<table class="ledger-table">' +
-      '<thead><tr><th>Lesson</th><th>Subject</th><th>Status</th><th class="is-right">Finished</th></tr></thead>' +
+      '<caption class="sr-only">Stories and experiments you have finished</caption>' +
+      '<thead><tr><th scope="col">Lesson</th><th scope="col">Subject</th><th scope="col">Status</th><th scope="col" class="is-right">Finished</th></tr></thead>' +
       '<tbody>' +
       (hasRows
         ? storyRows.join('') + labRows.join('')

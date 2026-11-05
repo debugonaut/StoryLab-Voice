@@ -152,6 +152,34 @@ Without a key the app still runs: the badge shows **OFFLINE** and the tutor answ
 
 > Do not serve this project with `python3 -m http.server` for the demo: static-only hosts have no `/api/tutor`, so free-form questions cannot be answered.
 
+### Demo checks
+
+```bash
+npm start            # same as node tools/server.mjs
+npm test             # smoke tests: routes, tutor error paths, guardrail, streaming
+curl http://127.0.0.1:8123/api/tutor/health
+```
+
+`health` must report `"configured":true` before the presentation; otherwise the tutor works only from its saved topics.
+
+### Sharing with a tablet or second device
+
+The server binds `127.0.0.1` by default. On a LAN use:
+
+```bash
+HOST=0.0.0.0 PORT=8123 node tools/server.mjs
+```
+
+Then open `http://<laptop-ip>:8123` on the device. **The microphone will not work over plain HTTP on another device** — Chromium only grants it on `localhost` or HTTPS. For a tablet demo, either present from the laptop or put the server behind HTTPS (a tunnel or a local certificate).
+
+### Tutor behaviour
+
+- Free-form questions go to the model in the student's language, streamed into the readout.
+- The last three exchanges are sent as context, so follow-ups like "and why?" work.
+- Story and lab screens have **ASK ABOUT THIS**, which carries the current step into the tutor.
+- A guardrail refuses clearly unsuitable questions before they reach the provider.
+- Starter chips and the lesson library keep working offline, and are used whenever the model is unavailable.
+
 ---
 
 ## 📚 Documentation Index & References

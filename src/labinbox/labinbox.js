@@ -317,7 +317,7 @@
       '<div class="lb-progress" aria-label="Experiment progress"><span data-progress style="width:0%"></span></div>' +
       '<div class="lb-readout" aria-live="polite" aria-atomic="true"><div class="lb-step" data-step-label>INSTRUCTION</div><p class="lb-instruction" data-instruction>Preparing your laboratory…</p></div>' +
       '<p class="lb-hint" data-hint>Listen to the instruction, then choose an answer or use the microphone.</p>' +
-      '<div class="lb-actions" data-choices></div><div class="lb-actions"><button class="btn btn-primary" type="button" data-listen>◉ SPEAK</button><button class="btn btn-secondary" type="button" data-repeat>↻ REPEAT</button></div>' +
+      '<div class="lb-actions" data-choices></div><div class="lb-actions"><button class="btn btn-primary" type="button" data-listen>◉ SPEAK</button><button class="btn btn-secondary" type="button" data-repeat>↻ REPEAT</button><button class="btn btn-secondary" type="button" data-ask>ASK ABOUT THIS</button></div>' +
       '<p class="lb-hint" data-voice-status>You can also tap an answer instead of speaking.</p></div></div></section>' +
       '<div data-completion></div></div>';
     root.querySelector('[data-back-list]').addEventListener('click', function () { showList(root); });
@@ -325,6 +325,15 @@
       if (token.currentStep && !token.cancelled) speak(token.currentStep.instruction, token);
     });
     root.querySelector('[data-listen]').addEventListener('click', function () { listenForAnswer(token); });
+    root.querySelector('[data-ask]').addEventListener('click', function () {
+      if (!window.Chatbot || !window.Chatbot.setLessonContext) return;
+      var step = token.currentStep || {};
+      window.Chatbot.setLessonContext({
+        title: (token.currentLab && token.currentLab.title) || 'Virtual Lab',
+        text: step.instruction || ''
+      });
+      window.StoryLabRouter.navigate('chatbot');
+    });
   }
 
   function speak(text, token) {
@@ -412,7 +421,7 @@
 
   function rootDisableControls(token, disabled) {
     if (token.cancelled || !token.root.isConnected) return;
-    token.root.querySelectorAll('[data-choices] button,[data-listen],[data-repeat]').forEach(function (button) { button.disabled = disabled; });
+    token.root.querySelectorAll('[data-choices] button,[data-listen],[data-repeat],[data-ask]').forEach(function (button) { button.disabled = disabled; });
   }
 
   function matchesAnswer(transcript, accepts) {

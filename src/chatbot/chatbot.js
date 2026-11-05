@@ -31,6 +31,8 @@
   var _micStream = null;
   var _micCtx = null;
   var _micRAF = null;
+  var _history = [];
+  var _lessonContext = null;
 
   var MAX_LINES = 12;
 
@@ -680,6 +682,16 @@
       });
     }
 
+    if (!_lessonContext) {
+      try {
+        var saved = sessionStorage.getItem('storylab:lesson-context');
+        if (saved) _lessonContext = JSON.parse(saved);
+      } catch (e) { /* private mode */ }
+    }
+    if (_lessonContext) {
+      _appendLine('system', 'About this lesson: ' + (_lessonContext.title || _lessonContext.text));
+    }
+
     _renderChips();
   }
 
@@ -781,20 +793,24 @@
     _setWaveLabel(S.thinking);
     _setControls(true);
 
-    function respond(text) {
-      if (_unmounted || token !== _queryToken) return;
-      _appendLine('tutor', text);
+    function localAnswer() {
+      var match = topic || _matchTopic(transcript);
+      return match ? _answerFor(match) : '';
+    }
+
+    function remember(answer) {
+      _history.push({ role: 'user', content: transcript });
+      _history.push({ role: 'assistant', content: answer });
+      _history = _history.slice(-6);
+    }
+
+    function speakAndSettle(answer) {
       _setWaveLabel(_S().speaking);
-      speak(text).then(function () {
+      speak(answer).then(function () {
         if (_unmounted || token !== _queryToken) return;
         _setControls(false);
         _setWaveLabel(_S().ready);
       });
-    }
-
-    function localAnswer() {
-      var match = topic || _matchTopic(transcript);
-      return match ? _answerFor(match) : '';
     }
 
     /* A tapped starter question is answered from the saved library: instant and
@@ -803,36 +819,108 @@
       _queryTimer = setTimeout(function () {
         _queryTimer = null;
         if (_unmounted || token !== _queryToken) return;
-        respond(localAnswer() || S.notSure);
+        var answer = localAnswer() || S.notSure;
+        _appendLine('tutor', answer);
+        speakAndSettle(answer);
       }, 320);
       return;
     }
 
-    _askAI(transcript).then(function (answer) {
+    /* Stream the answer into the readout so the student sees words while the
+     * model is still thinking. */
+    var line = _appendLine('tutor', '');
+    var textEl = line ? line.querySelector('.chatbot-readout__text') : null;
+
+    function onDelta(partial) {
+      if (_unmounted || token !== _queryToken || !textEl) return;
+      textEl.textContent = partial;
+      var readout = document.getElementById('chatbot-readout');
+      if (readout) readout.scrollTop = readout.scrollHeight;
+    }
+
+    _askAI(transcript, onDelta).then(function (answer) {
       if (_unmounted || token !== _queryToken) return;
-      respond(answer || localAnswer() || S.notSure);
+      var finalText = answer || localAnswer() || S.notSure;
+      if (textEl) textEl.textContent = finalText;
+      remember(finalText);
+      speakAndSettle(finalText);
     });
+  }
+
+  /* Context from StoryLearn or the Virtual Lab: the next questions can be about
+   * the step the student is looking at. */
+  function setLessonContext(context) {
+    _lessonContext = context && context.text
+      ? { title: String(context.title || ''), text: String(context.text) }
+      : null;
+    try {
+      if (_lessonContext) sessionStorage.setItem('storylab:lesson-context', JSON.stringify(_lessonContext));
+      else sessionStorage.removeItem('storylab:lesson-context');
+    } catch (e) { /* private mode */ }
   }
 
   /* ─────────────────────────────────────────────────────────
    * AI tutor — server proxy keeps the API key off the device
    * ───────────────────────────────────────────────────────── */
-  function _askAI(question) {
+  function _askAI(question, onDelta) {
     if (!window.fetch) return Promise.resolve('');
     var controller = ('AbortController' in window) ? new AbortController() : null;
-    var timer = setTimeout(function () { if (controller) controller.abort(); }, 25000);
+    var timer = setTimeout(function () { if (controller) controller.abort(); }, 30000);
 
     return fetch('/api/tutor', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ question: question, language: _lang() }),
+      body: JSON.stringify({
+        question: question,
+        language: _lang(),
+        history: _history.slice(-6),
+        context: _lessonContext ? _lessonContext.text : '',
+        stream: true
+      }),
       signal: controller ? controller.signal : undefined
     }).then(function (response) {
       _setAIBadge(response.ok ? 'online' : 'offline');
       if (!response.ok) return '';
-      return response.json().then(function (data) {
-        return data && typeof data.answer === 'string' ? data.answer.trim() : '';
-      });
+
+      /* Older browsers without streams fall back to the JSON response. */
+      if (!response.body || typeof response.body.getReader !== 'function' || !window.TextDecoder) {
+        return response.json().then(function (data) {
+          return data && typeof data.answer === 'string' ? data.answer.trim() : '';
+        });
+      }
+
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+      var text = '';
+      var done = false;
+
+      function pump() {
+        return reader.read().then(function (chunk) {
+          if (chunk.done || done) return text;
+          buffer += decoder.decode(chunk.value, { stream: true });
+
+          var index;
+          while ((index = buffer.indexOf('\n')) !== -1) {
+            var line = buffer.slice(0, index).trim();
+            buffer = buffer.slice(index + 1);
+            if (line.indexOf('data:') !== 0) continue;
+            var data = line.slice(5).trim();
+            if (data === '[DONE]') { done = true; return text; }
+            try {
+              var parsed = JSON.parse(data);
+              if (parsed && parsed.delta) {
+                text += parsed.delta;
+                if (typeof onDelta === 'function') onDelta(text);
+              }
+            } catch (error) { /* partial frame */ }
+          }
+
+          return pump();
+        });
+      }
+
+      return pump();
     }).catch(function () {
       _setAIBadge('offline');
       return '';
@@ -967,6 +1055,7 @@
     }
 
     readout.scrollTop = readout.scrollHeight;
+    return line;
   }
 
   function _setWaveLabel(label) {
@@ -999,6 +1088,7 @@
       speak: speak,
       listen: listen,
       listenLive: listenLive,
+      setLessonContext: setLessonContext,
       mount: mount,
       unmount: unmount,
       get state() { return _state; }

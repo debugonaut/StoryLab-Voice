@@ -621,6 +621,7 @@
   function _showStepText(text) {
     var el = document.getElementById('sl-text');
     if (el) el.textContent = text;
+    _showStepText.last = text;
   }
 
   function _hideOptions() {
@@ -633,10 +634,20 @@
     if (!el) return;
     el.innerHTML =
       '<button type="button" class="btn btn-secondary story-advance__btn" id="sl-advance-btn">' +
-      '<span>CONTINUE</span>' + window.StoryLabUI.icon('arrow-right') + '</button>';
+      '<span>CONTINUE</span>' + window.StoryLabUI.icon('arrow-right') + '</button>' +
+      '<button type="button" class="btn btn-secondary" id="sl-ask-btn">ASK ABOUT THIS</button>';
     show(el);
     var btn = document.getElementById('sl-advance-btn');
     if (btn) btn.addEventListener('click', onClick);
+    var ask = document.getElementById('sl-ask-btn');
+    if (ask) ask.addEventListener('click', function () {
+      if (!window.Chatbot || !window.Chatbot.setLessonContext) return;
+      window.Chatbot.setLessonContext({
+        title: _story ? _story.title : 'Story',
+        text: _showStepText.last || ''
+      });
+      window.StoryLabRouter.navigate('chatbot');
+    });
   }
 
   function _hideAdvance() {

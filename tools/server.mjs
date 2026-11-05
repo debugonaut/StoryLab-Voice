@@ -3,16 +3,17 @@
  * StoryLab Voice — demo server
  *
  * Serves the static app and proxies tutor questions to an OpenAI-compatible
- * chat API (Groq by default). The API key stays on this machine: it is read
- * from the environment or a local .env file and never sent to the browser.
+ * chat API (Groq by default). The key stays on this machine: it is read from
+ * the environment or a local .env file and never sent to the browser.
  *
  * Usage
  *   node tools/server.mjs
- *   PORT=8123 GROQ_API_KEY=... node tools/server.mjs
+ *   PORT=8123 node tools/server.mjs
+ *   HOST=0.0.0.0 PORT=8123 node tools/server.mjs   # share on the LAN
  *
  * Endpoints
  *   GET  /api/tutor/health   → { configured, model, provider }
- *   POST /api/tutor          → { answer, model, language }
+ *   POST /api/tutor          → { answer, model, language } or an SSE stream
  */
 
 import { createServer } from 'node:http';
@@ -23,8 +24,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
-/* .env is optional and never required in production; values already set in the
- * environment always win. */
+/* .env is optional; values already set in the environment always win. */
 function loadDotEnv() {
   const file = join(ROOT, '.env');
   if (!existsSync(file)) return;
@@ -56,6 +56,10 @@ const HOST = process.env.HOST || '127.0.0.1';
 const API_KEY = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || '';
 const API_BASE = (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, '');
 const MODEL = process.env.GROQ_MODEL || '';
+const MAX_BODY = 16 * 1024;
+const RATE_LIMIT = 40;
+const RATE_WINDOW = 60 * 1000;
+
 /* Groq retires model ids without much notice, so try the configured one first
  * and fall back through current ids. Whichever answers is reused afterwards. */
 const MODEL_CANDIDATES = Array.from(new Set([
@@ -68,15 +72,22 @@ const MODEL_CANDIDATES = Array.from(new Set([
   'llama-3.3-70b-versatile'
 ].filter(Boolean)));
 let activeModel = MODEL_CANDIDATES[0];
-const MAX_BODY = 8 * 1024;
-const RATE_LIMIT = 30;          // requests
-const RATE_WINDOW = 60 * 1000;  // per minute, per client
 
 const SYSTEM_PROMPTS = {
-  en: 'You are StoryLab, a friendly tutor for students in classes 6 to 8 in rural India. Answer in simple English using short sentences and a concrete example. Keep it to three sentences at most. Never use markdown, headings, bullet points or emoji. If the question is not about school learning, gently bring it back to a subject they are studying.',
+  en: 'You are StoryLab, a friendly tutor for students in classes 6 to 8 in rural India. Answer in simple English using short sentences and one concrete example. Keep it to three sentences at most. Never use markdown, headings, bullet points or emoji. If the question is not about school learning, gently bring it back to a subject they are studying.',
   hi: 'आप StoryLab हैं, भारत के गाँवों में कक्षा 6 से 8 के विद्यार्थियों के लिए एक मिलनसार शिक्षक। सरल हिंदी में छोटे वाक्यों में उत्तर दें और एक उदाहरण दें। अधिकतम तीन वाक्य। मार्कडाउन, शीर्षक, बिंदु या इमोजी का उपयोग न करें। यदि प्रश्न पढ़ाई से जुड़ा नहीं है, तो विनम्रता से किसी विषय की ओर लौटाएँ।',
   mr: 'तुम्ही StoryLab आहात, भारतातील गावांमधील इयत्ता 6 ते 8 च्या विद्यार्थ्यांसाठी मैत्रीपूर्ण शिक्षक. सोप्या मराठीत लहान वाक्यांत उत्तर द्या आणि एक उदाहरण द्या. जास्तीत जास्त तीन वाक्ये. मार्कडाउन, शीर्षके, ठिपके किंवा इमोजी वापरू नका. प्रश्न अभ्यासाशी संबंधित नसल्यास नम्रपणे विषयाकडे परत आणा.'
 };
+
+const REFUSALS = {
+  en: 'Let us keep to school subjects. Ask me about a lesson you are studying and I will explain it in simple words.',
+  hi: 'चलो पढ़ाई की बात करें। जो पाठ तुम पढ़ रहे हो उसके बारे में पूछो, मैं आसान शब्दों में समझाऊँगा।',
+  mr: 'आपण अभ्यासाच्या गोष्टी करूया. तुम्ही जो धडा शिकत आहात त्याबद्दल विचारा, मी सोप्या शब्दांत समजावून सांगेन.'
+};
+
+/* A light safety net for a child-facing model: clearly unsuitable requests are
+ * refused before they reach the provider, in the student's language. */
+const UNSAFE = /\b(suicide|self[- ]?harm|kill (myself|yourself)|porn|pornography|sex|sexual|nude|naked|drugs?|cocaine|heroin|weapon|bomb|gun|terrorist|hack (a|an|someone|the)|credit card number|password of)\b/i;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -145,6 +156,122 @@ function sameOrigin(req) {
   }
 }
 
+function cleanHistory(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(-6).map(function (item) {
+    const role = item && item.role === 'assistant' ? 'assistant' : 'user';
+    const content = String((item && item.content) || '').slice(0, 500);
+    return content ? { role: role, content: content } : null;
+  }).filter(Boolean);
+}
+
+function buildMessages(payload, language) {
+  const messages = [{ role: 'system', content: SYSTEM_PROMPTS[language] }];
+  const context = String(payload.context || '').trim();
+  if (context) {
+    messages.push({
+      role: 'system',
+      content: 'The student is looking at this lesson right now: "' + context.slice(0, 600) + '". Prefer answering about it when the question is short or refers to "this".'
+    });
+  }
+  buildHistory(payload).forEach(function (m) { messages.push(m); });
+  messages.push({ role: 'user', content: String(payload.question || '').trim() });
+  return messages;
+}
+
+function buildHistory(payload) {
+  return cleanHistory(payload.history);
+}
+
+function bodyFor(model, messages, stream) {
+  return JSON.stringify({
+    model: model,
+    messages: messages,
+    temperature: 0.4,
+    max_tokens: 320,
+    stream: Boolean(stream)
+  });
+}
+
+async function openUpstream(messages, stream) {
+  const order = [activeModel].concat(MODEL_CANDIDATES.filter(function (m) { return m !== activeModel; }));
+  let lastStatus = 0;
+  let lastDetail = '';
+
+  for (let i = 0; i < order.length; i += 1) {
+    const model = order[i];
+    let attempt;
+    try {
+      attempt = await fetch(API_BASE + '/chat/completions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer ' + API_KEY
+        },
+        body: bodyFor(model, messages, stream),
+        signal: AbortSignal.timeout(30000)
+      });
+    } catch (error) {
+      return { error: 'unreachable', detail: error.message, status: 504 };
+    }
+
+    if (attempt.ok) { activeModel = model; return { response: attempt, model: model }; }
+
+    lastStatus = attempt.status;
+    lastDetail = await attempt.text().catch(function () { return ''; });
+    const modelGone = attempt.status === 404 && /model_not_found|does not exist|do not have access/i.test(lastDetail);
+    if (!modelGone) break;
+    console.warn('[server] Model unavailable, trying the next one:', model);
+  }
+
+  console.warn('[server] Tutor upstream', lastStatus, lastDetail.slice(0, 200).replace(/[\r\n]+/g, ' '));
+  return { error: 'upstream', status: lastStatus === 429 ? 429 : 502, detail: lastDetail };
+}
+
+async function pipeStream(upstream, res) {
+  res.writeHead(200, {
+    'content-type': 'text/event-stream; charset=utf-8',
+    'cache-control': 'no-store, no-transform',
+    connection: 'keep-alive',
+    'x-accel-buffering': 'no'
+  });
+
+  const reader = upstream.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    for (;;) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+
+      let index;
+      while ((index = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, index).trim();
+        buffer = buffer.slice(index + 1);
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if (data === '[DONE]') {
+          res.write('data: [DONE]\n\n');
+          res.end();
+          return;
+        }
+        try {
+          const parsed = JSON.parse(data);
+          const delta = (((parsed.choices || [])[0] || {}).delta || {}).content;
+          if (delta) res.write('data: ' + JSON.stringify({ delta: delta }) + '\n\n');
+        } catch (error) { /* ignore keep-alives and partial frames */ }
+      }
+    }
+  } catch (error) {
+    console.warn('[server] Stream interrupted:', error.message);
+  }
+
+  res.write('data: [DONE]\n\n');
+  res.end();
+}
+
 async function handleTutor(req, res) {
   if (req.method !== 'POST') {
     sendJson(res, 405, { error: 'method_not_allowed' });
@@ -170,12 +297,18 @@ async function handleTutor(req, res) {
 
   const question = String(payload.question || '').trim();
   const language = ['en', 'hi', 'mr'].includes(payload.language) ? payload.language : 'en';
+  const wantsStream = Boolean(payload.stream);
+
   if (!question) {
     sendJson(res, 400, { error: 'empty_question', message: 'Ask a question first.' });
     return;
   }
   if (question.length > 800) {
     sendJson(res, 400, { error: 'question_too_long', message: 'Please ask a shorter question.' });
+    return;
+  }
+  if (UNSAFE.test(question)) {
+    sendJson(res, 200, { answer: REFUSALS[language], model: 'guardrail', language: language });
     return;
   }
   if (!API_KEY) {
@@ -186,59 +319,32 @@ async function handleTutor(req, res) {
     return;
   }
 
-  const messages = [
-    { role: 'system', content: SYSTEM_PROMPTS[language] },
-    { role: 'user', content: question }
-  ];
+  const messages = buildMessages(payload, language);
+  const result = await openUpstream(messages, wantsStream);
 
-  let upstream = null;
-  let upstreamStatus = 0;
-  let lastDetail = '';
-  const order = [activeModel].concat(MODEL_CANDIDATES.filter(function (m) { return m !== activeModel; }));
-
-  for (let i = 0; i < order.length; i += 1) {
-    const model = order[i];
-    let attempt;
-    try {
-      attempt = await fetch(API_BASE + '/chat/completions', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: 'Bearer ' + API_KEY
-        },
-        body: JSON.stringify({ model: model, messages: messages, temperature: 0.4, max_tokens: 320 }),
-        signal: AbortSignal.timeout(20000)
-      });
-    } catch (error) {
-      console.warn('[server] Tutor request failed:', error.name, error.message);
-      sendJson(res, 504, { error: 'upstream_unreachable', message: 'The tutor service could not be reached. Check the connection.' });
-      return;
-    }
-
-    if (attempt.ok) { upstream = attempt; activeModel = model; break; }
-
-    upstreamStatus = attempt.status;
-    lastDetail = await attempt.text().catch(function () { return ''; });
-    const modelGone = attempt.status === 404 && /model_not_found|does not exist|do not have access/i.test(lastDetail);
-    if (!modelGone) break;
-    console.warn('[server] Model unavailable, trying the next one:', model);
+  if (result.error === 'unreachable') {
+    console.warn('[server] Tutor request failed:', result.detail);
+    sendJson(res, 504, { error: 'upstream_unreachable', message: 'The tutor service could not be reached. Check the connection.' });
+    return;
   }
-
-  if (!upstream) {
-    console.warn('[server] Tutor upstream', upstreamStatus, lastDetail.slice(0, 200).replace(/[\r\n]+/g, ' '));
-    const status = upstreamStatus === 429 ? 429 : 502;
-    sendJson(res, status, {
-      error: status === 429 ? 'busy' : 'upstream_error',
-      message: status === 429
+  if (result.error === 'upstream') {
+    sendJson(res, result.status, {
+      error: result.status === 429 ? 'busy' : 'upstream_error',
+      message: result.status === 429
         ? 'The tutor is busy right now. Try again in a moment.'
         : 'The tutor could not answer that. Check the key and model, then try again.'
     });
     return;
   }
 
+  if (wantsStream) {
+    await pipeStream(result.response, res);
+    return;
+  }
+
   let data;
   try {
-    data = await upstream.json();
+    data = await result.response.json();
   } catch (error) {
     sendJson(res, 502, { error: 'bad_upstream_response', message: 'The tutor sent an answer we could not read.' });
     return;
@@ -334,4 +440,7 @@ server.on('error', function (error) {
 server.listen(PORT, HOST, function () {
   console.log('[server] StoryLab running at http://' + HOST + ':' + PORT);
   console.log('[server] AI tutor: ' + (API_KEY ? 'connected (model ' + activeModel + ')' : 'no key — add GROQ_API_KEY to .env'));
+  if (HOST === '0.0.0.0') {
+    console.log('[server] LAN mode: open http://<this-machine-ip>:' + PORT + ' — the microphone needs HTTPS on other devices.');
+  }
 });

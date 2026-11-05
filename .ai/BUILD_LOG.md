@@ -226,3 +226,12 @@
 - Starter chips still answer instantly from the saved topic library, so an offline or unconfigured machine keeps working; free-form questions fall back to it when the AI is unavailable.
 - Tutor header shows an `AI ON` / `OFFLINE` badge fed by `/api/tutor/health`; a TYPE button opens the inline question dialog so a demo never dead-ends.
 - Voice input now drives a real level meter (`getUserMedia` + `AnalyserNode`): the waveform follows the microphone while listening, which shows audio is reaching the browser even before transcription returns.
+
+### Demo hardening pass
+
+- Tutor answers now stream (SSE) into the readout, keep the last three exchanges as context, and accept the current story/lab step through `Chatbot.setLessonContext()`. StoryLearn and the Virtual Lab each got an **ASK ABOUT THIS** button.
+- `tools/server.mjs` gained a guardrail for unsuitable questions, lesson context, history and streamed pass-through, and honours `HOST=0.0.0.0` for LAN demos. The proxy still retries retired model ids automatically.
+- `npm start` and `npm test` exist (`package.json`, no dependencies). `tools/smoke.mjs` covers static routes, 404/400/403, the guardrail, health, a real answer and SSE — the two bugs that broke the first demo (`require` in ESM, retired model) would now fail the suite.
+- Story photos re-encoded: 2044 KB → 1280 KB (the map alone 622 KB → 599 KB, others roughly halved). `CACHE_VERSION` bumped to `storylab-v10` so devices pick them up.
+- Accessibility: the progress ledger table has a caption and `scope` on its headers; the lab's ASK control is included in the disabled-state handling.
+- Not done in this pass: full Hindi/Marathi coverage of the shell screens (only the Voice Tutor is localized), and additional lab experiments.
