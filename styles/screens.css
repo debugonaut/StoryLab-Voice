@@ -3333,6 +3333,33 @@
 .chatbot-wave-wrap .waveform[data-state="speaking"] .waveform__bar:nth-child(6) { animation-delay: 0.09s; height: 36px; }
 .chatbot-wave-wrap .waveform[data-state="speaking"] .waveform__bar:nth-child(7) { animation-delay: 0.00s; height: 20px; }
 
+/* live microphone level — bars follow the audio actually reaching the browser */
+.chatbot-wave-wrap .waveform[data-live="1"] .waveform__bar {
+  animation: none;
+  background: var(--color-ok);
+  height: calc(6px + var(--mic-level, 0) * 50px);
+  transition: height 60ms linear;
+}
+
+.chatbot-ai {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-faint);
+  white-space: nowrap;
+  margin-left: auto;
+}
+.chatbot-ai.is-online {
+  color: var(--color-ok);
+  border-color: currentColor;
+}
+.chatbot-ai.is-offline {
+  color: var(--color-text-faint);
+}
+
 @keyframes cb-bar-pulse {
   from { height: 8px;  opacity: 0.7; }
   to   { height: 38px; opacity: 1.0; }

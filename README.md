@@ -131,21 +131,26 @@ Detailed offline architectural specifications are documented in [`.ai/OFFLINE.md
 
 ### Running the Application
 
-Clone the repository and launch a lightweight HTTP server in the project root:
+Clone the repository and start the demo server. It serves the app **and** proxies tutor questions, so the AI answer and the saved topics both work:
 
 ```bash
 # Clone the repository
 git clone https://github.com/debugonaut/StoryLab-Voice.git
 cd StoryLab-Voice
 
-# Run with Python 3
-python3 -m http.server 8000
+# 1. Add your key once (never commit it)
+cp .env.example .env
+# edit .env and set GROQ_API_KEY=... from https://console.groq.com/keys
 
-# Or run with Node.js
-npx serve .
+# 2. Run the server (Node 18+) — no install step, no dependencies
+node tools/server.mjs
 ```
 
-Open `http://localhost:8000` in Google Chrome, Microsoft Edge, or any Chromium-based browser on desktop or Android.
+Open `http://127.0.0.1:8123` in Google Chrome or Microsoft Edge on desktop or Android, and allow the microphone when the browser asks.
+
+Without a key the app still runs: the badge shows **OFFLINE** and the tutor answers its starter topics. Voice recognition needs `localhost`/`127.0.0.1` (or HTTPS) plus a network connection, because Chromium sends audio to its speech service.
+
+> Do not serve this project with `python3 -m http.server` for the demo: static-only hosts have no `/api/tutor`, so free-form questions cannot be answered.
 
 ---
 

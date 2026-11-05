@@ -73,7 +73,7 @@ window.Chatbot = {
 2. **Intent matching**
    - A local keyword map with at least three real intents: plants/photosynthesis, division/share, greeting.
    - A warm unknown fallback that invites a supported topic.
-   - No cloud calls, API keys, or external requests.
+   - No API keys in the browser: free-form questions go to `/api/tutor`, a local proxy that holds the key. Offline, the local keyword map still answers the starter topics.
 
 3. **Voice behaviour**
    - Read the profile language and use its `languageTag` for `utter.lang` and `rec.lang`; fall back to `en-IN`.

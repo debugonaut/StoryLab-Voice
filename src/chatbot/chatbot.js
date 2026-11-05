@@ -28,6 +28,9 @@
   var _queryTimer = null;
   var _root = null;
   var _category = 'all';
+  var _micStream = null;
+  var _micCtx = null;
+  var _micRAF = null;
 
   var MAX_LINES = 12;
 
@@ -54,6 +57,7 @@
       unsupported: 'This browser cannot listen. Type your question below, or tap one above.',
       network: 'Listening needs a connection. Tap a question above instead.',
       notSure: 'I am not sure about that yet. Ask me about math, science, the world, or everyday life.',
+      aiOnline: 'AI ON', aiOffline: 'OFFLINE', type: 'TYPE',
       switched: 'Answering in English now.'
     },
     hi: {
@@ -66,6 +70,7 @@
       unsupported: 'यह ब्राउज़र सुन नहीं सकता। नीचे सवाल लिखो, या ऊपर से चुनो।',
       network: 'सुनने के लिए इंटरनेट चाहिए। ऊपर से सवाल चुनो।',
       notSure: 'इस बारे में मुझे अभी पक्का नहीं पता। गणित, विज्ञान, दुनिया या रोज़मर्रा की बातें पूछो।',
+      aiOnline: 'एआई चालू', aiOffline: 'ऑफ़लाइन', type: 'लिखो',
       switched: 'अब मैं हिंदी में जवाब दूँगा।'
     },
     mr: {
@@ -78,6 +83,7 @@
       unsupported: 'हा ब्राउझर ऐकू शकत नाही. खाली प्रश्न लिहा, किंवा वरून निवडा.',
       network: 'ऐकण्यासाठी इंटरनेट लागते. वरून प्रश्न निवडा.',
       notSure: 'याबद्दल मला अजून नक्की माहीत नाही. गणित, विज्ञान, जग किंवा रोजच्या गोष्टी विचारा.',
+      aiOnline: 'एआय सुरू', aiOffline: 'ऑफलाइन', type: 'लिहा',
       switched: 'आता मी मराठीत उत्तर देईन.'
     }
   };
@@ -567,6 +573,7 @@
           ' data-lang="' + l.id + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + esc(l.label) + '</button>';
       }).join(''),
       '    </div>',
+      '    <span class="chatbot-ai" id="cb-ai-badge">AI</span>',
       '    <span class="led led--ok" id="cb-state-led" aria-hidden="true"></span>',
       '  </div>',
       '  <div class="chatbot-body">',
@@ -609,6 +616,9 @@
       '      <button class="btn btn-primary chatbot-speak-btn" id="cb-speak-btn">',
       '        ' + icon('mic') + ' ' + esc(S.speak),
       '      </button>',
+      '      <button class="btn btn-secondary" id="cb-type-btn">',
+      '        ' + icon('chat') + ' ' + esc(S.type),
+      '      </button>',
       '      <button class="btn btn-secondary" id="cb-stop-btn" disabled>',
       '        ' + icon('x') + ' ' + esc(S.stop),
       '      </button>',
@@ -618,8 +628,11 @@
     ].join('\n');
 
     var speakBtn = document.getElementById('cb-speak-btn');
+    var typeBtn  = document.getElementById('cb-type-btn');
     var stopBtn  = document.getElementById('cb-stop-btn');
     if (speakBtn) speakBtn.addEventListener('click', _handleAsk);
+    if (typeBtn)  typeBtn.addEventListener('click', _handleType);
+    _refreshAIStatus();
 
     if (stopBtn) stopBtn.addEventListener('click', function () {
       _queryToken += 1;
@@ -627,6 +640,7 @@
       if (_queryTimer) { clearTimeout(_queryTimer); _queryTimer = null; }
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       if (_activeRec) { try { _activeRec.stop(); } catch (e) {} }
+      _stopMeter();
       _setState('idle');
       _setWaveLabel(_S().ready);
       _setControls(false);
@@ -699,6 +713,7 @@
     if (_queryTimer) { clearTimeout(_queryTimer); _queryTimer = null; }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     if (_activeRec) { try { _activeRec.stop(); } catch (e) {} _activeRec = null; }
+    _stopMeter();
     _setState('idle');
     _listening = false;
     _showHeard('');
@@ -733,6 +748,7 @@
     _setWaveLabel(S.listening);
     _showHeard('');
     _appendLine('system', S.listeningLine);
+    _startMeter();
 
     listenLive(function (live) {
       if (_unmounted) return;
@@ -740,6 +756,7 @@
       _setWaveLabel(S.listening);
     }).then(function (result) {
       _listening = false;
+      _stopMeter();
       if (_unmounted) return;
       _setControls(false);
       _setWaveLabel(S.ready);
@@ -764,19 +781,157 @@
     _setWaveLabel(S.thinking);
     _setControls(true);
 
-    _queryTimer = setTimeout(function () {
-      _queryTimer = null;
+    function respond(text) {
       if (_unmounted || token !== _queryToken) return;
-      var match = topic || _matchTopic(transcript);
-      var response = match ? _answerFor(match) : S.notSure;
-      _appendLine('tutor', response);
-      _setWaveLabel(S.speaking);
-      speak(response).then(function () {
+      _appendLine('tutor', text);
+      _setWaveLabel(_S().speaking);
+      speak(text).then(function () {
         if (_unmounted || token !== _queryToken) return;
         _setControls(false);
         _setWaveLabel(_S().ready);
       });
-    }, 380);
+    }
+
+    function localAnswer() {
+      var match = topic || _matchTopic(transcript);
+      return match ? _answerFor(match) : '';
+    }
+
+    /* A tapped starter question is answered from the saved library: instant and
+     * free. Anything the student says or types goes to the AI tutor first. */
+    if (topic) {
+      _queryTimer = setTimeout(function () {
+        _queryTimer = null;
+        if (_unmounted || token !== _queryToken) return;
+        respond(localAnswer() || S.notSure);
+      }, 320);
+      return;
+    }
+
+    _askAI(transcript).then(function (answer) {
+      if (_unmounted || token !== _queryToken) return;
+      respond(answer || localAnswer() || S.notSure);
+    });
+  }
+
+  /* ─────────────────────────────────────────────────────────
+   * AI tutor — server proxy keeps the API key off the device
+   * ───────────────────────────────────────────────────────── */
+  function _askAI(question) {
+    if (!window.fetch) return Promise.resolve('');
+    var controller = ('AbortController' in window) ? new AbortController() : null;
+    var timer = setTimeout(function () { if (controller) controller.abort(); }, 25000);
+
+    return fetch('/api/tutor', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question: question, language: _lang() }),
+      signal: controller ? controller.signal : undefined
+    }).then(function (response) {
+      _setAIBadge(response.ok ? 'online' : 'offline');
+      if (!response.ok) return '';
+      return response.json().then(function (data) {
+        return data && typeof data.answer === 'string' ? data.answer.trim() : '';
+      });
+    }).catch(function () {
+      _setAIBadge('offline');
+      return '';
+    }).then(function (answer) {
+      clearTimeout(timer);
+      return answer;
+    }, function () {
+      clearTimeout(timer);
+      return '';
+    });
+  }
+
+  function _refreshAIStatus() {
+    if (!window.fetch) { _setAIBadge('offline'); return; }
+    fetch('/api/tutor/health', { cache: 'no-store' }).then(function (response) {
+      return response.ok ? response.json() : null;
+    }).then(function (data) {
+      _setAIBadge(data && data.configured ? 'online' : 'offline');
+    }).catch(function () { _setAIBadge('offline'); });
+  }
+
+  function _setAIBadge(state) {
+    var badge = document.getElementById('cb-ai-badge');
+    if (!badge) return;
+    var online = state === 'online';
+    var S = _S();
+    badge.textContent = online ? S.aiOnline : S.aiOffline;
+    badge.classList.toggle('is-online', online);
+    badge.classList.toggle('is-offline', !online);
+    badge.setAttribute('title', online
+      ? 'Questions are answered by the AI tutor.'
+      : 'AI tutor not connected — answers come from the saved topics.');
+  }
+
+  function _handleType() {
+    if (_listening) return;
+    _listening = true;
+    _inlineTextFallback(function (text) {
+      _listening = false;
+      if (_unmounted) return;
+      _setControls(false);
+      if (!text) return;
+      _showHeard(text);
+      _runQuery(text, null);
+    });
+  }
+
+  /* Live microphone level — proves audio is actually reaching the browser
+   * before recognition returns any words. */
+  function _startMeter() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    var wave = document.getElementById('chatbot-waveform');
+    if (!wave) return;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      if (_unmounted || !_listening) {
+        stream.getTracks().forEach(function (track) { try { track.stop(); } catch (e) {} });
+        return;
+      }
+      _micStream = stream;
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      _micCtx = new Ctx();
+      var source = _micCtx.createMediaStreamSource(stream);
+      var analyser = _micCtx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+      var buffer = new Uint8Array(analyser.frequencyBinCount);
+      wave.setAttribute('data-live', '1');
+
+      function tick() {
+        if (!_listening || !_micStream) return;
+        analyser.getByteTimeDomainData(buffer);
+        var sum = 0;
+        for (var i = 0; i < buffer.length; i++) {
+          var value = (buffer[i] - 128) / 128;
+          sum += value * value;
+        }
+        var rms = Math.min(1, Math.sqrt(sum / buffer.length) * 4);
+        wave.style.setProperty('--mic-level', rms.toFixed(3));
+        _micRAF = requestAnimationFrame(tick);
+      }
+      tick();
+    }).catch(function (error) {
+      console.warn('[Chatbot] Microphone level unavailable:', error.name);
+    });
+  }
+
+  function _stopMeter() {
+    if (_micRAF) { cancelAnimationFrame(_micRAF); _micRAF = null; }
+    var wave = document.getElementById('chatbot-waveform');
+    if (wave) {
+      wave.removeAttribute('data-live');
+      wave.style.removeProperty('--mic-level');
+    }
+    if (_micCtx) { try { _micCtx.close(); } catch (e) {} _micCtx = null; }
+    if (_micStream) {
+      _micStream.getTracks().forEach(function (track) { try { track.stop(); } catch (e) {} });
+      _micStream = null;
+    }
   }
 
   function _appendLine(who, text) {

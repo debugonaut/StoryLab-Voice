@@ -219,3 +219,10 @@
 - Language audit with the profile set to हिंदी: only the Voice Tutor renders localized copy (~471 Devanagari characters on screen). Home, Stories, Virtual Lab, Progress and onboarding stay English (0 Devanagari characters), and every lesson and lab instruction is English-only.
 - The plumbing exists (`StoryLabState.setLanguage`, `en-IN` / `hi-IN` / `mr-IN` tags, `Chatbot.listen(lang)`), but the `STRINGS` / `I18N` tables live only in `src/chatbot/chatbot.js`.
 - Approximate user-facing English strings still hardcoded elsewhere: onboarding ~82, progress ~39, router chrome ~27, home ~24, virtual lab ~22, plus all story and lab content.
+
+### End-to-end AI tutor + voice input
+
+- Removed the "predefined answers only" behaviour: spoken and typed questions are sent to `/api/tutor`, served by `tools/server.mjs`, which proxies an OpenAI-compatible chat API (Groq by default). The key is read from `.env` on this machine and never reaches the browser.
+- Starter chips still answer instantly from the saved topic library, so an offline or unconfigured machine keeps working; free-form questions fall back to it when the AI is unavailable.
+- Tutor header shows an `AI ON` / `OFFLINE` badge fed by `/api/tutor/health`; a TYPE button opens the inline question dialog so a demo never dead-ends.
+- Voice input now drives a real level meter (`getUserMedia` + `AnalyserNode`): the waveform follows the microphone while listening, which shows audio is reaching the browser even before transcription returns.
