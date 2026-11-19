@@ -9,7 +9,7 @@
  *   background sync  drain sync_queue into sync_archive
  */
 
-var CACHE_VERSION = 'storylab-v13';
+var CACHE_VERSION = 'storylab-v14';
 var DB_NAME = 'storylab_v1';
 var DB_VERSION = 2;
 
@@ -169,8 +169,22 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  event.respondWith(staleWhileRevalidate(event.request));
+  /* Scripts and data go to the network first, so a new build is live on the
+   * first reload. The cache still answers when the connection is gone. */
+  event.respondWith(networkFirstAsset(event.request));
 });
+
+function networkFirstAsset(request) {
+  return fetch(request).then(function (response) {
+    if (response && response.status === 200 && response.type === 'basic') {
+      var copy = response.clone();
+      caches.open(CACHE_VERSION).then(function (cache) { cache.put(request, copy); });
+    }
+    return response;
+  }).catch(function () {
+    return caches.match(request);
+  });
+}
 
 /* ------------------------------------------------------------
    Background Sync — flush the queue from the service worker

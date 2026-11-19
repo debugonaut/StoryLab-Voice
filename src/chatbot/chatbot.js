@@ -415,7 +415,9 @@
         settled = true;
         cleanup();
         var clean = String(text || '').trim();
-        resolve({ text: clean, confidence: 0, reason: reason || (clean ? 'ok' : 'no-speech') });
+        var why = reason || (clean ? 'ok' : 'no-speech');
+        console.log('[Chatbot] recorder →', why, clean ? '(' + clean.length + ' chars)' : '(no text)');
+        resolve({ text: clean, confidence: 0, reason: why });
       }
 
       function stopRecorder() {
@@ -437,8 +439,9 @@
         try {
           recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
         } catch (error) {
-          finish('', 'error');
-          return;
+          /* Some builds advertise a type they then refuse: use the default. */
+          try { recorder = new MediaRecorder(stream); }
+          catch (fallbackError) { finish('', 'error'); return; }
         }
 
         recorder.ondataavailable = function (event) {
@@ -447,6 +450,7 @@
         recorder.onerror = function () { finish('', 'error'); };
         recorder.onstop = function () {
           var blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+          console.log('[Chatbot] recorded', blob.size, 'bytes of', blob.type);
           if (!blob.size) { finish('', 'no-speech'); return; }
           var code = String(lang || _getLanguageTag()).slice(0, 2).toLowerCase();
           fetch('/api/transcribe?lang=' + encodeURIComponent(code), {
@@ -469,6 +473,7 @@
         try {
           var AudioCtx = window.AudioContext || window.webkitAudioContext;
           ctx = new AudioCtx();
+          if (ctx.state === 'suspended' && typeof ctx.resume === 'function') ctx.resume();
           var analyser = ctx.createAnalyser();
           analyser.fftSize = 1024;
           ctx.createMediaStreamSource(stream).connect(analyser);
@@ -1271,5 +1276,8 @@
     configurable: false
   });
 
+  console.log('[Chatbot] build stt-2 | browser recogniser: ' +
+    (window.SpeechRecognition || window.webkitSpeechRecognition ? 'yes' : 'no') +
+    ' | recorder fallback: ' + (_canRecord() ? 'ready' : 'unavailable'));
   console.log('[Chatbot] window.Chatbot ready');
 })();
