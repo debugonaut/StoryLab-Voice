@@ -1,0 +1,41 @@
+%% StoryLab Voice — ask the AI tutor a question (online path)
+%% Render at https://mermaid.live or paste into the Canva sequence-diagram frame.
+sequenceDiagram
+    autonumber
+    actor S as Student
+    participant UI as Browser UI (chatbot.js)
+    participant SR as Web Speech (STT)
+    participant TS as TutorSession
+    participant API as Node proxy /api/tutor
+    participant G as Groq inference API
+    participant TTS as Web Speech (TTS)
+
+    S->>UI: presses MIC (or TYPE)
+    UI->>SR: start recognition (lang = profile language)
+    SR-->>UI: interim transcript
+    SR-->>UI: final transcript
+    UI->>TS: ask(transcript)
+
+    alt curated topic matched
+        TS-->>UI: answer from local library (no network)
+    else free-form question
+        TS->>TS: append last 3 exchanges + current lesson step
+        TS->>API: POST {question, language, history, context, stream:true}
+        API->>API: same-origin check, 16 KB cap, rate limit, guardrail
+        alt guardrail refuses
+            API-->>TS: refusal in student's language
+        else allowed
+            API->>G: chat completion (stream)
+            loop each token
+                G-->>API: delta
+                API-->>TS: SSE data: {"delta": "..."}
+                TS-->>UI: append text to readout
+            end
+            API-->>TS: data: [DONE]
+        end
+    end
+
+    TS-->>UI: final answer text
+    UI->>TTS: speak(answer)
+    TTS-->>S: audio
+    TS->>TS: push exchange to history (max 6 messages)

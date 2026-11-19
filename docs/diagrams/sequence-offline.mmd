@@ -1,0 +1,27 @@
+%% StoryLab Voice — ask a question with no network (offline path)
+sequenceDiagram
+    autonumber
+    actor S as Student
+    participant UI as Browser UI (chatbot.js)
+    participant TS as TutorSession
+    participant LIB as Curated topic library
+    participant IDB as IndexedDB (storylab_v1)
+    participant TTS as Web Speech (TTS)
+
+    S->>UI: presses MIC (or TYPE)
+    Note over UI: service worker served the app shell from cache
+    UI->>TS: ask(transcript)
+    TS->>TS: POST /api/tutor fails (network error)
+    TS->>TS: badge switches to OFFLINE
+    TS->>LIB: match transcript against 22 topics
+    alt topic matched
+        LIB-->>TS: curated answer
+        TS-->>UI: answer (English / Hindi / Marathi variant)
+    else no match
+        TS-->>UI: "I could not reach the tutor. Try one of these questions."
+        TS-->>UI: show starter chips
+    end
+    UI->>TTS: speak(answer)
+    TTS-->>S: audio
+    TS->>IDB: queue event (question, module, timestamp)
+    Note over IDB: flushed by SyncService when the network returns

@@ -107,7 +107,7 @@ Run `npx impeccable context` at session start.
 
 ## Offline Strategy
 
-See [`OFFLINE.md`](./OFFLINE.md) — TL;DR: SW caches every shell asset, font, and data file on install; IndexedDB stores profile, journey, sessions, progress, activity, and a sync queue; Background Sync drains the queue into a local archive when a tab is closed. Voice = Web Speech API (zero bytes, on-device). App payload is under 1 MB; total budget ≤ 25 MB.
+See [`OFFLINE.md`](./OFFLINE.md) — TL;DR: SW caches every shell asset, font, and data file on install; IndexedDB stores profile, journey, sessions, progress, activity, and a sync queue; Background Sync drains the queue into a local archive when a tab is closed. Voice = Web Speech API (TTS on-device; STT uses the browser's speech service, so it needs a network). Free-form tutor questions go through the Node proxy to Groq; everything else is local. App payload is under 1 MB; total budget ≤ 25 MB.
 
 ---
 
@@ -122,6 +122,6 @@ See [`BUILD_LOG.md`](./BUILD_LOG.md) for checkpoint-by-checkpoint status.
 1. **Vanilla JS only** — no React, no Vue, no bundler
 2. **One global per module** — `window.StoryLearn`, `window.Chatbot`, `window.LabInBox`, `window.DB`, `window.StoryLabRouter`
 3. **All content is JSON** — no backend required for prototype
-4. **Voice = Web Speech API** — free, in-browser, no API key
+4. **Voice = Web Speech API** — free and in-browser, no key; the AI tutor key stays server-side in `.env` behind `/api/tutor`
 5. **Progress = IndexedDB via `window.DB`** — never touch IDB directly
 6. **Mark BUILD_LOG.md** after every successful checkpoint

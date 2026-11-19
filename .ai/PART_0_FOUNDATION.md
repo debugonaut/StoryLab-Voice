@@ -128,7 +128,7 @@ window.DB.getAll(store)
 - Assets are stale-while-revalidate; fonts/icons are cache-first.
 - `online`/`offline` events repaint the banner and header chip. The full record flow keeps working offline.
 - Writes append to `sync_queue`. `StoryLabNetwork.syncNow()` drains it into `sync_archive` (or a remote endpoint if `window.STORYLAB_SYNC_ENDPOINT` is set). Background Sync uses the same queue from `sw.js` so a closed tab can still drain it.
-- No cloud credentials or personal data leave the device in the prototype.
+- No credentials or personal data are stored on the device. The AI tutor key lives only in the server's git-ignored `.env`; the browser never receives it.
 
 ---
 

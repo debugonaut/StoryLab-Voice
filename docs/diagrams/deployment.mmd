@@ -1,0 +1,39 @@
+%% StoryLab Voice — deployment diagram (current)
+%% Mermaid has no native deployment type; this flowchart uses UML-style node boxes.
+flowchart TB
+    subgraph Device["&laquo;device&raquo; Student Android phone (Android 8+, 2 GB RAM)"]
+        direction TB
+        Chrome["&laquo;execution environment&raquo; Chrome / Chromium"]
+        SW["&laquo;artifact&raquo; sw.js<br/>CacheStorage: storylab-v10"]
+        IDB[("&laquo;artifact&raquo; IndexedDB<br/>storylab_v1")]
+        Shell["&laquo;artifact&raquo; index.html + styles + src/*.js"]
+        Speech["&laquo;component&raquo; Web Speech API<br/>STT / TTS (browser service)"]
+        Canvas["&laquo;component&raquo; Canvas 2D lab engine"]
+        Chrome --> Shell
+        Chrome --> SW
+        Chrome --> IDB
+        Shell --> Speech
+        Shell --> Canvas
+    end
+
+    subgraph AppServer["&laquo;server&raquo; Node.js 18 host (laptop or school machine)"]
+        direction TB
+        Static["&laquo;component&raquo; static file server<br/>correct MIME types"]
+        Proxy["&laquo;component&raquo; /api/tutor proxy<br/>guardrail · 40 req/min · 16 KB cap<br/>same-origin check"]
+        Env[/"&laquo;artifact&raquo; .env<br/>GROQ_API_KEY (git-ignored)"/]
+        Static --> Env
+        Proxy --> Env
+    end
+
+    subgraph Cloud["&laquo;external service&raquo; Groq inference API"]
+        Model["openai/gpt-oss-20b<br/>(fallback list for retired ids)"]
+    end
+
+    subgraph Optional["&laquo;external service&raquo; optional school sync endpoint (future)"]
+        Sync["teacher / analytics API"]
+    end
+
+    Chrome -- "HTTP(S) GET static assets" --> Static
+    Chrome -- "POST /api/tutor<br/>SSE stream back" --> Proxy
+    Proxy -- "HTTPS + bearer key<br/>no key ever reaches the browser" --> Model
+    IDB -. "queued events, when online" .-> Sync

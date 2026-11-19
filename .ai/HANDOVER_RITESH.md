@@ -73,7 +73,7 @@ window.Chatbot = {
 2. **Intent matching**
    - A local keyword map with at least three real intents: plants/photosynthesis, division/share, greeting.
    - A warm unknown fallback that invites a supported topic.
-   - No cloud calls, API keys, or external requests.
+   - Curated answers must work with no network. Free-form questions may use the cloud tutor through `POST /api/tutor`; the API key lives only in the server's git-ignored `.env` and never reaches client code.
 
 3. **Voice behaviour**
    - Read the profile language and use its `languageTag` for `utter.lang` and `rec.lang`; fall back to `en-IN`.
@@ -107,7 +107,7 @@ window.Chatbot = {
 - [ ] Text fallback works without `SpeechRecognition`, with no `window.prompt()`.
 - [ ] StoryLearn can call `speak()` and `listen()` mid-story.
 - [ ] LabInBox can call `speak()` and `listen()` mid-experiment.
-- [ ] Works offline after the first load; no network requests for answers.
+- [ ] Works offline after the first load; curated answers need no network. Free-form questions fall back to a curated answer or a prompt when the tutor is unreachable.
 - [ ] 390px mobile layout has no horizontal overflow and usable controls.
 - [ ] Browser console is clean.
 - [ ] No `STUB` text or placeholder responses remain.

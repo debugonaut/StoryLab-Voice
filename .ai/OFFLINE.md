@@ -18,7 +18,7 @@ The app must boot, run stories, run labs, and save progress **completely offline
 | Asset Cache | **Service Worker + CacheStorage** | Caches HTML, CSS, JS, JSON on first install |
 | Data Store | **IndexedDB** (via thin wrapper `window.DB`) | Stores student progress, session state |
 | Sync Queue | **Background Sync API** | Queues analytics events; flushes when back online |
-| Voice | **Web Speech API** (SpeechSynthesis + SpeechRecognition) | 100% on-device, no network |
+| Voice | **Web Speech API** (SpeechSynthesis + SpeechRecognition) | TTS is on-device; STT in Chromium sends audio to the browser's speech service, so it needs a network |
 | Install | **PWA manifest + beforeinstallprompt** | "Add to Home Screen" = native-like app |
 
 ---
@@ -130,7 +130,7 @@ Banner style: amber strip at top of viewport. Mechanical stencil text: `◈ OFFL
 | Voice Q&A within stories | ✅ Yes | Web Speech API on-device |
 | Lab simulation | ✅ Yes | Pure canvas + JS |
 | Lab voice commands | ✅ Yes | Web Speech API on-device |
-| Chatbot Q&A | ✅ Yes | Static intent-matching, no cloud AI needed for prototype |
+| Chatbot Q&A | ✅ Yes (curated) | 22 curated topics answer offline; free-form questions use the cloud tutor only when a network is available |
 | Progress save | ✅ Yes | IndexedDB |
 | Analytics sync | ⏳ Queued | Flushes automatically when online |
 | Teacher dashboard | ❌ No | Out of scope for prototype |

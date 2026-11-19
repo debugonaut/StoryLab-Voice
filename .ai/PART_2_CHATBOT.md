@@ -13,7 +13,7 @@
 
 - `src/chatbot/chatbot.js` — exports `window.Chatbot`
 - Chatbot UI screen (when navigated to directly)
-- Intent matching for Q&A (static keyword map — no cloud AI needed for prototype)
+- Curated intent matching for offline answers (22 topics, 5 categories); free-form questions are proxied to the cloud tutor and streamed back
 
 ---
 

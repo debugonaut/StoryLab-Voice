@@ -6,7 +6,9 @@ This document details the architectural design, UML models, data flow, and hardw
 
 ## 🏛️ 1. High-Level Architecture Overview
 
-StoryLab Voice is an offline-first, client-side Progressive Web Application designed to operate in low-resource environments (Android 8+, 2 GB RAM, ≤ 25 MB storage budget, zero persistent connectivity).
+StoryLab Voice is an offline-first Progressive Web Application designed to operate in low-resource environments (Android 8+, 2 GB RAM, ≤ 25 MB storage budget, intermittent connectivity).
+
+It is offline-**first**, not offline-**only**: every lesson, image and curated answer is bundled and served from the service-worker cache, so the app is fully usable with no network at all. When a network is present, free-form questions are answered by a language model behind a server-side proxy, and answers are spoken back to the student. The proxy is the only cloud dependency, it is optional at runtime, and no key ever reaches the browser.
 
 ```mermaid
 graph TD
@@ -25,8 +27,14 @@ graph TD
         Deck[Control Deck & Learning Record]
     end
 
-    subgraph Remote [Intermittent 2G/3G Cloud Sync]
-        Cloud[Teacher Dashboard / Analytics API]
+    subgraph Server [Node.js 18 App Server]
+        Static[Static File Server]
+        Proxy[/api/tutor proxy\nGuardrail · Rate Limit · Key in env]
+    end
+
+    subgraph Remote [Optional Cloud Services]
+        Groq[[Groq Inference API]]
+        Cloud[School Sync / Analytics API]
     end
 
     UI --> Modules
@@ -36,7 +44,10 @@ graph TD
     LabInBox --> Audio
     Modules --> IDB
     SW -.->|Cache-First Asset Serving| UI
-    IDB -->|Background Sync Queue| Cloud
+    Static --> SW
+    Chatbot -->|POST /api/tutor, SSE| Proxy
+    Proxy -->|HTTPS| Groq
+    IDB -.->|Queued Events, When Online| Cloud
 ```
 
 ---
@@ -47,13 +58,13 @@ The system design was developed across seven Software Architecture and Design (S
 
 | Practical | UML Modeling Domain | Key Focus Areas | Reference Document |
 | :--- | :--- | :--- | :--- |
-| **SRS** | **IEEE 830 Specification** | Spiral SDLC model, risk-driven iterations, edge AI voice constraints | [SAD_Assignment1-1-1.pdf](../SAD_Assignment1-1-1.pdf) |
+| **SRS** | **IEEE 830 Specification** | Spiral SDLC model, risk-driven iterations, offline-first voice constraints | [SAD_Assignment1-1-1.pdf](../SAD_Assignment1-1-1.pdf) |
 | **PR-02** | **Use Case Analysis** | Actors: *Student*, *Teacher*, *Admin*, *AI Assistant*; Use Cases: UC-01 (Chatbot), UC-02 (StoryLearn), UC-03 (LabInBox) | [sadas2.pdf](../sadas2.pdf) |
 | **PR-03** | **Structural Design** | Class, Deployment (PWA to low-spec Android), and Package diagrams | [sadas3-1.pdf](../sadas3-1.pdf) |
 | **PR-04** | **System Architecture** | Component diagrams, Composite structure, and UML Profile extensions | [sadas4-1.pdf](../sadas4-1.pdf) |
 | **PR-05** | **Workflow & State** | Activity diagrams for lesson branches; State Machines for voice interaction states (`idle`, `listening`, `thinking`, `speaking`) | [sadas5.pdf](../sadas5.pdf) |
 | **PR-06** | **Interaction Diagrams** | Sequence diagrams for voice query processing; Communication diagrams for canvas apparatus updates | [sadas6.pdf](../sadas6.pdf) |
-| **PR-07** | **Complex Interactions** | Interaction Overview and Timing diagrams for the 1.8s voice latency budget | [sadas7.pdf](../sadas7.pdf) |
+| **PR-07** | **Complex Interactions** | Interaction Overview and Timing diagrams for the voice latency budget (streamed answers) | [sadas7.pdf](../sadas7.pdf) |
 
 ---
 
@@ -84,7 +95,7 @@ The system design was developed across seven Software Architecture and Design (S
 ```
 
 ### 3.2 Service Worker Caching Strategy
-- **Static Assets & App Shell**: Cache-first (`CACHE_VERSION = 'storylab-v3'`) pre-caching HTML, CSS, JavaScript, self-hosted Google Sans fonts, and JSON datasets.
+- **Static Assets & App Shell**: Cache-first (`CACHE_VERSION = 'storylab-v10'`) pre-caching HTML, CSS, JavaScript, self-hosted Google Sans fonts, JSON datasets and lesson photography.
 - **Analytics Sync**: Queued locally in IndexedDB when offline; automatically flushed via W3C Background Sync API (`analytics-flush`) or window `online` listeners.
 
 ---
@@ -101,8 +112,10 @@ window.DB.getAll(store: string): Promise<any[]>;
 window.DB.queueSync(payload: object): Promise<void>;
 
 // 2. Conversational Voice Interface (Chatbot Core)
-window.Chatbot.speak(text: string): Promise<void>;
-window.Chatbot.listen(): Promise<string>;
+window.Chatbot.speak(text: string, lang?: string): Promise<void>;
+window.Chatbot.listen(lang?: string): Promise<string>;
+window.Chatbot.listenLive(onInterim: (text: string) => void, lang?: string): void;
+window.Chatbot.setLessonContext({ title: string, text: string } | null): void;
 window.Chatbot.state: 'idle' | 'listening' | 'thinking' | 'speaking';
 
 // 3. Application Routing Interface (Shell)
@@ -111,6 +124,14 @@ window.StoryLabRouter.navigate(route: 'home' | 'storylearn' | 'chatbot' | 'labin
 // 4. State & Session Ledger (Shell State)
 window.StoryLabState.getProfile(): StudentProfile;
 window.StoryLabState.logEvent(type: string, description: string, meta: object): Promise<void>;
+
+// 5. Tutor Proxy Contract (Node.js, server-side only)
+POST /api/tutor
+  body: { question: string, language?: 'en'|'hi'|'mr', history?: Message[], context?: string, stream?: boolean }
+  200:  { answer: string }            // stream: false
+  200:  text/event-stream             // stream: true  →  data: {"delta":"..."} … data: [DONE]
+  400:  empty or oversized body, 403: foreign origin, 429: rate limited, 503: no key configured
+GET /api/tutor/health → { ok, configured, provider, model }
 ```
 
 ---
@@ -122,3 +143,4 @@ Designed following field-instrument panel aesthetics:
 - **Palette**: Dark forge black (`#111111`), steel panel (`#1c1c1c`), and warning amber (`#f59e0b`) for active interactive states.
 - **Visual Feedback**: Mechanical ventilation slot separators, corner rivet markings (`◈`), and live 5-bar animated audio waveforms.
 - **Typography**: Self-hosted Google Sans Flex and Google Sans Code (WOFF2) with strict WCAG AA contrast compliance (minimum 4.5:1 on all text).
+

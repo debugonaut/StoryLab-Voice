@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>StoryLab Voice — corrected diagrams</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 32px; background: #0a0c0b; color: #ece9dd;
+         font-family: system-ui, sans-serif; }
+  h1 { font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; color: #f59e0b; }
+  p { max-width: 70ch; color: #b4b6a9; line-height: 1.5; }
+  section { margin: 40px 0; border-top: 1px solid #343b35; padding-top: 16px; }
+  h2 { font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .diagram { background: #141815; border: 1px solid #343b35; padding: 16px; overflow: auto; }
+  .error { color: #ff7264; white-space: pre-wrap; font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<h1>Corrected diagrams</h1>
+<p>Source of truth is the <code>.mmd</code> files next to this page. Use the browser's
+print dialog (Save as PDF) or a screenshot for the deck. The Canva frames still show the
+pre-proxy versions.</p>
+
+<section><h2>Deployment</h2><div class="diagram" id="d1">rendering…</div></section>
+<section><h2>Sequence — online tutor request</h2><div class="diagram" id="d2">rendering…</div></section>
+<section><h2>Sequence — offline fallback</h2><div class="diagram" id="d3">rendering…</div></section>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  themeVariables: {
+    background: '#141815',
+    primaryColor: '#1b201c',
+    primaryTextColor: '#ece9dd',
+    primaryBorderColor: '#4a534b',
+    lineColor: '#94988c',
+    secondaryColor: '#33250e',
+    tertiaryColor: '#141815',
+    noteBkgColor: '#33250e',
+    noteTextColor: '#ffdf9e',
+    actorBkg: '#1b201c',
+    actorBorder: '#f59e0b',
+    signalColor: '#ece9dd'
+  }
+});
+
+const files = [['d1', 'deployment.mmd'], ['d2', 'sequence-tutor.mmd'], ['d3', 'sequence-offline.mmd']];
+
+for (const [id, file] of files) {
+  const host = document.getElementById(id);
+  try {
+    const source = await fetch(file, { cache: 'no-store' }).then(r => r.text());
+    const { svg } = await mermaid.render(id + '-svg', source);
+    host.innerHTML = svg;
+    host.dataset.state = 'ok';
+  } catch (error) {
+    host.dataset.state = 'error';
+    host.innerHTML = '<div class="error">' + file + ': ' + (error && error.message ? error.message : error) + '</div>';
+    console.error(file, error);
+  }
+}
+</script>
+</body>
+</html>

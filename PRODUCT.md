@@ -37,8 +37,8 @@ The only offline-first, voice-primary educational platform that combines multi-s
 - **Offline-first:** 100% functional with no internet after Service Worker install
 - **Storage budget:** ≤ 25 MB total (PWA assets + JSON + speech models)
 - **Latency budget:** Speech-to-response ≤ 1.8s on 2 GB RAM
-- **Voice:** Web Speech API (SpeechSynthesis + SpeechRecognition) — fully on-device
-- **No cloud AI for prototype:** intent matching is static keyword map
+- **Voice:** Web Speech API (SpeechSynthesis + SpeechRecognition) — TTS is on-device; STT uses the browser's speech service and needs a network
+- **Tutor:** 22 curated topics answer offline; free-form questions go through the server-side `/api/tutor` proxy to Groq, with the key held in the server's `.env`
 - **Modules:** AI Voice Chatbot Core, StoryLearn, LabInBox
 - **Progress:** stored in IndexedDB per student session
 - **Analytics sync:** Background Sync API; queues when offline, flushes on reconnect
