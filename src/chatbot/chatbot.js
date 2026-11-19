@@ -58,6 +58,7 @@
       denied: 'Microphone is blocked. Allow it for this site, or tap a question above.',
       unsupported: 'This browser cannot listen. Type your question below, or tap one above.',
       network: 'Listening needs a connection. Tap a question above instead.',
+      service: 'This browser blocks voice recognition. Type your question below, or tap one above.',
       notSure: 'I am not sure about that yet. Ask me about math, science, the world, or everyday life.',
       aiOnline: 'AI ON', aiOffline: 'OFFLINE', type: 'TYPE',
       switched: 'Answering in English now.'
@@ -71,6 +72,7 @@
       denied: 'माइक्रोफ़ोन बंद है। ब्राउज़र में इसे चालू करो, या ऊपर से सवाल चुनो।',
       unsupported: 'यह ब्राउज़र सुन नहीं सकता। नीचे सवाल लिखो, या ऊपर से चुनो।',
       network: 'सुनने के लिए इंटरनेट चाहिए। ऊपर से सवाल चुनो।',
+      service: 'यह ब्राउज़र आवाज़ पहचानने नहीं देता। नीचे सवाल लिखो, या ऊपर से चुनो।',
       notSure: 'इस बारे में मुझे अभी पक्का नहीं पता। गणित, विज्ञान, दुनिया या रोज़मर्रा की बातें पूछो।',
       aiOnline: 'एआई चालू', aiOffline: 'ऑफ़लाइन', type: 'लिखो',
       switched: 'अब मैं हिंदी में जवाब दूँगा।'
@@ -84,6 +86,7 @@
       denied: 'मायक्रोफोन बंद आहे. ब्राउझरमध्ये सुरू करा, किंवा वरून प्रश्न निवडा.',
       unsupported: 'हा ब्राउझर ऐकू शकत नाही. खाली प्रश्न लिहा, किंवा वरून निवडा.',
       network: 'ऐकण्यासाठी इंटरनेट लागते. वरून प्रश्न निवडा.',
+      service: 'हा ब्राउझर आवाज ओळखू देत नाही. खाली प्रश्न लिहा, किंवा वरून निवडा.',
       notSure: 'याबद्दल मला अजून नक्की माहीत नाही. गणित, विज्ञान, जग किंवा रोजच्या गोष्टी विचारा.',
       aiOnline: 'एआय सुरू', aiOffline: 'ऑफलाइन', type: 'लिहा',
       switched: 'आता मी मराठीत उत्तर देईन.'
@@ -231,7 +234,9 @@
         if (safety) { clearTimeout(safety); safety = null; }
         if (_utterance === utter) {
           _utterance = null;
-          _setState('idle');
+          /* A cancelled utterance must not knock the screen out of the
+           * 'listening' state that replaced it. */
+          if (_state === 'speaking') _setState('idle');
         }
         resolve();
       }
@@ -275,6 +280,10 @@
         return;
       }
 
+      /* Never listen while the tutor is still narrating: the microphone would
+       * pick up the tutor's own voice instead of the student's. */
+      if (typeof window.speechSynthesis.cancel === 'function') window.speechSynthesis.cancel();
+
       _setState('listening');
 
       var rec = new SR();
@@ -309,7 +318,7 @@
         silence = setTimeout(function () { try { rec.stop(); } catch (e) {} }, ms);
       }
 
-      hardStop = setTimeout(function () { try { rec.stop(); } catch (e) {} }, 9000);
+      hardStop = setTimeout(function () { try { rec.stop(); } catch (e) {} }, 15000);
 
       rec.onresult = function (event) {
         var interim = '';
@@ -331,7 +340,7 @@
       rec.onerror = function (e) {
         var map = {
           'not-allowed': 'denied',
-          'service-not-allowed': 'denied',
+          'service-not-allowed': 'service',
           'audio-capture': 'denied',
           'no-speech': 'no-speech',
           'network': 'network'
@@ -344,7 +353,8 @@
 
       try {
         rec.start();
-        armSilence(8000);
+        /* Give a child time to read the instruction before speaking. */
+        armSilence(12000);
       } catch (e) {
         console.warn('[Chatbot] Could not start recognition:', e);
         settle('error');

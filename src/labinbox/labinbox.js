@@ -46,6 +46,11 @@
         '.lb-actions button{flex:1 1 110px}',
         '.lb-progress{height:5px;background:var(--color-border);overflow:hidden}',
         '.lb-progress span{display:block;height:100%;background:var(--color-accent);transition:width .25s ease}',
+        '.lb-typed{display:flex;gap:var(--sp-2)}',
+        '.lb-typed[hidden]{display:none}',
+        '.lb-typed__input{flex:1 1 auto;min-width:0;background:var(--color-bg-inset);border:1px solid var(--color-border);color:var(--color-text-primary);font-family:var(--font-body);font-size:var(--text-sm);padding:0 var(--sp-3);height:44px}',
+        '.lb-typed__input:focus{outline:2px solid var(--color-accent);outline-offset:1px}',
+        '.lb-typed button{flex:0 0 auto}',
         '.lb-complete{border:1px solid var(--color-accent);background:var(--color-panel-raised,var(--color-panel));padding:var(--sp-5);margin-top:var(--sp-4)}',
         '.lb-complete h3{margin:0 0 var(--sp-2);color:var(--color-accent)}',
         '.lb-status{display:flex;align-items:center;gap:var(--sp-2);font:var(--text-xs) var(--font-mono);color:var(--color-text-muted)}',
@@ -317,7 +322,9 @@
       '<div class="lb-progress" aria-label="Experiment progress"><span data-progress style="width:0%"></span></div>' +
       '<div class="lb-readout" aria-live="polite" aria-atomic="true"><div class="lb-step" data-step-label>INSTRUCTION</div><p class="lb-instruction" data-instruction>Preparing your laboratory…</p></div>' +
       '<p class="lb-hint" data-hint>Listen to the instruction, then choose an answer or use the microphone.</p>' +
-      '<div class="lb-actions" data-choices></div><div class="lb-actions"><button class="btn btn-primary" type="button" data-listen>◉ SPEAK</button><button class="btn btn-secondary" type="button" data-repeat>↻ REPEAT</button><button class="btn btn-secondary" type="button" data-ask>ASK ABOUT THIS</button></div>' +
+      '<div class="lb-actions" data-choices></div>' +
+      '<form class="lb-typed" data-typed-form hidden><input type="text" class="lb-typed__input" data-typed-input placeholder="Or type your answer…" autocomplete="off" aria-label="Type your answer" /><button class="btn btn-secondary" type="submit" data-typed-submit>SUBMIT</button></form>' +
+      '<div class="lb-actions"><button class="btn btn-primary" type="button" data-listen>◉ SPEAK</button><button class="btn btn-secondary" type="button" data-repeat>↻ REPEAT</button><button class="btn btn-secondary" type="button" data-ask>ASK ABOUT THIS</button></div>' +
       '<p class="lb-hint" data-voice-status>You can also tap an answer instead of speaking.</p></div></div></section>' +
       '<div data-completion></div></div>';
     root.querySelector('[data-back-list]').addEventListener('click', function () { showList(root); });
@@ -325,6 +332,14 @@
       if (token.currentStep && !token.cancelled) speak(token.currentStep.instruction, token);
     });
     root.querySelector('[data-listen]').addEventListener('click', function () { listenForAnswer(token); });
+    root.querySelector('[data-typed-form]').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var input = root.querySelector('[data-typed-input]');
+      var typed = input ? input.value.trim() : '';
+      if (!typed) { if (input) input.focus(); return; }
+      if (input) input.value = '';
+      submitAnswer(token, typed, 'typed');
+    });
     root.querySelector('[data-ask]').addEventListener('click', function () {
       if (!window.Chatbot || !window.Chatbot.setLessonContext) return;
       var step = token.currentStep || {};
@@ -353,6 +368,12 @@
     root.querySelector('[data-instruction]').textContent = step.instruction;
     root.querySelector('[data-progress]').style.width = Math.max(4, ((index - 1) / total) * 100) + '%';
     root.querySelector('[data-choices]').innerHTML = '';
+    var typedForm = root.querySelector('[data-typed-form]');
+    if (typedForm) {
+      typedForm.hidden = true;
+      var typedInput = root.querySelector('[data-typed-input]');
+      if (typedInput) typedInput.value = '';
+    }
     root.querySelector('[data-hint]').textContent = 'Listen to the instruction, then choose an answer or use the microphone.';
     root.querySelector('[data-listen]').disabled = false;
     root.querySelector('[data-voice-status]').textContent = 'You can also tap an answer instead of speaking.';
@@ -399,7 +420,7 @@
       finally { rootDisableControls(token, false); }
       if (token.cancelled) return;
       token.busy = false;
-      schedule(token, function () { runStep(token, step.next); }, 450);
+      schedule(token, function () { runStep(token, step.next); }, 200);
       return;
     }
     if (action.type === 'react') {
@@ -408,7 +429,7 @@
       finally { rootDisableControls(token, false); }
       if (token.cancelled) return;
       token.busy = false;
-      schedule(token, function () { runStep(token, step.next); }, 450);
+      schedule(token, function () { runStep(token, step.next); }, 200);
       return;
     }
     if (action.type === 'complete') {
@@ -429,12 +450,14 @@
     container.querySelectorAll('[data-answer]').forEach(function (button) {
       button.addEventListener('click', function () { submitAnswer(token, button.getAttribute('data-answer'), 'tap'); });
     });
-    token.root.querySelector('[data-hint]').textContent = 'Choose an answer below, or tap SPEAK and say it.';
+    token.root.querySelector('[data-hint]').textContent = 'Choose an answer below, tap SPEAK and say it, or type it.';
+    var typedForm = token.root.querySelector('[data-typed-form]');
+    if (typedForm) typedForm.hidden = false;
   }
 
   function rootDisableControls(token, disabled) {
     if (token.cancelled || !token.root.isConnected) return;
-    token.root.querySelectorAll('[data-choices] button,[data-listen],[data-repeat],[data-ask]').forEach(function (button) { button.disabled = disabled; });
+    token.    root.querySelectorAll('[data-choices] button,[data-listen],[data-repeat],[data-ask],[data-typed-input],[data-typed-submit]').forEach(function (button) { button.disabled = disabled; });
   }
 
   function matchesAnswer(transcript, accepts) {
@@ -455,18 +478,27 @@
     var step = token.currentStep;
     if (!matchesAnswer(answer, step.action.accepts)) {
       token.root.querySelector('[data-voice-status]').textContent = 'That answer was not recognised. Try one of the available choices.';
-      await speak('I did not catch that. Please try again.', token);
+      speak('I did not catch that. Please try again.', token);
       return;
     }
     token.busy = true;
     token.root.querySelector('[data-choices]').innerHTML = '<span class="lb-status">CORRECT — CONTINUING</span>';
     token.root.querySelector('[data-listen]').disabled = true;
+    token.root.querySelector('[data-typed-form]').hidden = true;
     token.root.querySelector('[data-voice-status]').textContent = source === 'voice' ? 'Voice answer recognised: ' + answer : 'Answer selected: ' + answer;
-    await speak('Correct! Let us continue.', token);
-    if (token.cancelled) return;
+    /* Move straight on: the next step's narration already says "Correct!".
+     * Waiting for this line left ~2 s of dead screen after every answer. */
     token.busy = false;
     runStep(token, step.next);
   }
+
+  var VOICE_REASONS = {
+    denied: 'The microphone is blocked for this page. Allow it in the browser, or type the answer below.',
+    network: 'Voice recognition needs an internet connection in this browser. Type the answer below instead.',
+    service: 'This browser blocks voice recognition (some browsers disable it). Choose an answer or type it below.',
+    unsupported: 'This browser cannot listen. Type the answer below instead.',
+    'no-speech': 'I did not hear anything. Tap SPEAK and say it clearly, choose a button, or type it.'
+  };
 
   async function listenForAnswer(token) {
     if (token.cancelled || token.busy || !token.currentStep || token.currentStep.action.type !== 'wait_voice') return;
@@ -477,20 +509,32 @@
     }
     token.busy = true;
     rootDisableControls(token, true);
+    /* Stop the tutor's narration first, otherwise the recogniser transcribes
+     * the tutor instead of the student. */
+    if (window.speechSynthesis && typeof window.speechSynthesis.cancel === 'function') window.speechSynthesis.cancel();
     token.root.querySelector('[data-voice-status]').textContent = 'Listening… speak clearly into your microphone.';
-    var transcript = '';
-    try { transcript = await window.Chatbot.listen('en-IN'); }
-    catch (error) { console.warn('[LabInBox] Voice input failed:', error); }
+    var result = null;
+    try {
+      result = typeof window.Chatbot.listenLive === 'function'
+        ? await window.Chatbot.listenLive(function (live) {
+            if (token.cancelled) return;
+            token.root.querySelector('[data-voice-status]').textContent = 'Hearing “' + live + '”…';
+          }, 'en-IN')
+        : { text: await window.Chatbot.listen('en-IN'), reason: 'ok' };
+    } catch (error) { console.warn('[LabInBox] Voice input failed:', error); }
     if (token.cancelled) return;
     rootDisableControls(token, false);
     token.busy = false;
+
+    var transcript = (result && result.text) || '';
+    var reason = (result && result.reason) || 'no-speech';
     if (!transcript) {
-      token.root.querySelector('[data-voice-status]').textContent = 'No voice answer received. You can try again or choose an answer below.';
+      token.root.querySelector('[data-voice-status]').textContent = VOICE_REASONS[reason] || VOICE_REASONS['no-speech'];
       return;
     }
     if (!matchesAnswer(transcript, token.currentStep.action.accepts)) {
-      token.root.querySelector('[data-voice-status]').textContent = 'I heard “' + transcript + '”. That was not one of the expected answers. Please try again.';
-      await speak('I heard ' + transcript + '. That is not the answer. Please try again.', token);
+      token.root.querySelector('[data-voice-status]').textContent = 'I heard “' + transcript + '”. That was not one of the expected answers. Try again, choose a button, or type it.';
+      speak('I heard ' + transcript + '. That is not the answer. Please try again.', token);
       return;
     }
     submitAnswer(token, transcript, 'voice');
