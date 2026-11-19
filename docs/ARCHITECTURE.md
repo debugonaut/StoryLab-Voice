@@ -131,7 +131,12 @@ POST /api/tutor
   200:  { answer: string }            // stream: false
   200:  text/event-stream             // stream: true  →  data: {"delta":"..."} … data: [DONE]
   400:  empty or oversized body, 403: foreign origin, 429: rate limited, 503: no key configured
-GET /api/tutor/health → { ok, configured, provider, model }
+GET /api/tutor/health → { ok, configured, provider, model, stt }
+
+POST /api/transcribe?lang=en|hi|mr     // speech → text when the browser has no
+  body: audio/* binary (webm, ogg, wav, m4a; max 12 MB)   // usable recogniser
+  200:  { text, model, language }
+  403:  foreign origin, 429: rate limited, 503: no key configured
 ```
 
 ---

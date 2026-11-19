@@ -503,7 +503,10 @@
   async function listenForAnswer(token) {
     if (token.cancelled || token.busy || !token.currentStep || token.currentStep.action.type !== 'wait_voice') return;
     var supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-    if (!window.Chatbot || typeof window.Chatbot.listen !== 'function' || !supported) {
+    /* Browsers without a Web Speech recogniser (Firefox, Safari, Brave) still
+     * work: Chatbot records the clip and transcribes it on our server. */
+    var canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+    if (!window.Chatbot || typeof window.Chatbot.listenLive !== 'function' || !(supported || canRecord)) {
       token.root.querySelector('[data-voice-status]').textContent = 'Microphone speech recognition is unavailable. Please use an answer button.';
       return;
     }

@@ -14,6 +14,7 @@
  * Endpoints
  *   GET  /api/tutor/health   → { configured, model, provider }
  *   POST /api/tutor          → { answer, model, language } or an SSE stream
+ *   POST /api/transcribe     → { text, model, language } from recorded audio
  */
 
 import { createServer } from 'node:http';
@@ -56,7 +57,9 @@ const HOST = process.env.HOST || '127.0.0.1';
 const API_KEY = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || '';
 const API_BASE = (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, '');
 const MODEL = process.env.GROQ_MODEL || '';
+const STT_MODEL = process.env.GROQ_STT_MODEL || 'whisper-large-v3-turbo';
 const MAX_BODY = 16 * 1024;
+const MAX_AUDIO = 12 * 1024 * 1024;
 const RATE_LIMIT = 40;
 const RATE_WINDOW = 60 * 1000;
 
@@ -139,6 +142,24 @@ function readBody(req) {
       chunks.push(chunk);
     });
     req.on('end', function () { resolve(Buffer.concat(chunks).toString('utf8')); });
+    req.on('error', reject);
+  });
+}
+
+function readRawBody(req, limit) {
+  return new Promise(function (resolve, reject) {
+    let size = 0;
+    const chunks = [];
+    req.on('data', function (chunk) {
+      size += chunk.length;
+      if (size > limit) {
+        reject(Object.assign(new Error('Recording too large.'), { status: 413 }));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', function () { resolve(Buffer.concat(chunks)); });
     req.on('error', reject);
   });
 }
@@ -356,6 +377,90 @@ async function handleTutor(req, res) {
   sendJson(res, 200, { answer: answer, model: activeModel, language: language });
 }
 
+/* Speech-to-text for browsers without a usable Web Speech recogniser
+ * (Firefox, Safari, Brave). The recorded clip is forwarded to Groq Whisper so
+ * the API key still never reaches the device. */
+async function handleTranscribe(req, res) {
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'method_not_allowed' });
+    return;
+  }
+  if (!sameOrigin(req)) {
+    sendJson(res, 403, { error: 'bad_origin' });
+    return;
+  }
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (rateLimited(ip)) {
+    sendJson(res, 429, { error: 'busy', message: 'Too much listening just now. Wait a moment and try again.' });
+    return;
+  }
+  if (!API_KEY) {
+    sendJson(res, 503, {
+      error: 'not_configured',
+      message: 'Speech recognition is not connected on this machine yet. Add GROQ_API_KEY to .env and restart the server.'
+    });
+    return;
+  }
+
+  let audio;
+  try {
+    audio = await readRawBody(req, MAX_AUDIO);
+  } catch (error) {
+    sendJson(res, error.status || 400, { error: 'bad_audio', message: 'Could not read that recording.' });
+    return;
+  }
+  if (!audio.length) {
+    sendJson(res, 400, { error: 'empty_audio', message: 'No audio was recorded.' });
+    return;
+  }
+
+  let language = 'en';
+  try {
+    const requested = new URL(req.url, 'http://localhost').searchParams.get('lang') || 'en';
+    if (['en', 'hi', 'mr'].includes(requested)) language = requested;
+  } catch (error) { /* keep the default */ }
+
+  const type = String(req.headers['content-type'] || 'audio/webm').split(';')[0].trim();
+  const ext = /ogg/.test(type) ? 'ogg' : /mp4|m4a|aac/.test(type) ? 'm4a' : /wav/.test(type) ? 'wav' : 'webm';
+
+  const form = new FormData();
+  form.append('file', new Blob([audio], { type: type || 'audio/webm' }), 'answer.' + ext);
+  form.append('model', STT_MODEL);
+  form.append('language', language);
+  form.append('response_format', 'json');
+  form.append('temperature', '0');
+
+  let upstream;
+  try {
+    upstream = await fetch(API_BASE + '/audio/transcriptions', {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + API_KEY },
+      body: form,
+      signal: AbortSignal.timeout(30000)
+    });
+  } catch (error) {
+    console.warn('[server] Transcription failed:', error.message);
+    sendJson(res, 504, { error: 'stt_unreachable', message: 'Speech recognition could not be reached. Check the connection.' });
+    return;
+  }
+
+  if (!upstream.ok) {
+    const detail = await upstream.text().catch(function () { return ''; });
+    console.warn('[server] Transcription error', upstream.status, detail.slice(0, 200));
+    sendJson(res, upstream.status === 429 ? 429 : 502, {
+      error: upstream.status === 429 ? 'busy' : 'stt_error',
+      message: upstream.status === 429
+        ? 'Speech recognition is busy right now. Try again in a moment.'
+        : 'That recording could not be understood. Try again.'
+    });
+    return;
+  }
+
+  const data = await upstream.json().catch(function () { return null; });
+  const text = String((data && data.text) || '').trim();
+  sendJson(res, 200, { text: text, model: STT_MODEL, language: language });
+}
+
 async function serveStatic(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { 'content-type': 'text/plain; charset=utf-8' });
@@ -405,7 +510,14 @@ const server = createServer(function (req, res) {
 
   const pathname = (req.url || '/').split('?')[0];
   if (pathname === '/api/tutor/health') {
-    sendJson(res, 200, { ok: true, configured: Boolean(API_KEY), provider: 'groq', model: activeModel });
+    sendJson(res, 200, { ok: true, configured: Boolean(API_KEY), provider: 'groq', model: activeModel, stt: STT_MODEL });
+    return;
+  }
+  if (pathname === '/api/transcribe') {
+    handleTranscribe(req, res).catch(function (error) {
+      console.error('[server] Unhandled transcription error:', error);
+      if (!res.headersSent) sendJson(res, 500, { error: 'server_error' });
+    });
     return;
   }
   if (pathname === '/api/tutor') {

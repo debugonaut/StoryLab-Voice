@@ -269,7 +269,7 @@
   /* ─────────────────────────────────────────────────────────
    * listen() — STT with inline text fallback
    * ───────────────────────────────────────────────────────── */
-  function listenLive(onInterim, lang) {
+  function listenWithSR(onInterim, lang) {
     return new Promise(function (resolve) {
       var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -364,6 +364,170 @@
 
   function listen(lang) {
     return listenLive(undefined, lang).then(function (result) { return result.text || ''; });
+  }
+
+  /* ─────────────────────────────────────────────────────────
+   * Recording fallback — used when the browser has no working
+   * Web Speech recogniser (Firefox, Safari, Brave, or Firefox
+   * without the on-device model installed). The clip goes to
+   * our own /api/transcribe, never to a key in the page.
+   * ───────────────────────────────────────────────────────── */
+  function _canRecord() {
+    return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function' && window.MediaRecorder);
+  }
+
+  function _audioMime() {
+    if (typeof window.MediaRecorder.isTypeSupported !== 'function') return '';
+    var types = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/mp4'];
+    for (var i = 0; i < types.length; i += 1) {
+      if (window.MediaRecorder.isTypeSupported(types[i])) return types[i];
+    }
+    return '';
+  }
+
+  function listenWithRecorder(onInterim, lang) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      var stream = null;
+      var recorder = null;
+      var chunks = [];
+      var ctx = null;
+      var raf = null;
+      var muteTimer = null;
+      var hardTimer = null;
+      var heard = false;
+
+      function cleanup() {
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        if (muteTimer) { clearTimeout(muteTimer); muteTimer = null; }
+        if (hardTimer) { clearTimeout(hardTimer); hardTimer = null; }
+        if (ctx) { try { ctx.close(); } catch (e) {} ctx = null; }
+        if (stream) {
+          var tracks = stream.getTracks();
+          for (var i = 0; i < tracks.length; i += 1) { try { tracks[i].stop(); } catch (e) {} }
+          stream = null;
+        }
+        _setState('idle');
+      }
+
+      function finish(text, reason) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        var clean = String(text || '').trim();
+        resolve({ text: clean, confidence: 0, reason: reason || (clean ? 'ok' : 'no-speech') });
+      }
+
+      function stopRecorder() {
+        if (recorder && recorder.state !== 'inactive') {
+          try { recorder.stop(); } catch (e) { finish('', 'error'); }
+        }
+      }
+
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function (micStream) {
+        if (settled) {
+          micStream.getTracks().forEach(function (track) { track.stop(); });
+          return;
+        }
+        stream = micStream;
+        _setState('listening');
+        if (typeof onInterim === 'function') onInterim('', true);
+
+        var mime = _audioMime();
+        try {
+          recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+        } catch (error) {
+          finish('', 'error');
+          return;
+        }
+
+        recorder.ondataavailable = function (event) {
+          if (event.data && event.data.size) chunks.push(event.data);
+        };
+        recorder.onerror = function () { finish('', 'error'); };
+        recorder.onstop = function () {
+          var blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+          if (!blob.size) { finish('', 'no-speech'); return; }
+          var code = String(lang || _getLanguageTag()).slice(0, 2).toLowerCase();
+          fetch('/api/transcribe?lang=' + encodeURIComponent(code), {
+            method: 'POST',
+            headers: { 'content-type': blob.type || 'audio/webm' },
+            body: blob
+          }).then(function (response) {
+            if (!response.ok) return null;
+            return response.json();
+          }).then(function (data) {
+            var text = data && typeof data.text === 'string' ? data.text : '';
+            finish(text, text ? 'ok' : 'no-speech');
+          }).catch(function () { finish('', 'network'); });
+        };
+
+        recorder.start();
+
+        /* Stop a little after the student stops talking, so nobody has to press
+         * a button again. The hard stop keeps a silent room from hanging. */
+        try {
+          var AudioCtx = window.AudioContext || window.webkitAudioContext;
+          ctx = new AudioCtx();
+          var analyser = ctx.createAnalyser();
+          analyser.fftSize = 1024;
+          ctx.createMediaStreamSource(stream).connect(analyser);
+          var buffer = new Uint8Array(analyser.fftSize);
+          (function watch() {
+            if (settled) return;
+            analyser.getByteTimeDomainData(buffer);
+            var sum = 0;
+            for (var i = 0; i < buffer.length; i += 1) {
+              var value = (buffer[i] - 128) / 128;
+              sum += value * value;
+            }
+            if (Math.sqrt(sum / buffer.length) > 0.02) {
+              heard = true;
+              if (muteTimer) { clearTimeout(muteTimer); muteTimer = null; }
+            } else if (heard && !muteTimer) {
+              muteTimer = setTimeout(stopRecorder, 1200);
+            }
+            raf = requestAnimationFrame(watch);
+          })();
+        } catch (error) { /* the hard stop still ends the recording */ }
+
+        hardTimer = setTimeout(stopRecorder, 8000);
+      }).catch(function (error) {
+        var name = error && error.name;
+        finish('', (name === 'NotAllowedError' || name === 'SecurityError') ? 'denied' : 'error');
+      });
+    });
+  }
+
+  function _isGecko() {
+    return /\bFirefox\//.test(navigator.userAgent || '');
+  }
+
+  function listenLive(onInterim, lang) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    /* Firefox only recognises speech once its on-device model is downloaded
+     * (and not at all before v160), so record and transcribe on the server
+     * there instead of depending on that. Chrome, Edge and Safari keep their
+     * built-in recogniser. */
+    if (!SR || _isGecko()) {
+      if (_canRecord()) return listenWithRecorder(onInterim, lang);
+      return new Promise(function (resolve) {
+        _inlineTextFallback(function (text) {
+          resolve({ text: text || '', confidence: 0, reason: text ? 'typed' : 'unsupported' });
+        });
+      });
+    }
+
+    return listenWithSR(onInterim, lang).then(function (result) {
+      /* Firefox without its on-device model, or a browser whose speech service
+       * is blocked: retry once through the server instead of failing. */
+      var broken = !result.text && (result.reason === 'service' || result.reason === 'error');
+      if (!broken || !_canRecord()) return result;
+      return listenWithRecorder(onInterim, lang).then(function (fallback) {
+        return fallback.text ? fallback : result;
+      });
+    });
   }
 
   /* ─────────────────────────────────────────────────────────

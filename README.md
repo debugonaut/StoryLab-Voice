@@ -146,9 +146,9 @@ cp .env.example .env
 node tools/server.mjs
 ```
 
-Open `http://127.0.0.1:8123` in Google Chrome or Microsoft Edge on desktop or Android, and allow the microphone when the browser asks.
+Open `http://127.0.0.1:8123` in any modern browser (Chrome, Edge, Firefox or Safari) and allow the microphone when it asks.
 
-Without a key the app still runs: the badge shows **OFFLINE** and the tutor answers its starter topics. Voice recognition needs `localhost`/`127.0.0.1` (or HTTPS) plus a network connection, because Chromium sends audio to its speech service.
+Without a key the app still runs: the badge shows **OFFLINE** and the tutor answers its starter topics. Chrome and Edge transcribe in the browser (so the microphone needs `localhost`/`127.0.0.1` or HTTPS, plus a connection). Firefox and Safari have no dependable in-browser recogniser, so the app records a short clip and posts it to `/api/transcribe`, which forwards it to Groq Whisper — voice therefore needs the key and a connection, but works the same in every browser.
 
 > Do not serve this project with `python3 -m http.server` for the demo: static-only hosts have no `/api/tutor`, so free-form questions cannot be answered.
 
