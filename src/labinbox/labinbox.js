@@ -367,9 +367,22 @@
     var steps = token.currentLab.steps;
     var index = steps.findIndex(function (item) { return item.id === stepId; }) + 1;
     setInstruction(token, step, index, steps.length);
-    await speak(step.instruction, token);
-    if (token.cancelled || token.stepId !== stepId) { token.busy = false; return; }
     var action = step.action;
+
+    /* A step that asks a question must be answerable the moment it appears.
+     * Waiting for narration left a dead screen whenever speech stalled or the
+     * student's device had no voices installed. */
+    if (action && action.type === 'wait_voice') {
+      token.busy = false;
+      renderChoices(token, step);
+      speak(step.instruction, token);
+      return;
+    }
+
+    /* Narration runs alongside the step, never in front of it: a slow or
+     * missing voice must not hold up pouring, reacting or answering. */
+    speak(step.instruction, token);
+    if (token.cancelled || token.stepId !== stepId) { token.busy = false; return; }
     if (!action) {
       token.busy = false;
       schedule(token, function () { runStep(token, step.next); }, 350);
