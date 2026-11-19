@@ -217,6 +217,36 @@
   /* ─────────────────────────────────────────────────────────
    * speak(text) — TTS
    * ───────────────────────────────────────────────────────── */
+  var _speakToken = 0;
+  var SPEECH_CHUNK = 150;
+
+  /* Browsers drop a single long utterance part-way through, which is what made
+   * the tutor go quiet mid-sentence. Speak sentence-sized chunks instead. */
+  function _speechChunks(text) {
+    var clean = String(text == null ? '' : text)
+      .replace(/\r/g, ' ')
+      .replace(/[*_`#>|<]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!clean) return [];
+
+    var pieces = [];
+    var sentences = clean.match(/[^.!?।]+[.!?।]*/g) || [clean];
+    sentences.forEach(function (sentence) {
+      var rest = sentence.trim();
+      while (rest.length > SPEECH_CHUNK) {
+        var head = rest.slice(0, SPEECH_CHUNK);
+        var at = Math.max(head.lastIndexOf(', '), head.lastIndexOf('; '), head.lastIndexOf(' '));
+        if (at < SPEECH_CHUNK * 0.4) at = head.lastIndexOf(' ');
+        if (at < 1) at = SPEECH_CHUNK;
+        pieces.push(rest.slice(0, at + 1).trim());
+        rest = rest.slice(at + 1).trim();
+      }
+      if (rest) pieces.push(rest);
+    });
+    return pieces.filter(Boolean);
+  }
+
   function speak(text, lang) {
     return new Promise(function (resolve) {
       if (!('speechSynthesis' in window)) {
@@ -226,13 +256,25 @@
         return;
       }
 
+      var chunks = _speechChunks(text);
+      if (!chunks.length) {
+        if (_state === 'speaking') _setState('idle');
+        setTimeout(resolve, 0);
+        return;
+      }
+
+      var synth = window.speechSynthesis;
+      var token = ++_speakToken;
+      var voiceLang = lang || _getLanguageTag();
+      var index = 0;
       var settled = false;
-      var safety = null;
+      var guard = null;
+
       function settle() {
         if (settled) return;
         settled = true;
-        if (safety) { clearTimeout(safety); safety = null; }
-        if (_utterance === utter) {
+        if (guard) { clearTimeout(guard); guard = null; }
+        if (token === _speakToken) {
           _utterance = null;
           /* A cancelled utterance must not knock the screen out of the
            * 'listening' state that replaced it. */
@@ -241,28 +283,47 @@
         resolve();
       }
 
-      window.speechSynthesis.cancel();
+      function next() {
+        if (settled) return;
+        if (token !== _speakToken || index >= chunks.length) { settle(); return; }
 
-      var utter = new SpeechSynthesisUtterance(text);
-      utter.lang  = lang || _getLanguageTag();
-      utter.rate  = 0.92;
-      utter.pitch = 1.0;
+        var utter = new SpeechSynthesisUtterance(chunks[index]);
+        utter.lang = voiceLang;
+        utter.rate = 0.92;
+        utter.pitch = 1.0;
+        index += 1;
+        _utterance = utter;
 
-      utter.onstart = function () { _setState('speaking'); };
-      utter.onend   = function () { settle(); };
-      utter.onerror = function (e) {
-        if (e.error !== 'interrupted' && e.error !== 'canceled' && e.error !== 'cancelled') {
-          console.warn('[Chatbot] TTS error:', e.error);
+        function advance() {
+          if (settled || token !== _speakToken) return;
+          if (guard) { clearTimeout(guard); guard = null; }
+          /* A beat between chunks keeps Firefox from dropping the next one. */
+          setTimeout(next, 60);
         }
-        settle();
-      };
 
-      _setState('speaking');
-      _utterance = utter;
-      window.speechSynthesis.speak(utter);
+        utter.onstart = function () { _setState('speaking'); };
+        utter.onend = advance;
+        utter.onerror = function (event) {
+          if (event.error !== 'interrupted' && event.error !== 'canceled' && event.error !== 'cancelled') {
+            console.warn('[Chatbot] TTS error:', event.error);
+          }
+          advance();
+        };
 
-      var safetyMs = Math.max(4000, text.length * 80 + 3000);
-      safety = setTimeout(function () { settle(); }, safetyMs);
+        _setState('speaking');
+        synth.speak(utter);
+
+        /* If the engine silently abandons a chunk, continue with the rest
+         * rather than leaving the caller waiting. */
+        guard = setTimeout(function () {
+          console.warn('[Chatbot] TTS chunk timed out, continuing');
+          advance();
+        }, Math.max(6000, Math.min(18000, utter.text.length * 120 + 2500)));
+      }
+
+      synth.cancel();
+      /* Chrome drops an utterance queued in the same tick as cancel(). */
+      setTimeout(next, 50);
     });
   }
 
@@ -1276,7 +1337,7 @@
     configurable: false
   });
 
-  console.log('[Chatbot] build stt-2 | browser recogniser: ' +
+  console.log('[Chatbot] build tts-3 | browser recogniser: ' +
     (window.SpeechRecognition || window.webkitSpeechRecognition ? 'yes' : 'no') +
     ' | recorder fallback: ' + (_canRecord() ? 'ready' : 'unavailable'));
   console.log('[Chatbot] window.Chatbot ready');
