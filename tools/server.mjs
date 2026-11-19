@@ -64,12 +64,9 @@ const RATE_WINDOW = 60 * 1000;
  * and fall back through current ids. Whichever answers is reused afterwards. */
 const MODEL_CANDIDATES = Array.from(new Set([
   MODEL,
-  'llama-3.1-8b-instant',
+  'qwen/qwen3.8-27b',
   'openai/gpt-oss-20b',
-  'openai/gpt-oss-120b',
-  'meta-llama/llama-4-scout-17b-16e-instruct',
-  'qwen/qwen3-32b',
-  'llama-3.3-70b-versatile'
+  'openai/gpt-oss-120b'
 ].filter(Boolean)));
 let activeModel = MODEL_CANDIDATES[0];
 

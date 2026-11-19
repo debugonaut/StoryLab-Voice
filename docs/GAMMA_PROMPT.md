@@ -23,7 +23,7 @@ You are preparing a university Software Architecture & Design (SAD) project pres
 
 **Product:** StoryLab Voice — an offline-first, voice-guided learning app (Progressive Web App) for Indian students in classes 6–8 on low-spec Android devices in low-connectivity areas.
 
-**Stack:** vanilla HTML/CSS/JavaScript (no framework, no bundler), service worker cache-first app shell, IndexedDB database `storylab_v1`, HTML5 Canvas 2D lab engine, Web Speech API for speech-to-text and text-to-speech, and a small zero-dependency Node.js 18 server (`tools/server.mjs`) that serves static files and proxies AI tutor requests to Groq (`openai/gpt-oss-20b`, with automatic fallback across retired model ids).
+**Stack:** vanilla HTML/CSS/JavaScript (no framework, no bundler), service worker cache-first app shell, IndexedDB database `storylab_v1`, HTML5 Canvas 2D lab engine, Web Speech API for speech-to-text and text-to-speech, and a small zero-dependency Node.js 18 server (`tools/server.mjs`) that serves static files and proxies AI tutor requests to Groq (`qwen/qwen3.8-27b`, with automatic fallback across model ids).
 
 **Modules and owners:**
 - Foundation / app shell — routing, onboarding, IndexedDB data layer, service worker, offline queue, design system — Aadesh
