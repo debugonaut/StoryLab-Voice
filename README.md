@@ -152,6 +152,10 @@ Without a key the app still runs: the badge shows **OFFLINE** and the tutor answ
 
 > Do not serve this project with `python3 -m http.server` for the demo: static-only hosts have no `/api/tutor`, so free-form questions cannot be answered.
 
+### What "offline first" means here
+
+Load the app once from `node tools/server.mjs`, then it works with the network off (and even with the server stopped): the service worker answers the page, stories, labs, images and your saved progress from the device. `127.0.0.1` is not the internet — but the very first load needs the local server running, because that is what serves the files. The two things that still need a connection are the AI tutor and voice transcription, and the header shows **OFFLINE** when they are unavailable.
+
 ### Demo checks
 
 ```bash

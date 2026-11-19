@@ -9,7 +9,9 @@
  *   background sync  drain sync_queue into sync_archive
  */
 
-var CACHE_VERSION = 'storylab-v15';
+var CACHE_VERSION = 'storylab-v16';
+/* Give a dead or unreachable server this long before answering from cache. */
+var NETWORK_TIMEOUT = 2500;
 var DB_NAME = 'storylab_v1';
 var DB_VERSION = 2;
 
@@ -105,18 +107,35 @@ function isNavigation(request) {
       request.headers.get('accept').indexOf('text/html') !== -1);
 }
 
+function cachedShell(request) {
+  return caches.match(request).then(function (cached) {
+    return cached || caches.match('./index.html');
+  });
+}
+
 function networkFirst(request) {
-  return fetch(request).then(function (response) {
-    if (response && response.status === 200 && response.type === 'basic') {
-      var copy = response.clone();
-      caches.open(CACHE_VERSION).then(function (cache) {
-        cache.put(request, copy);
-      });
-    }
-    return response;
-  }).catch(function () {
-    return caches.match(request).then(function (cached) {
-      return cached || caches.match('./index.html');
+  return new Promise(function (resolve) {
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      cachedShell(request).then(resolve);
+    }, NETWORK_TIMEOUT);
+
+    fetch(request).then(function (response) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (response && response.status === 200 && response.type === 'basic') {
+        var copy = response.clone();
+        caches.open(CACHE_VERSION).then(function (cache) { cache.put(request, copy); });
+      }
+      resolve(response);
+    }).catch(function () {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cachedShell(request).then(resolve);
     });
   });
 }
@@ -175,14 +194,29 @@ self.addEventListener('fetch', function (event) {
 });
 
 function networkFirstAsset(request) {
-  return fetch(request).then(function (response) {
-    if (response && response.status === 200 && response.type === 'basic') {
-      var copy = response.clone();
-      caches.open(CACHE_VERSION).then(function (cache) { cache.put(request, copy); });
-    }
-    return response;
-  }).catch(function () {
-    return caches.match(request);
+  return new Promise(function (resolve) {
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      caches.match(request).then(resolve);
+    }, NETWORK_TIMEOUT);
+
+    fetch(request).then(function (response) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (response && response.status === 200 && response.type === 'basic') {
+        var copy = response.clone();
+        caches.open(CACHE_VERSION).then(function (cache) { cache.put(request, copy); });
+      }
+      resolve(response);
+    }).catch(function () {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      caches.match(request).then(resolve);
+    });
   });
 }
 
