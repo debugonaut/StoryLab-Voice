@@ -7,7 +7,7 @@
     "minutes": 4,
     "summary": "Rani has 50 rupees and a mango stall to beat.",
     "art": "market",
-    "image": "assets/stories/math-market.jpg"
+    "image": "assets/stories/math-market.webp"
   },
   {
     "id": "math-fractions",
@@ -17,7 +17,7 @@
     "minutes": 4,
     "summary": "One pizza, eight slices, four hungry friends.",
     "art": "fractions",
-    "image": "assets/stories/math-fractions.jpg"
+    "image": "assets/stories/math-fractions.webp"
   },
   {
     "id": "math-shapes",
@@ -27,7 +27,7 @@
     "minutes": 3,
     "summary": "Sameer needs four equal sides before the wind picks up.",
     "art": "shapes",
-    "image": "assets/stories/math-shapes.jpg"
+    "image": "assets/stories/math-shapes.webp"
   },
   {
     "id": "science-plants",
@@ -37,7 +37,7 @@
     "minutes": 4,
     "summary": "A leaf is a food factory that runs on sunlight.",
     "art": "plants",
-    "image": "assets/stories/science-plants.jpg"
+    "image": "assets/stories/science-plants.webp"
   },
   {
     "id": "science-water",
@@ -47,7 +47,7 @@
     "minutes": 4,
     "summary": "Follow one drop of water from the sea to the sky and back.",
     "art": "water",
-    "image": "assets/stories/science-water.jpg"
+    "image": "assets/stories/science-water.webp"
   },
   {
     "id": "science-solar",
@@ -57,7 +57,7 @@
     "minutes": 5,
     "summary": "Meet the eight planets in the order they orbit.",
     "art": "solar",
-    "image": "assets/stories/science-solar.jpg"
+    "image": "assets/stories/science-solar.webp"
   },
   {
     "id": "social-map",
@@ -67,7 +67,7 @@
     "minutes": 4,
     "summary": "Read a map and get the school bus there on time.",
     "art": "map",
-    "image": "assets/stories/social-map.jpg"
+    "image": "assets/stories/social-map.webp"
   },
   {
     "id": "social-village",
@@ -77,7 +77,7 @@
     "minutes": 4,
     "summary": "Everyone speaks, then the village votes together.",
     "art": "village",
-    "image": "assets/stories/social-village.jpg"
+    "image": "assets/stories/social-village.webp"
   },
   {
     "id": "evs-animals",
@@ -87,6 +87,6 @@
     "minutes": 4,
     "summary": "Find the right home for every forest animal.",
     "art": "animals",
-    "image": "assets/stories/evs-animals.jpg"
+    "image": "assets/stories/evs-animals.webp"
   }
 ]

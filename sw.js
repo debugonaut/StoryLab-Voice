@@ -9,7 +9,7 @@
  *   background sync  drain sync_queue into sync_archive
  */
 
-var CACHE_VERSION = 'storylab-v16';
+var CACHE_VERSION = 'storylab-v17';
 /* Give a dead or unreachable server this long before answering from cache. */
 var NETWORK_TIMEOUT = 2500;
 var DB_NAME = 'storylab_v1';
@@ -43,15 +43,15 @@ var PRECACHE = [
   './data/stories/social-map.json',
   './data/stories/social-village.json',
   './data/stories/evs-animals.json',
-  './assets/stories/math-market.jpg',
-  './assets/stories/math-fractions.jpg',
-  './assets/stories/math-shapes.jpg',
-  './assets/stories/science-plants.jpg',
-  './assets/stories/science-water.jpg',
-  './assets/stories/science-solar.jpg',
-  './assets/stories/social-map.jpg',
-  './assets/stories/social-village.jpg',
-  './assets/stories/evs-animals.jpg',
+  './assets/stories/math-market.webp',
+  './assets/stories/math-fractions.webp',
+  './assets/stories/math-shapes.webp',
+  './assets/stories/science-plants.webp',
+  './assets/stories/science-water.webp',
+  './assets/stories/science-solar.webp',
+  './assets/stories/social-map.webp',
+  './assets/stories/social-village.webp',
+  './assets/stories/evs-animals.webp',
   './data/labs/index.json',
   './data/labs/acid-base.json',
   './data/labs/salt-dissolving.json',
