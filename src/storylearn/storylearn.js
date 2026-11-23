@@ -604,6 +604,9 @@
           if (reason === 'denied') {
             statusEl.textContent = currentLang === 'hi' ? 'माइक ब्लॉक है — नीचे किसी विकल्प पर क्लिक करें' : currentLang === 'mr' ? 'माइक ब्लॉक आहे — खालील पर्यायावर क्लिक करा' : 'Microphone is blocked. Tap an option directly or allow mic in browser settings.';
             statusEl.style.color = 'var(--color-warn)';
+          } else if (reason === 'network') {
+            statusEl.textContent = currentLang === 'hi' ? 'ऑफ़लाइन: आवाज़ के लिए इंटरनेट चाहिए — नीचे विकल्प चुनें' : currentLang === 'mr' ? 'ऑफलाइन: आवाजासाठी इंटरनेट आवश्यक — खालील पर्याय निवडा' : 'Offline: Voice recognition needs internet in this browser. Tap an option directly!';
+            statusEl.style.color = 'var(--color-warn)';
           } else {
             statusEl.textContent = currentLang === 'hi' ? 'आवाज़ नहीं सुनाई दी — माइक दबाकर फिर बोलें' : currentLang === 'mr' ? 'आवाज ऐकू आला नाही — माइक दाबून पुन्हा बोला' : 'Did not hear speech. Tap SPEAK to try again or click an option.';
             statusEl.style.color = 'var(--color-text-muted)';
