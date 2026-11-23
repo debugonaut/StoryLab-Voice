@@ -1,27 +1,29 @@
 #!/usr/bin/env node
 /**
- * StoryLab Voice — demo server
- *
- * Serves the static app and proxies tutor questions to an OpenAI-compatible
- * chat API (Groq by default). The key stays on this machine: it is read from
- * the environment or a local .env file and never sent to the browser.
- *
- * Usage
- *   node tools/server.mjs
- *   PORT=8123 node tools/server.mjs
- *   HOST=0.0.0.0 PORT=8123 node tools/server.mjs   # share on the LAN
- *
- * Endpoints
- *   GET  /api/tutor/health   → { configured, model, provider }
- *   POST /api/tutor          → { answer, model, language } or an SSE stream
- *   POST /api/transcribe     → { text, model, language } from recorded audio
+ * StoryLab Voice — Express & MongoDB Backend Server
+ * 
+ * Satisfies Web Technology Syllabus Practicals:
+ * - Practical 04: Server-side Development with Node.js
+ * - Practical 05: Web Application Framework with Express.js
+ * - Practical 06: RESTful API for CRUD operations (testable via Postman)
+ * - Practical 07: NoSQL Database (MongoDB) interaction via Mongoose
  */
 
+import express from 'express';
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  Account,
+  Progress,
+  Session,
+  Assignment,
+  TeacherNote,
+  AuditLog,
+  connectMongo,
+  isMongoConnected
+} from './models.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -58,13 +60,10 @@ const API_KEY = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || '';
 const API_BASE = (process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, '');
 const MODEL = process.env.GROQ_MODEL || '';
 const STT_MODEL = process.env.GROQ_STT_MODEL || 'whisper-large-v3-turbo';
-const MAX_BODY = 16 * 1024;
-const MAX_AUDIO = 12 * 1024 * 1024;
 const RATE_LIMIT = 40;
 const RATE_WINDOW = 60 * 1000;
 
-/* Groq retires model ids without much notice, so try the configured one first
- * and fall back through current ids. Whichever answers is reused afterwards. */
+/* Groq model candidates */
 const MODEL_CANDIDATES = Array.from(new Set([
   MODEL,
   'qwen/qwen3.8-27b',
@@ -85,28 +84,7 @@ const REFUSALS = {
   mr: 'आपण अभ्यासाच्या गोष्टी करूया. तुम्ही जो धडा शिकत आहात त्याबद्दल विचारा, मी सोप्या शब्दांत समजावून सांगेन.'
 };
 
-/* A light safety net for a child-facing model: clearly unsuitable requests are
- * refused before they reach the provider, in the student's language. */
 const UNSAFE = /\b(suicide|self[- ]?harm|kill (myself|yourself)|porn|pornography|sex|sexual|nude|naked|drugs?|cocaine|heroin|weapon|bomb|gun|terrorist|hack (a|an|someone|the)|credit card number|password of)\b/i;
-
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.webmanifest': 'application/manifest+json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.woff2': 'font/woff2',
-  '.pdf': 'application/pdf',
-  '.md': 'text/markdown; charset=utf-8',
-  '.txt': 'text/plain; charset=utf-8',
-  '.ico': 'image/x-icon'
-};
 
 const hits = new Map();
 
@@ -116,52 +94,6 @@ function rateLimited(ip) {
   recent.push(now);
   hits.set(ip, recent);
   return recent.length > RATE_LIMIT;
-}
-
-function sendJson(res, status, payload) {
-  const body = JSON.stringify(payload);
-  res.writeHead(status, {
-    'content-type': 'application/json; charset=utf-8',
-    'content-length': Buffer.byteLength(body),
-    'cache-control': 'no-store'
-  });
-  res.end(body);
-}
-
-function readBody(req) {
-  return new Promise(function (resolve, reject) {
-    let size = 0;
-    const chunks = [];
-    req.on('data', function (chunk) {
-      size += chunk.length;
-      if (size > MAX_BODY) {
-        reject(Object.assign(new Error('Request body too large.'), { status: 413 }));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on('end', function () { resolve(Buffer.concat(chunks).toString('utf8')); });
-    req.on('error', reject);
-  });
-}
-
-function readRawBody(req, limit) {
-  return new Promise(function (resolve, reject) {
-    let size = 0;
-    const chunks = [];
-    req.on('data', function (chunk) {
-      size += chunk.length;
-      if (size > limit) {
-        reject(Object.assign(new Error('Recording too large.'), { status: 413 }));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on('end', function () { resolve(Buffer.concat(chunks)); });
-    req.on('error', reject);
-  });
 }
 
 function sameOrigin(req) {
@@ -192,13 +124,9 @@ function buildMessages(payload, language) {
       content: 'The student is looking at this lesson right now: "' + context.slice(0, 600) + '". Prefer answering about it when the question is short or refers to "this".'
     });
   }
-  buildHistory(payload).forEach(function (m) { messages.push(m); });
+  cleanHistory(payload.history).forEach(function (m) { messages.push(m); });
   messages.push({ role: 'user', content: String(payload.question || '').trim() });
   return messages;
-}
-
-function buildHistory(payload) {
-  return cleanHistory(payload.history);
 }
 
 function bodyFor(model, messages, stream) {
@@ -290,69 +218,101 @@ async function pipeStream(upstream, res) {
   res.end();
 }
 
-async function handleTutor(req, res) {
-  if (req.method !== 'POST') {
-    sendJson(res, 405, { error: 'method_not_allowed' });
-    return;
-  }
+/* ============================================================
+   EXPRESS APPLICATION SETUP
+   ============================================================ */
+
+const app = express();
+
+/* Request logger middleware */
+app.use(function (req, res, next) {
+  const started = Date.now();
+  res.on('finish', function () {
+    console.log(req.method, req.url.split('?')[0], res.statusCode, (Date.now() - started) + 'ms');
+  });
+  next();
+});
+
+/* Body parsers */
+app.use(express.json({ limit: '1mb' }));
+app.use(express.raw({ type: 'audio/*', limit: '12mb' }));
+
+/* ------------------------------------------------------------
+   HEALTH & METRICS ENDPOINTS
+   ------------------------------------------------------------ */
+
+app.get('/api/tutor/health', function (req, res) {
+  res.json({
+    ok: true,
+    configured: Boolean(API_KEY),
+    provider: 'groq',
+    model: activeModel,
+    stt: STT_MODEL,
+    mongodb: isMongoConnected()
+  });
+});
+
+app.get('/api/health', function (req, res) {
+  res.json({
+    status: 'healthy',
+    timestamp: Date.now(),
+    mongodb: {
+      connected: isMongoConnected()
+    },
+    tutor: {
+      configured: Boolean(API_KEY),
+      model: activeModel
+    }
+  });
+});
+
+/* ------------------------------------------------------------
+   AI TUTOR & TRANSCRIBE (Practical 4 / Node Server Features)
+   ------------------------------------------------------------ */
+
+app.post('/api/tutor', async function (req, res) {
   if (!sameOrigin(req)) {
-    sendJson(res, 403, { error: 'bad_origin' });
-    return;
+    return res.status(403).json({ error: 'bad_origin' });
   }
   const ip = req.socket.remoteAddress || 'unknown';
   if (rateLimited(ip)) {
-    sendJson(res, 429, { error: 'busy', message: 'Too many questions just now. Wait a moment and try again.' });
-    return;
+    return res.status(429).json({ error: 'busy', message: 'Too many questions just now. Wait a moment and try again.' });
   }
 
-  let payload;
-  try {
-    payload = JSON.parse(await readBody(req) || '{}');
-  } catch (error) {
-    sendJson(res, error.status || 400, { error: 'bad_request', message: 'Could not read that question.' });
-    return;
-  }
-
+  const payload = req.body || {};
   const question = String(payload.question || '').trim();
   const language = ['en', 'hi', 'mr'].includes(payload.language) ? payload.language : 'en';
   const wantsStream = Boolean(payload.stream);
 
   if (!question) {
-    sendJson(res, 400, { error: 'empty_question', message: 'Ask a question first.' });
-    return;
+    return res.status(400).json({ error: 'empty_question', message: 'Ask a question first.' });
   }
   if (question.length > 800) {
-    sendJson(res, 400, { error: 'question_too_long', message: 'Please ask a shorter question.' });
-    return;
+    return res.status(400).json({ error: 'question_too_long', message: 'Please ask a shorter question.' });
   }
   if (UNSAFE.test(question)) {
-    sendJson(res, 200, { answer: REFUSALS[language], model: 'guardrail', language: language });
-    return;
+    return res.status(200).json({ answer: REFUSALS[language], model: 'guardrail', language: language });
   }
   if (!API_KEY) {
-    sendJson(res, 503, {
+    return res.status(503).json({
       error: 'not_configured',
       message: 'The AI tutor is not connected on this machine yet. Add GROQ_API_KEY to .env and restart the server.'
     });
-    return;
   }
 
   const messages = buildMessages(payload, language);
   const result = await openUpstream(messages, wantsStream);
 
   if (result.error === 'unreachable') {
-    console.warn('[server] Tutor request failed:', result.detail);
-    sendJson(res, 504, { error: 'upstream_unreachable', message: 'The tutor service could not be reached. Check the connection.' });
-    return;
+    return res.status(504).json({ error: 'upstream_unreachable', message: 'The tutor service could not be reached. Check the connection.' });
   }
   if (result.error === 'upstream') {
-    sendJson(res, result.status, {
+    return res.status(result.status).json({
       error: result.status === 429 ? 'busy' : 'upstream_error',
       message: result.status === 429
         ? 'The tutor is busy right now. Try again in a moment.'
         : 'The tutor could not answer that. Check the key and model, then try again.'
     });
-    return;
   }
 
   if (wantsStream) {
@@ -364,61 +324,42 @@ async function handleTutor(req, res) {
   try {
     data = await result.response.json();
   } catch (error) {
-    sendJson(res, 502, { error: 'bad_upstream_response', message: 'The tutor sent an answer we could not read.' });
-    return;
+    return res.status(502).json({ error: 'bad_upstream_response', message: 'The tutor sent an answer we could not read.' });
   }
 
   const answer = String((((data.choices || [])[0] || {}).message || {}).content || '').trim();
   if (!answer) {
-    sendJson(res, 502, { error: 'empty_answer', message: 'The tutor did not answer. Try asking in another way.' });
-    return;
+    return res.status(502).json({ error: 'empty_answer', message: 'The tutor did not answer. Try asking in another way.' });
   }
 
-  sendJson(res, 200, { answer: answer, model: activeModel, language: language });
-}
+  res.status(200).json({ answer: answer, model: activeModel, language: language });
+});
 
-/* Speech-to-text for browsers without a usable Web Speech recogniser
- * (Firefox, Safari, Brave). The recorded clip is forwarded to Groq Whisper so
- * the API key still never reaches the device. */
-async function handleTranscribe(req, res) {
-  if (req.method !== 'POST') {
-    sendJson(res, 405, { error: 'method_not_allowed' });
-    return;
-  }
+app.post('/api/transcribe', async function (req, res) {
   if (!sameOrigin(req)) {
-    sendJson(res, 403, { error: 'bad_origin' });
-    return;
+    return res.status(403).json({ error: 'bad_origin' });
   }
   const ip = req.socket.remoteAddress || 'unknown';
   if (rateLimited(ip)) {
-    sendJson(res, 429, { error: 'busy', message: 'Too much listening just now. Wait a moment and try again.' });
-    return;
+    return res.status(429).json({ error: 'busy', message: 'Too much listening just now. Wait a moment and try again.' });
   }
   if (!API_KEY) {
-    sendJson(res, 503, {
+    return res.status(503).json({
       error: 'not_configured',
       message: 'Speech recognition is not connected on this machine yet. Add GROQ_API_KEY to .env and restart the server.'
     });
-    return;
   }
 
-  let audio;
-  try {
-    audio = await readRawBody(req, MAX_AUDIO);
-  } catch (error) {
-    sendJson(res, error.status || 400, { error: 'bad_audio', message: 'Could not read that recording.' });
-    return;
-  }
+  const audio = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
   if (!audio.length) {
-    sendJson(res, 400, { error: 'empty_audio', message: 'No audio was recorded.' });
-    return;
+    return res.status(400).json({ error: 'empty_audio', message: 'No audio was recorded.' });
   }
 
   let language = 'en';
   try {
-    const requested = new URL(req.url, 'http://localhost').searchParams.get('lang') || 'en';
+    const requested = req.query.lang || 'en';
     if (['en', 'hi', 'mr'].includes(requested)) language = requested;
-  } catch (error) { /* keep the default */ }
+  } catch (error) { /* keep default */ }
 
   const type = String(req.headers['content-type'] || 'audio/webm').split(';')[0].trim();
   const ext = /ogg/.test(type) ? 'ogg' : /mp4|m4a|aac/.test(type) ? 'm4a' : /wav/.test(type) ? 'wav' : 'webm';
@@ -439,103 +380,295 @@ async function handleTranscribe(req, res) {
       signal: AbortSignal.timeout(30000)
     });
   } catch (error) {
-    console.warn('[server] Transcription failed:', error.message);
-    sendJson(res, 504, { error: 'stt_unreachable', message: 'Speech recognition could not be reached. Check the connection.' });
-    return;
+    return res.status(504).json({ error: 'stt_unreachable', message: 'Speech recognition could not be reached. Check the connection.' });
   }
 
   if (!upstream.ok) {
-    const detail = await upstream.text().catch(function () { return ''; });
-    console.warn('[server] Transcription error', upstream.status, detail.slice(0, 200));
-    sendJson(res, upstream.status === 429 ? 429 : 502, {
+    return res.status(upstream.status === 429 ? 429 : 502).json({
       error: upstream.status === 429 ? 'busy' : 'stt_error',
-      message: upstream.status === 429
-        ? 'Speech recognition is busy right now. Try again in a moment.'
-        : 'That recording could not be understood. Try again.'
+      message: upstream.status === 429 ? 'Speech recognition is busy right now.' : 'Recording could not be understood.'
     });
-    return;
   }
 
   const data = await upstream.json().catch(function () { return null; });
   const text = String((data && data.text) || '').trim();
-  sendJson(res, 200, { text: text, model: STT_MODEL, language: language });
-}
-
-async function serveStatic(req, res) {
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    res.writeHead(405, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('Method not allowed');
-    return;
-  }
-
-  let pathname;
-  try {
-    pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-  } catch (error) {
-    res.writeHead(400).end('Bad request');
-    return;
-  }
-  if (pathname.endsWith('/')) pathname += 'index.html';
-
-  const target = normalize(join(ROOT, pathname));
-  if (target !== ROOT && !target.startsWith(ROOT + sep)) {
-    res.writeHead(403).end('Forbidden');
-    return;
-  }
-
-  let body;
-  try {
-    body = await readFile(target);
-  } catch (error) {
-    res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('Not found');
-    return;
-  }
-
-  const type = MIME[extname(target).toLowerCase()] || 'application/octet-stream';
-  const immutable = /\.(woff2|jpg|jpeg|png|webp|svg|ico)$/i.test(target);
-  res.writeHead(200, {
-    'content-type': type,
-    'content-length': body.length,
-    'cache-control': immutable ? 'public, max-age=3600' : 'no-cache'
-  });
-  res.end(req.method === 'HEAD' ? undefined : body);
-}
-
-const server = createServer(function (req, res) {
-  const started = Date.now();
-  res.on('finish', function () {
-    console.log(req.method, req.url.split('?')[0], res.statusCode, (Date.now() - started) + 'ms');
-  });
-
-  const pathname = (req.url || '/').split('?')[0];
-  if (pathname === '/api/tutor/health') {
-    sendJson(res, 200, { ok: true, configured: Boolean(API_KEY), provider: 'groq', model: activeModel, stt: STT_MODEL });
-    return;
-  }
-  if (pathname === '/api/transcribe') {
-    handleTranscribe(req, res).catch(function (error) {
-      console.error('[server] Unhandled transcription error:', error);
-      if (!res.headersSent) sendJson(res, 500, { error: 'server_error' });
-    });
-    return;
-  }
-  if (pathname === '/api/tutor') {
-    handleTutor(req, res).catch(function (error) {
-      console.error('[server] Unhandled tutor error:', error);
-      if (!res.headersSent) sendJson(res, 500, { error: 'server_error' });
-    });
-    return;
-  }
-  if (pathname.startsWith('/api/')) {
-    sendJson(res, 404, { error: 'not_found' });
-    return;
-  }
-  serveStatic(req, res).catch(function (error) {
-    console.error('[server] Static error:', error);
-    if (!res.headersSent) res.writeHead(500).end('Server error');
-  });
+  res.status(200).json({ text: text, model: STT_MODEL, language: language });
 });
+
+/* ------------------------------------------------------------
+   RESTful CRUD APIs & MONGODB SYNC (Practicals 06 & 07)
+   ------------------------------------------------------------ */
+
+/* 1. Sync Gateway: Ingests offline-queued telemetry events into MongoDB */
+app.post('/api/sync', async function (req, res) {
+  try {
+    const { student, events } = req.body || {};
+    if (!Array.isArray(events)) {
+      return res.status(400).json({ error: 'invalid_payload', message: 'events array expected' });
+    }
+
+    if (!isMongoConnected()) {
+      return res.status(200).json({ ok: true, synced: events.length, mode: 'local-fallback' });
+    }
+
+    let studentId = (student && student.id) || 'unknown';
+
+    // Ingest events into audit log or progress collections
+    for (const event of events) {
+      if (event.action || event.kind) {
+        await AuditLog.create({
+          actorId: studentId,
+          actorRole: 'student',
+          action: event.action || event.kind || 'activity',
+          detail: typeof event.detail === 'string' ? event.detail : JSON.stringify(event.detail || {}),
+          ts: event.ts || Date.now()
+        }).catch(() => {});
+      }
+
+      // If it's a progress or session event, update corresponding documents
+      if (event.session && event.session.id) {
+        await Session.findOneAndUpdate(
+          { id: event.session.id },
+          {
+            id: event.session.id,
+            studentId: studentId,
+            startedAt: event.session.startedAt || Date.now(),
+            endedAt: event.session.endedAt || null,
+            durationMs: event.session.durationMs || 0,
+            syncedAt: Date.now()
+          },
+          { upsert: true }
+        ).catch(() => {});
+      }
+    }
+
+    res.status(200).json({
+      ok: true,
+      count: events.length,
+      mode: 'mongodb',
+      timestamp: Date.now()
+    });
+  } catch (err) {
+    console.error('[server] Sync error:', err.message);
+    res.status(500).json({ error: 'sync_failed', message: err.message });
+  }
+});
+
+/* 2. Accounts CRUD */
+app.get('/api/accounts', async function (req, res) {
+  try {
+    if (!isMongoConnected()) return res.json([]);
+    const query = {};
+    if (req.query.role) query.role = req.query.role;
+    if (req.query.active !== undefined) query.active = req.query.active === 'true';
+    const accounts = await Account.find(query).select('-pinHash').lean();
+    res.json(accounts);
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+app.post('/api/accounts', async function (req, res) {
+  try {
+    const { id, role, name, pinHash, metadata } = req.body || {};
+    if (!id || !role || !name || !pinHash) {
+      return res.status(400).json({ error: 'validation_error', message: 'id, role, name, and pinHash are required' });
+    }
+    if (!isMongoConnected()) {
+      return res.status(503).json({ error: 'db_unavailable' });
+    }
+    const created = await Account.findOneAndUpdate(
+      { id: id },
+      { id, role, name, pinHash, metadata: metadata || {}, active: true },
+      { upsert: true, new: true }
+    );
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+app.get('/api/accounts/:id', async function (req, res) {
+  try {
+    if (!isMongoConnected()) return res.status(404).json({ error: 'not_found' });
+    const account = await Account.findOne({ id: req.params.id }).select('-pinHash').lean();
+    if (!account) return res.status(404).json({ error: 'not_found' });
+    res.json(account);
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+app.delete('/api/accounts/:id', async function (req, res) {
+  try {
+    if (!isMongoConnected()) return res.status(503).json({ error: 'db_unavailable' });
+    await Account.deleteOne({ id: req.params.id });
+    res.json({ ok: true, deleted: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+/* 3. Progress CRUD */
+app.get('/api/progress/:studentId', async function (req, res) {
+  try {
+    if (!isMongoConnected()) return res.json({ stories: {}, labs: {} });
+    const doc = await Progress.findOne({ studentId: req.params.studentId }).lean();
+    res.json(doc || { studentId: req.params.studentId, stories: {}, labs: {} });
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+app.post('/api/progress', async function (req, res) {
+  try {
+    const { studentId, stories, labs, orientation, badges } = req.body || {};
+    if (!studentId) return res.status(400).json({ error: 'studentId required' });
+    if (!isMongoConnected()) return res.json({ ok: true, saved: 'local' });
+
+    const updated = await Progress.findOneAndUpdate(
+      { studentId },
+      { $set: { stories, labs, orientation, badges, updatedAt: Date.now() } },
+      { upsert: true, new: true }
+    );
+    res.json({ ok: true, progress: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+/* 4. Assignments CRUD */
+app.get('/api/assignments', async function (req, res) {
+  try {
+    if (!isMongoConnected()) return res.json([]);
+    const query = {};
+    if (req.query.teacherId) query.teacherId = req.query.teacherId;
+    if (req.query.targetId) query.targetId = req.query.targetId;
+    const assignments = await Assignment.find(query).sort({ createdAt: -1 }).lean();
+    res.json(assignments);
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+app.post('/api/assignments', async function (req, res) {
+  try {
+    const { id, teacherId, targetType, targetId, moduleType, moduleId, dueAt } = req.body || {};
+    if (!teacherId || !targetType || !moduleType || !moduleId) {
+      return res.status(400).json({ error: 'validation_error', message: 'Required fields missing' });
+    }
+    if (!isMongoConnected()) return res.status(503).json({ error: 'db_unavailable' });
+
+    const newAssignment = await Assignment.create({
+      id: id || 'ASN-' + Date.now().toString(36).toUpperCase(),
+      teacherId,
+      targetType,
+      targetId: targetId || null,
+      moduleType,
+      moduleId,
+      dueAt: dueAt || null,
+      createdAt: Date.now()
+    });
+    res.status(201).json(newAssignment);
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+/* 5. Teacher Notes CRUD */
+app.get('/api/notes/:studentId', async function (req, res) {
+  try {
+    if (!isMongoConnected()) return res.json([]);
+    const notes = await TeacherNote.find({ studentId: req.params.studentId }).sort({ createdAt: -1 }).lean();
+    res.json(notes);
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+app.post('/api/notes', async function (req, res) {
+  try {
+    const { teacherId, studentId, text } = req.body || {};
+    if (!teacherId || !studentId || !text) {
+      return res.status(400).json({ error: 'validation_error', message: 'teacherId, studentId, and text are required' });
+    }
+    if (!isMongoConnected()) return res.status(503).json({ error: 'db_unavailable' });
+
+    const note = await TeacherNote.create({
+      id: 'NOTE-' + Date.now().toString(36).toUpperCase(),
+      teacherId,
+      studentId,
+      text: String(text).trim(),
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    res.status(201).json(note);
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+/* 6. Audit Log */
+app.get('/api/audit-log', async function (req, res) {
+  try {
+    if (!isMongoConnected()) return res.json([]);
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const logs = await AuditLog.find().sort({ ts: -1 }).limit(limit).lean();
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+/* Fallback for unknown /api endpoints - required by smoke test to return JSON 404 */
+app.use('/api', function (req, res) {
+  res.status(404).json({ error: 'not_found' });
+});
+
+/* ------------------------------------------------------------
+   STATIC ASSETS SERVING (SPA)
+   ------------------------------------------------------------ */
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.woff2': 'font/woff2',
+  '.pdf': 'application/pdf',
+  '.md': 'text/markdown; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '.ico': 'image/x-icon'
+};
+
+app.use(express.static(ROOT, {
+  setHeaders: function (res, path) {
+    const ext = extname(path).toLowerCase();
+    if (MIME[ext]) {
+      res.setHeader('content-type', MIME[ext]);
+    }
+    const immutable = /\.(woff2|jpg|jpeg|png|webp|svg|ico)$/i.test(path);
+    res.setHeader('cache-control', immutable ? 'public, max-age=3600' : 'no-cache');
+  }
+}));
+
+/* 404 handler for non-API files */
+app.use(function (req, res) {
+  res.status(404).type('text/plain; charset=utf-8').send('Not found');
+});
+
+/* ------------------------------------------------------------
+   SERVER INITIALIZATION & STARTUP
+   ------------------------------------------------------------ */
+
+const server = createServer(app);
 
 server.on('error', function (error) {
   if (error.code === 'EADDRINUSE') {
@@ -546,10 +679,18 @@ server.on('error', function (error) {
   process.exit(1);
 });
 
-server.listen(PORT, HOST, function () {
-  console.log('[server] StoryLab running at http://' + HOST + ':' + PORT);
-  console.log('[server] AI tutor: ' + (API_KEY ? 'connected (model ' + activeModel + ')' : 'no key — add GROQ_API_KEY to .env'));
-  if (HOST === '0.0.0.0') {
-    console.log('[server] LAN mode: open http://<this-machine-ip>:' + PORT + ' — the microphone needs HTTPS on other devices.');
-  }
-});
+async function start() {
+  await connectMongo();
+
+  server.listen(PORT, HOST, function () {
+    console.log('[server] StoryLab running with Express at http://' + HOST + ':' + PORT);
+    console.log('[server] Framework: Express.js (v' + (express.version || '4.x') + ')');
+    console.log('[server] Database: MongoDB (' + (isMongoConnected() ? 'connected' : 'offline fallback') + ')');
+    console.log('[server] AI tutor: ' + (API_KEY ? 'connected (model ' + activeModel + ')' : 'no key — add GROQ_API_KEY to .env'));
+    if (HOST === '0.0.0.0') {
+      console.log('[server] LAN mode: open http://<this-machine-ip>:' + PORT);
+    }
+  });
+}
+
+start();

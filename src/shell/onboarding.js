@@ -408,6 +408,7 @@
       '    <div class="plate-body" id="enrol-body"></div>' +
       '    <footer class="plate-foot">' +
       '      <button type="button" class="btn btn-ghost" id="enrol-back">← BACK</button>' +
+      '      <button type="button" class="btn btn-ghost" id="enrol-guest" style="font-size:12px;opacity:0.85;border:1px dashed var(--color-border)">⚡ QUICK GUEST DEMO</button>' +
       '      <span class="plate-foot__hint" id="enrol-hint">STEP 1 OF 3</span>' +
       '      <button type="button" class="btn btn-primary" id="enrol-next">CONTINUE →</button>' +
       '    </footer>' +
@@ -415,6 +416,11 @@
       '</section>';
 
     _enrolBody = document.getElementById('enrol-body');
+
+    var guestBtn = document.getElementById('enrol-guest');
+    if (guestBtn) {
+      guestBtn.addEventListener('click', quickGuestStart);
+    }
 
     _enrolBody.addEventListener('click', function (event) {
       var avatarBtn = event.target.closest('[data-avatar]');
@@ -988,6 +994,43 @@
         box.textContent = 'Progress could not be saved: ' + (err.message || err) + '. Check that this browser allows storage, then try again.';
         body.appendChild(box);
       }
+    }
+  }
+
+  async function quickGuestStart() {
+    stopMic(false);
+    var lang = (window.StoryLabI18n && window.StoryLabI18n.getLanguage) ? window.StoryLabI18n.getLanguage() : 'en';
+    var language = findLanguage(lang);
+    try {
+      var profile = await State.saveProfile({
+        name: 'Guest Learner',
+        avatar: 'sun',
+        grade: '6',
+        language: lang,
+        languageTag: language.code,
+        mic: 'touch',
+        onboardedAt: Date.now()
+      });
+      if (window.StoryLabAuth) {
+        try {
+          var accountExists = await window.DB.load('accounts', profile.id);
+          if (!accountExists) {
+            await window.StoryLabAuth.createAccount('student', {
+              id: profile.id,
+              name: profile.name,
+              grade: profile.grade,
+              avatar: profile.avatar,
+              language: profile.language
+            }, '1234');
+          }
+        } catch (e) {}
+      }
+      await State.startSession();
+      clearDraft();
+      window.StoryLabRouter.navigate('home');
+    } catch (err) {
+      console.error('[Onboarding] Guest quick start failed:', err);
+      window.StoryLabRouter.navigate('home');
     }
   }
 

@@ -76,6 +76,7 @@
         <a class="app-nav__link nav--student" data-nav="home" href="#/home">HOME</a>
         <a class="app-nav__link nav--student" data-nav="record" href="#/record">PROGRESS</a>
         <a class="app-nav__link nav--student nav--guest" data-nav="guide" href="#/orientation">INTRO</a>
+        <a class="app-nav__link nav--student nav--guest" data-nav="login" href="#/login">PORTAL</a>
         <!-- teacher -->
         <a class="app-nav__link nav--teacher" data-nav="teacher" href="#/teacher">DASHBOARD</a>
         <a class="app-nav__link nav--teacher" data-nav="teacher-assign" href="#/teacher/assign">ASSIGN</a>
@@ -159,6 +160,11 @@
       <p style="color:#b4b6a9;max-width:52ch;margin:12px auto 0">StoryLab Voice runs in your browser. Enable JavaScript to open the stories, the voice tutor, and your saved progress.</p>
     </div>
   </noscript>
+
+  <!-- Runtime environment config -->
+  <script>
+    window.STORYLAB_SYNC_ENDPOINT = '/api/sync';
+  </script>
 
   <!-- Shell scripts — order matters -->
   <script src="src/shell/i18n.js"></script>

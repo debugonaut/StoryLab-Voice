@@ -23,6 +23,21 @@
   var _utterance = null;
   var _unmounted = false;
   var _fallbackOpen = false;
+  var _cachedVoices = [];
+
+  function _loadVoices() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        _cachedVoices = window.speechSynthesis.getVoices() || [];
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+          window.speechSynthesis.onvoiceschanged = function () {
+            _cachedVoices = window.speechSynthesis.getVoices() || [];
+          };
+        }
+      } catch (e) {}
+    }
+  }
+  _loadVoices();
   var _listening = false;
   var _queryToken = 0;
   var _queryTimer = null;
@@ -185,10 +200,19 @@
   /* ─────────────────────────────────────────────────────────
    * Helpers
    * ───────────────────────────────────────────────────────── */
-  function _getLanguageTag() {
+  function _getLanguageTag(explicit) {
     try {
+      if (explicit) {
+        var map = { en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN' };
+        if (map[explicit]) return map[explicit];
+        if (explicit.indexOf('-') !== -1) return explicit;
+      }
+      var i18nLang = (window.StoryLabI18n && typeof window.StoryLabI18n.getLanguage === 'function')
+        ? window.StoryLabI18n.getLanguage()
+        : null;
+      var docLang = document.documentElement.getAttribute('data-lang');
       var profile = window.StoryLabState && window.StoryLabState.getProfile();
-      var lang = profile && profile.language;
+      var lang = i18nLang || docLang || (profile && profile.language) || 'en';
       var map = { en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN' };
       return map[lang] || 'en-IN';
     } catch (e) {
@@ -267,8 +291,11 @@
       }
 
       var synth = window.speechSynthesis;
+      if (synth && synth.paused && typeof synth.resume === 'function') {
+        synth.resume();
+      }
       var token = ++_speakToken;
-      var voiceLang = lang || _getLanguageTag();
+      var voiceLang = _getLanguageTag(lang);
       var index = 0;
       var settled = false;
       var guard = null;
@@ -292,15 +319,35 @@
 
         var utter = new SpeechSynthesisUtterance(chunks[index]);
         utter.lang = voiceLang;
-        utter.rate = 0.92;
+        utter.rate = 0.90;
         utter.pitch = 1.0;
         if (synth && typeof synth.getVoices === 'function') {
           var voices = synth.getVoices() || [];
+          if (!voices.length) voices = _cachedVoices || [];
           var prefix = voiceLang.slice(0, 2).toLowerCase();
           var matched = voices.find(function (v) {
-            return v.lang === voiceLang || (v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(prefix));
+            var vLang = (v.lang || '').toLowerCase().replace(/_/g, '-');
+            return vLang === voiceLang.toLowerCase() || vLang.startsWith(prefix);
           });
-          if (matched) utter.voice = matched;
+          // Fallback for Marathi: native mr-IN TTS voices are often absent on macOS / Chrome.
+          // Fall back to Hindi (hi-IN) which shares identical Devanagari script and phonetics!
+          if (!matched && prefix === 'mr') {
+            matched = voices.find(function (v) {
+              var vLang = (v.lang || '').toLowerCase().replace(/_/g, '-');
+              return vLang.startsWith('hi');
+            });
+          }
+          if (!matched && (prefix === 'hi' || prefix === 'mr')) {
+            matched = voices.find(function (v) {
+              return v.name && /lekha|hindi|india/i.test(v.name);
+            });
+          }
+          if (matched) {
+            utter.voice = matched;
+            utter.lang = matched.lang;
+          } else if (prefix === 'mr') {
+            utter.lang = 'hi-IN';
+          }
         }
         index += 1;
         _utterance = utter;
@@ -359,7 +406,7 @@
       _setState('listening');
 
       var rec = new SR();
-      rec.lang = lang || _getLanguageTag();
+      rec.lang = _getLanguageTag(lang);
       rec.interimResults = true;
       rec.continuous = false;
       rec.maxAlternatives = 3;
@@ -406,7 +453,7 @@
         }
         var live = (best + ' ' + interim).trim();
         if (typeof onInterim === 'function' && live) onInterim(live, false);
-        armSilence(interim ? 1300 : 700);
+        armSilence(interim ? 2200 : 1600);
       };
 
       rec.onerror = function (e) {

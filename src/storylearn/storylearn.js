@@ -296,8 +296,9 @@
       })
       .then(function (rawStory) {
         if (_unmounted) return;
+        var currentLang = (window.StoryLabI18n && window.StoryLabI18n.getLanguage) ? window.StoryLabI18n.getLanguage() : 'en';
         var story = (window.StoryLabI18n && window.StoryLabI18n.translateStory)
-          ? window.StoryLabI18n.translateStory(rawStory)
+          ? window.StoryLabI18n.translateStory(rawStory, currentLang)
           : rawStory;
         var meta = null;
         for (var m = 0; m < _stories.length; m++) {
@@ -407,8 +408,9 @@
     _hideAdvance();
     _hideVoice();
 
+    var currentLang = (window.StoryLabI18n && window.StoryLabI18n.getLanguage) ? window.StoryLabI18n.getLanguage() : 'en';
     var speakPromise = (window.Chatbot && typeof window.Chatbot.speak === 'function')
-      ? window.Chatbot.speak(step.text)
+      ? window.Chatbot.speak(step.text, currentLang)
       : Promise.resolve();
 
     if (step.type === 'narrate') {
@@ -449,6 +451,7 @@
     if (_unmounted || token !== _stepToken) return;
     var esc = window.StoryLabUI.escape;
     var icon = window.StoryLabUI.icon;
+    var currentLang = (window.StoryLabI18n && window.StoryLabI18n.getLanguage) ? window.StoryLabI18n.getLanguage() : 'en';
 
     var optionsEl = document.getElementById('sl-options');
     if (!optionsEl) return;
@@ -457,6 +460,26 @@
       ? '<p class="story-step__hint">' + icon('info') + ' ' + esc(step.hint) + '</p>'
       : '';
     show(optionsEl);
+
+    // Interactive Tap-to-Speak microphone bar
+    var micWrap = document.createElement('div');
+    micWrap.className = 'story-voice-prompt';
+    micWrap.style.cssText = 'display:flex;align-items:center;gap:12px;margin:12px 0 16px;flex-wrap:wrap;';
+    var micLabel = currentLang === 'hi' ? 'उत्तर बोलें (Mic)' : currentLang === 'mr' ? 'उत्तर बोला (Mic)' : 'SPEAK ANSWER (Mic)';
+    micWrap.innerHTML =
+      '<button type="button" class="btn btn-secondary story-mic-trigger" id="sl-mic-btn" style="display:inline-flex;align-items:center;gap:8px;font-weight:600;">' +
+      icon('mic') + ' <span>' + micLabel + '</span>' +
+      '</button>' +
+      '<span class="story-voice-status" id="sl-voice-status" style="font-family:var(--font-mono);font-size:0.8rem;color:var(--color-text-muted);"></span>';
+    optionsEl.appendChild(micWrap);
+
+    var micBtn = micWrap.querySelector('#sl-mic-btn');
+    if (micBtn) {
+      micBtn.addEventListener('click', function () {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        _startVoiceAnswer(step, token);
+      });
+    }
 
     var buttonsWrap = document.createElement('div');
     buttonsWrap.className = 'story-options-grid';
@@ -486,46 +509,146 @@
     if (_unmounted || token !== _stepToken || _listening) return;
     if (!window.Chatbot || typeof window.Chatbot.listen !== 'function') return;
 
-    _listening = true;
-    _showVoice('Listening…');
+    var currentLang = (window.StoryLabI18n && window.StoryLabI18n.getLanguage) ? window.StoryLabI18n.getLanguage() : 'en';
+    var langTag = (window.StoryLabI18n && window.StoryLabI18n.getLanguageTag)
+      ? window.StoryLabI18n.getLanguageTag()
+      : (currentLang === 'hi' ? 'hi-IN' : currentLang === 'mr' ? 'mr-IN' : 'en-IN');
 
-    window.Chatbot.listen().then(function (transcript) {
+    _listening = true;
+    _showVoice(currentLang === 'hi' ? 'सुन रहा हूँ… उत्तर बोलें' : currentLang === 'mr' ? 'ऐकत आहे… उत्तर बोला' : 'Listening… speak answer');
+
+    var statusEl = document.getElementById('sl-voice-status');
+    if (statusEl) {
+      statusEl.textContent = '● ' + (currentLang === 'hi' ? 'माइक चालू है… बोलिए' : currentLang === 'mr' ? 'माइक सुरू आहे… बोला' : 'Mic listening… speak now');
+      statusEl.style.color = 'var(--color-accent)';
+    }
+
+    window.Chatbot.listen(langTag).then(function (transcript) {
       if (token !== _stepToken) return;
       _listening = false;
       _hideVoice();
-      if (_unmounted || !transcript) return;
+      if (_unmounted) return;
+      if (!transcript) {
+        if (statusEl) {
+          statusEl.textContent = currentLang === 'hi' ? 'आवाज़ नहीं सुनाई दी, माइक दबाकर फिर बोलें' : currentLang === 'mr' ? 'आवाज ऐकू आला नाही, पुन्हा बोला' : 'No speech heard. Tap mic to speak again.';
+          statusEl.style.color = 'var(--color-warn)';
+        }
+        return;
+      }
+
+      if (statusEl) {
+        statusEl.textContent = '✓ ' + transcript;
+        statusEl.style.color = 'var(--color-ok)';
+      }
+
       var match = _matchTranscript(transcript, step.options);
-      if (match) _selectOption(step, match, _findOptionButton(match.label), token);
+      if (match) {
+        _selectOption(step, match, _findOptionButton(match.label), token);
+      } else {
+        if (statusEl) {
+          statusEl.textContent = 'Heard "' + transcript + '". Tap an option directly or try again.';
+          statusEl.style.color = 'var(--color-warn)';
+        }
+      }
     }).catch(function () {
       if (token !== _stepToken) return;
       _listening = false;
       _hideVoice();
+      if (statusEl) {
+        statusEl.textContent = 'Mic stopped. Tap button to retry.';
+        statusEl.style.color = 'var(--color-text-muted)';
+      }
     });
   }
 
   function _matchTranscript(transcript, options) {
-    var lower = transcript.toLowerCase();
+    if (!transcript || !options || !options.length) return null;
+    var raw = String(transcript).trim().toLowerCase();
+    var clean = raw.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // 1. Direct letter & ordinal mappings
+    var letterMap = {
+      'a': 0, 'option a': 0, 'choice a': 0, 'letter a': 0, 'ए': 0, 'ऑप्शन ए': 0, 'पहिला': 0, 'पहला': 0, 'first': 0, 'one': 0, '1': 0, '१': 0,
+      'b': 1, 'option b': 1, 'choice b': 1, 'letter b': 1, 'बी': 1, 'ऑप्शन बी': 1, 'दुसरा': 1, 'दूसरा': 1, 'second': 1, 'two': 1, '2': 1, '२': 1,
+      'c': 2, 'option c': 2, 'choice c': 2, 'letter c': 2, 'सी': 2, 'ऑप्शन सी': 2, 'तिसरा': 2, 'तीसरा': 2, 'third': 2, 'three': 2, '3': 2, '३': 2,
+      'd': 3, 'option d': 3, 'choice d': 3, 'letter d': 3, 'डी': 3, 'ऑप्शन डी': 3, 'चौथा': 3, 'fourth': 3, 'four': 3, '4': 3, '४': 3
+    };
+
+    if (letterMap[clean] !== undefined && options[letterMap[clean]]) {
+      return options[letterMap[clean]];
+    }
+
+    for (var key in letterMap) {
+      var wordRegex = new RegExp('(?:^|\\s)' + key + '(?:\\s|$)', 'i');
+      if (wordRegex.test(clean) && options[letterMap[key]]) {
+        return options[letterMap[key]];
+      }
+    }
+
+    // 2. Number normalization: "six" -> 6, "seven" -> 7, "सहा" -> 6, etc.
+    var numMap = {
+      'zero': '0', 'शून्य': '0',
+      'one': '1', 'एक': '1',
+      'two': '2', 'दो': '2', 'दोन': '2',
+      'three': '3', 'तीन': '3',
+      'four': '4', 'चार': '4',
+      'five': '5', 'पाँच': '5', 'पांच': '5', 'पाच': '5',
+      'six': '6', 'छह': '6', 'सहा': '6',
+      'seven': '7', 'सात': '7',
+      'eight': '8', 'आठ': '8',
+      'nine': '9', 'नौ': '9', 'नऊ': '9',
+      'ten': '10', 'दस': '10', 'दहा': '10'
+    };
+
+    var expanded = clean;
+    for (var numWord in numMap) {
+      var nRegex = new RegExp('(?:^|\\s)' + numWord + '(?:\\s|$)', 'gi');
+      if (nRegex.test(expanded)) {
+        expanded = expanded.replace(nRegex, ' ' + numMap[numWord] + ' ');
+      }
+    }
+    expanded = expanded.replace(/\s+/g, ' ').trim();
+
+    // 3. Direct or substring matches on option labels
     for (var i = 0; i < options.length; i++) {
-      if (lower === options[i].label.toLowerCase()) return options[i];
+      var optLabel = String(options[i].label || '').toLowerCase();
+      var optClean = optLabel.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ').replace(/\s+/g, ' ').trim();
+
+      if (clean === optClean || expanded === optClean) return options[i];
+      if (clean.indexOf(optClean) !== -1 || expanded.indexOf(optClean) !== -1) return options[i];
+      if (optClean.indexOf(clean) !== -1 || optClean.indexOf(expanded) !== -1) return options[i];
+
+      var optNumbers = optClean.match(/\d+/g) || [];
+      var spokenNumbers = expanded.match(/\d+/g) || [];
+      if (optNumbers.length > 0 && spokenNumbers.length > 0) {
+        if (optNumbers.some(function (n) { return spokenNumbers.indexOf(n) !== -1; })) {
+          return options[i];
+        }
+      }
+
+      var firstWord = optClean.split(' ')[0];
+      if (firstWord && firstWord.length > 2 && (clean.indexOf(firstWord) !== -1 || expanded.indexOf(firstWord) !== -1)) {
+        return options[i];
+      }
     }
-    for (var j = 0; j < options.length; j++) {
-      var firstWord = options[j].label.toLowerCase().split(' ')[0];
-      if (lower.indexOf(firstWord) !== -1) return options[j];
-    }
-    for (var k = 0; k < options.length; k++) {
-      if (lower.indexOf(options[k].label.toLowerCase()) !== -1) return options[k];
-    }
+
     return null;
   }
 
   function _findOptionButton(label) {
     if (!_root) return null;
+    var target = String(label || '').trim().toLowerCase();
     var btns = _root.querySelectorAll('.story-option-btn');
     for (var i = 0; i < btns.length; i++) {
       var labelEl = btns[i].querySelector('.story-option-btn__label');
-      if (labelEl && labelEl.textContent === label) return btns[i];
+      if (labelEl && labelEl.textContent.trim().toLowerCase() === target) return btns[i];
     }
-    return null;
+    // Fallback: match first button if index match or substring
+    for (var j = 0; j < btns.length; j++) {
+      var txt = btns[j].textContent.trim().toLowerCase();
+      if (txt.indexOf(target) !== -1 || target.indexOf(txt) !== -1) return btns[j];
+    }
+    return btns[0] || null;
   }
 
   function _selectOption(step, opt, btn, token) {

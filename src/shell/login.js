@@ -115,8 +115,9 @@
       '      </div>' +
       '    </div>' +
       '    <p class="pin-error" id="setup-error"></p>' +
-      '    <div class="form-actions">' +
+      '    <div class="form-actions" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">' +
       '      <button type="submit" class="btn btn-primary">CREATE ADMIN →</button>' +
+      '      <a href="#/home" class="btn btn-ghost">← CONTINUE AS GUEST</a>' +
       '    </div>' +
       '  </form>' +
       '</div>'
@@ -137,7 +138,10 @@
       '    <span class="role-badge role-badge--admin">ADMIN</span>MANAGE' +
       '  </button>' +
       '</div>' +
-      '<p class="login-setup__hint">PINs are checked on this device. Nothing is sent anywhere.</p>'
+      '<p class="login-setup__hint">PINs are checked on this device. Nothing is sent anywhere.</p>' +
+      '<div style="margin-top:20px;text-align:center;">' +
+      '  <a href="#/home" class="btn btn-ghost">← CONTINUE AS GUEST</a>' +
+      '</div>'
     );
   }
 
@@ -165,11 +169,18 @@
       ? 'No students yet. Ask your teacher.'
       : 'No teachers yet. See admin.';
 
+    var emptyActions = isStudent
+      ? '<div style="display:flex;gap:10px;margin:12px 0 16px;flex-wrap:wrap;">' +
+        '  <a href="#/onboarding" class="btn btn-primary">ENROL AS STUDENT →</a>' +
+        '  <a href="#/home" class="btn btn-ghost">CONTINUE AS GUEST</a>' +
+        '</div>'
+      : '';
+
     return (
       brand(isStudent ? 'STUDENT' : 'TEACHER', isStudent ? 'PICK YOUR NAME' : 'PICK YOUR ACCOUNT') +
       (state.list.length
         ? '<div class="account-list">' + rows + '</div>'
-        : '<p class="login-setup__hint">' + empty + '</p>') +
+        : '<p class="login-setup__hint">' + empty + '</p>' + emptyActions) +
       '<button type="button" class="btn btn-ghost" data-action="back">← BACK</button>'
     );
   }

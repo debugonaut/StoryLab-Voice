@@ -174,43 +174,46 @@
 
   function guard(route) {
     var Auth = window.StoryLabAuth;
-    if (!Auth) {
-      // Auth not loaded yet — fall back to the original enrolment guard.
-      var hasProfileOnly = window.StoryLabState && window.StoryLabState.hasProfile();
-      if (!hasProfileOnly && route !== 'onboarding') return 'onboarding';
-      if (hasProfileOnly && route === 'onboarding') return 'home';
+    var session = Auth ? Auth.getSession() : null;
+    var role = session ? session.role : null;
+
+    // Protected areas: teacher and admin
+    var isTeacherRoute = (route === 'teacher' || route.indexOf('teacher/') === 0);
+    var isAdminRoute = (route === 'admin' || route.indexOf('admin/') === 0);
+
+    if (isTeacherRoute) {
+      if (!session || (role !== 'teacher' && role !== 'admin')) return 'login';
       return route;
     }
 
-    var session = Auth.getSession();
-    var role = session ? session.role : null;
+    if (isAdminRoute) {
+      if (!session || role !== 'admin') return 'login';
+      return route;
+    }
 
-    if (!session) {
-      if (route === 'login') return 'login';
-      // Backward compat: an enrolled student with no session still reaches
-      // their learning screens after the v2 -> v3 upgrade.
-      var hasProfile = window.StoryLabState && window.StoryLabState.hasProfile();
-      if (hasProfile && (route === 'home' || route === 'record' || route === 'orientation' || route === 'storylearn' || route === 'chatbot' || route === 'labinbox')) {
-        return route;
-      }
+    // Login route handling
+    if (route === 'login') {
+      if (session && role !== 'student') return roleHome(role);
       return 'login';
     }
 
-    if (route === 'login') return roleHome(role);
-
-    if (role === 'student') {
-      var studentRoutes = ['home', 'record', 'orientation', 'storylearn', 'chatbot', 'labinbox'];
-      if (studentRoutes.indexOf(route) === -1) return 'home';
-    }
-
-    if (role === 'teacher') {
-      var teacherRoutes = ['teacher', 'teacher/student'];
+    // Active session for teacher or admin: keep within role portal
+    if (session && role === 'teacher') {
+      var teacherRoutes = ['teacher', 'teacher/student', 'home', 'storylearn', 'chatbot', 'labinbox', 'orientation', 'record'];
       if (teacherRoutes.indexOf(route) === -1) return 'teacher';
+      return route;
     }
 
-    if (role === 'admin') {
-      var adminRoutes = ['admin', 'admin/accounts', 'admin/settings', 'admin/log', 'teacher', 'teacher/student'];
+    if (session && role === 'admin') {
+      var adminRoutes = ['admin', 'admin/accounts', 'admin/settings', 'admin/log', 'teacher', 'teacher/student', 'home', 'storylearn', 'chatbot', 'labinbox', 'orientation', 'record'];
       if (adminRoutes.indexOf(route) === -1) return 'admin';
+      return route;
+    }
+
+    // Role is null or 'student' — learning platform is open!
+    var hasProfile = window.StoryLabState && window.StoryLabState.hasProfile();
+    if (!hasProfile && (route === 'home' || route === 'record')) {
+      return 'onboarding';
     }
 
     return route;
