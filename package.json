@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node tools/server.mjs",
     "serve": "node tools/server.mjs",
-    "test": "node tools/smoke.mjs"
+    "test": "node tools/smoke.mjs",
+    "server:wt": "node server/server.js",
+    "test:api": "node server/tests/crud.test.js",
+    "seed:wt": "node server/seed.js"
   },
   "engines": {
     "node": ">=18"

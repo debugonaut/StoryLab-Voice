@@ -1,0 +1,19 @@
+{
+  "name": "storylab-voice-backend",
+  "version": "1.0.0",
+  "description": "StoryLab Voice Backend - NodeJS & ExpressJS RESTful API with MongoDB / NoSQL Integration",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node tests/crud.test.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.3.1"
+  }
+}

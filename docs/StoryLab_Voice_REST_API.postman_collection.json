@@ -1,0 +1,367 @@
+{
+  "info": {
+    "_postman_id": "c7a8e2b9-1f4a-43d9-b2c3-9d412e485a01",
+    "name": "StoryLab Voice - Web Technology RESTful API Collection (Practical 06)",
+    "description": "Postman API test collection for CRUD operations, NodeJS server-side validation, ExpressJS routes, and MongoDB NoSQL interactions. Fulfills Practical No. 06 (RESTful API) of Web Technology (2310362L).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "testPrn",
+      "value": "202401100099",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Explorer",
+      "item": [
+        {
+          "name": "GET /api (API Discovery & Status)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Students CRUD Operations (Practical 06)",
+      "item": [
+        {
+          "name": "POST /api/students (CREATE - Valid Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Response has success true\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prn\": \"202401108888\",\n  \"name\": \"Neha Kulkarni\",\n  \"email\": \"neha.kulkarni@mitaoe.ac.in\",\n  \"age\": 14,\n  \"grade\": \"Grade 9\",\n  \"preferredLanguage\": \"en-IN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/students (VALIDATION FAIL - Practical 04/05)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Error type is EXPRESS_VALIDATION_ERROR\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errorType).to.eql('EXPRESS_VALIDATION_ERROR');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prn\": \"invalid_prn\",\n  \"name\": \"A\",\n  \"email\": \"bad-email\",\n  \"age\": 99\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/students (READ ALL)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/students/:prn (READ ONE)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{testPrn}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{testPrn}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /api/students/:prn (UPDATE)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prn\": \"{{testPrn}}\",\n  \"name\": \"Pritam Tatkari\",\n  \"email\": \"pritam.tatkari@mitaoe.ac.in\",\n  \"age\": 15,\n  \"grade\": \"Grade 10\",\n  \"preferredLanguage\": \"en-IN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{testPrn}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{testPrn}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/students/:prn (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/202401108888",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "202401108888"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Learning Records CRUD (Practical 06)",
+      "item": [
+        {
+          "name": "POST /api/records (CREATE Learning Record)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentPrn\": \"{{testPrn}}\",\n  \"moduleName\": \"StoryLearn\",\n  \"subject\": \"Science\",\n  \"score\": 95,\n  \"durationSeconds\": 360,\n  \"voiceInteractions\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "records"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/records (READ ALL Records)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "records"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Node.js Capabilities (Practical 04)",
+      "item": [
+        {
+          "name": "GET /api/node/runtime-info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/node/runtime-info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "node",
+                "runtime-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/node/crypto-demo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inputString\": \"StoryLab Voice Cryptography Check\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/node/crypto-demo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "node",
+                "crypto-demo"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. NoSQL Databases (Practical 07)",
+      "item": [
+        {
+          "name": "GET /api/nosql/overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/nosql/overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "nosql",
+                "overview"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/nosql/cassandra/schema",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/nosql/cassandra/schema",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "nosql",
+                "cassandra",
+                "schema"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

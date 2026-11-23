@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryLab Voice — ReactJS Client-Side Validation Portal (Practical 03)</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #0d6efd;
+      --terminal-dark: #0f172a;
+      --card-bg: #1e293b;
+    }
+    body {
+      background: #f8fafc;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+    .hero-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #fff;
+      padding: 2.5rem 0;
+      margin-bottom: 2rem;
+      border-bottom: 4px solid #3b82f6;
+    }
+    .card-custom {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      background: #ffffff;
+      margin-bottom: 1.5rem;
+    }
+    .card-custom .card-header {
+      background: #ffffff;
+      border-bottom: 2px solid #f1f5f9;
+      font-weight: 600;
+      padding: 1rem 1.25rem;
+    }
+    .calc-screen {
+      background: #0f172a;
+      color: #22c55e;
+      font-family: monospace;
+      font-size: 1.75rem;
+      padding: 0.75rem;
+      text-align: right;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      min-height: 58px;
+    }
+    .chat-box {
+      height: 280px;
+      overflow-y: auto;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .badge-syllabus {
+      background: #2563eb;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-3 text-muted">Loading ReactJS Web Application Component Tree…</p>
+    </div>
+  </div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function StudentRegistrationForm({ onStudentAdded }) {
+      const initialForm = {
+        prn: '',
+        name: '',
+        email: '',
+        age: '',
+        grade: 'Grade 9',
+        preferredLanguage: 'en-IN'
+      };
+
+      const [formData, setFormData] = useState(initialForm);
+      const [errors, setErrors] = useState({});
+      const [touched, setTouched] = useState({});
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const [submitSuccess, setSubmitSuccess] = useState(false);
+
+      const validate = (values) => {
+        const errs = {};
+
+        if (!values.prn.trim()) {
+          errs.prn = 'PRN / Roll Number is required';
+        } else if (!/^[0-9]{12}$/.test(values.prn.trim())) {
+          errs.prn = 'PRN must be exactly 12 numeric digits (e.g. 202401100099)';
+        }
+
+        if (!values.name.trim()) {
+          errs.name = 'Full Student Name is required';
+        } else if (values.name.trim().length < 2) {
+          errs.name = 'Name must be at least 2 characters long';
+        } else if (!/^[a-zA-Z\s.-]+$/.test(values.name)) {
+          errs.name = 'Name can only contain letters, spaces, and hyphens';
+        }
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!values.email.trim()) {
+          errs.email = 'Email address is required';
+        } else if (!emailPattern.test(values.email.trim())) {
+          errs.email = 'Please enter a valid email address';
+        }
+
+        const ageNum = Number(values.age);
+        if (!values.age) {
+          errs.age = 'Age is required';
+        } else if (isNaN(ageNum) || ageNum < 5 || ageNum > 18) {
+          errs.age = 'Age must be between 5 and 18 for school programs';
+        }
+
+        return errs;
+      };
+
+      const handleChange = (e) => {
+        const { name, value } = e.target;
+        const newFormData = { ...formData, [name]: value };
+        setFormData(newFormData);
+
+        if (touched[name]) {
+          const validationErrors = validate(newFormData);
+          setErrors(validationErrors);
+        }
+      };
+
+      const handleBlur = (e) => {
+        const { name } = e.target;
+        setTouched({ ...touched, [name]: true });
+        const validationErrors = validate(formData);
+        setErrors(validationErrors);
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setTouched({
+          prn: true,
+          name: true,
+          email: true,
+          age: true,
+          grade: true
+        });
+
+        const validationErrors = validate(formData);
+        setErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length === 0) {
+          setIsSubmitting(true);
+          try {
+            let savedRecord = { ...formData, id: Date.now() };
+            try {
+              const res = await fetch('http://localhost:5000/api/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+              });
+              if (res.ok) {
+                const json = await res.json();
+                savedRecord = json.data;
+              }
+            } catch (netErr) {}
+
+            onStudentAdded(savedRecord);
+            setSubmitSuccess(true);
+            setFormData(initialForm);
+            setTouched({});
+            setTimeout(() => setSubmitSuccess(false), 4000);
+          } finally {
+            setIsSubmitting(false);
+          }
+        }
+      };
+
+      return (
+        <div class="card card-custom">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-shield-check text-primary me-2"></i>ReactJS Client-Side Validation Form</span>
+            <span class="badge badge-syllabus">Practical 03</span>
+          </div>
+          <div class="card-body">
+            {submitSuccess && (
+              <div class="alert alert-success d-flex align-items-center" role="alert">
+                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                <div>
+                  <strong>Form Validated & Submitted!</strong> Student record registered via React state pipeline.
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">PRN / Roll Number <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    name="prn"
+                    class={`form-control ${touched.prn ? (errors.prn ? 'is-invalid' : 'is-valid') : ''}`}
+                    placeholder="e.g. 202401100099"
+                    value={formData.prn}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                  />
+                  {touched.prn && errors.prn && <div class="invalid-feedback">{errors.prn}</div>}
+                  {touched.prn && !errors.prn && <div class="valid-feedback">Valid 12-digit PRN format.</div>}
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Student Full Name <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    name="name"
+                    class={`form-control ${touched.name ? (errors.name ? 'is-invalid' : 'is-valid') : ''}`}
+                    placeholder="e.g. Pritam Tatkari"
+                    value={formData.name}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                  />
+                  {touched.name && errors.name && <div class="invalid-feedback">{errors.name}</div>}
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                  <input
+                    type="email"
+                    name="email"
+                    class={`form-control ${touched.email ? (errors.email ? 'is-invalid' : 'is-valid') : ''}`}
+                    placeholder="student@mitaoe.ac.in"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                  />
+                  {touched.email && errors.email && <div class="invalid-feedback">{errors.email}</div>}
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold">Age (5 - 18) <span class="text-danger">*</span></label>
+                  <input
+                    type="number"
+                    name="age"
+                    class={`form-control ${touched.age ? (errors.age ? 'is-invalid' : 'is-valid') : ''}`}
+                    placeholder="14"
+                    value={formData.age}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                  />
+                  {touched.age && errors.age && <div class="invalid-feedback">{errors.age}</div>}
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold">Grade / Standard</label>
+                  <select name="grade" class="form-select" value={formData.grade} onChange={handleChange}>
+                    <option value="Grade 5">Grade 5</option>
+                    <option value="Grade 6">Grade 6</option>
+                    <option value="Grade 7">Grade 7</option>
+                    <option value="Grade 8">Grade 8</option>
+                    <option value="Grade 9">Grade 9</option>
+                    <option value="Grade 10">Grade 10</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mt-4 d-flex justify-content-end gap-2">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  onClick={() => { setFormData(initialForm); setErrors({}); setTouched({}); }}
+                >
+                  Reset Form
+                </button>
+                <button type="submit" class="btn btn-primary px-4" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <span class="spinner-border spinner-border-sm me-2"></span>Validating…
+                    </>
+                  ) : (
+                    <>
+                      <i class="bi bi-person-check-fill me-2"></i>Validate & Register Student
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    function InteractiveCalculator() {
+      const [display, setDisplay] = useState('0');
+      const [equation, setEquation] = useState('');
+
+      const handleDigit = (digit) => {
+        if (display === '0' || display === 'Error') {
+          setDisplay(String(digit));
+        } else {
+          setDisplay(display + digit);
+        }
+      };
+
+      const handleOperator = (op) => {
+        setEquation(display + ' ' + op + ' ');
+        setDisplay('0');
+      };
+
+      const handleEquals = () => {
+        try {
+          const fullExpr = equation + display;
+          const sanitized = fullExpr.replace(/[^0-9+\-*/. ]/g, '');
+          const result = Function('"use strict";return (' + sanitized + ')')();
+          setDisplay(String(result));
+          setEquation('');
+        } catch (err) {
+          setDisplay('Error');
+        }
+      };
+
+      const handleClear = () => {
+        setDisplay('0');
+        setEquation('');
+      };
+
+      return (
+        <div class="card card-custom">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-calculator text-success me-2"></i>Interactive React Calculator</span>
+            <span class="badge bg-success">Practical 02 / 03</span>
+          </div>
+          <div class="card-body">
+            <div class="text-muted small mb-1" style={{ minHeight: '18px' }}>{equation}</div>
+            <div class="calc-screen">{display}</div>
+            
+            <div class="row g-2">
+              <div class="col-3"><button class="btn btn-danger w-100" onClick={handleClear}>C</button></div>
+              <div class="col-3"><button class="btn btn-light w-100" onClick={() => handleOperator('/')}>÷</button></div>
+              <div class="col-3"><button class="btn btn-light w-100" onClick={() => handleOperator('*')}>×</button></div>
+              <div class="col-3"><button class="btn btn-light w-100" onClick={() => handleOperator('-')}>−</button></div>
+
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('7')}>7</button></div>
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('8')}>8</button></div>
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('9')}>9</button></div>
+              <div class="col-3"><button class="btn btn-light w-100" onClick={() => handleOperator('+')}>+</button></div>
+
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('4')}>4</button></div>
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('5')}>5</button></div>
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('6')}>6</button></div>
+              <div class="col-3" style={{ gridRow: 'span 2' }}>
+                <button class="btn btn-primary w-100 h-100" onClick={handleEquals}>=</button>
+              </div>
+
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('1')}>1</button></div>
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('2')}>2</button></div>
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('3')}>3</button></div>
+
+              <div class="col-6"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('0')}>0</button></div>
+              <div class="col-3"><button class="btn btn-outline-dark w-100" onClick={() => handleDigit('.')}>.</button></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function VoiceChatSimulator() {
+      const [messages, setMessages] = useState([
+        { id: 1, sender: 'bot', text: 'Hello! I am your StoryLab AI Voice Tutor. Ask me any Science or Math question.', time: '10:00 AM' },
+        { id: 2, sender: 'student', text: 'Can you explain the water cycle?', time: '10:01 AM' },
+        { id: 3, sender: 'bot', text: 'Sure! The water cycle consists of Evaporation, Condensation, and Precipitation.', time: '10:01 AM' }
+      ]);
+      const [inputMsg, setInputMsg] = useState('');
+
+      const handleSend = (e) => {
+        e.preventDefault();
+        if (!inputMsg.trim()) return;
+
+        const newMsg = {
+          id: messages.length + 1,
+          sender: 'student',
+          text: inputMsg.trim(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        const updatedMessages = [...messages, newMsg];
+        setMessages(updatedMessages);
+        setInputMsg('');
+
+        setTimeout(() => {
+          const botReply = {
+            id: updatedMessages.length + 1,
+            sender: 'bot',
+            text: `[StoryLab AI] Recorded question in session store: "${newMsg.text}".`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setMessages((prev) => [...prev, botReply]);
+        }, 600);
+      };
+
+      return (
+        <div class="card card-custom">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-chat-dots-fill text-info me-2"></i>Interactive Chat Window (JSON & Array State)</span>
+            <span class="badge bg-info text-dark">Practical 02</span>
+          </div>
+          <div class="card-body">
+            <div class="chat-box mb-3 d-flex flex-column gap-2">
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  class={`p-2 rounded-3 text-break ${
+                    m.sender === 'student'
+                      ? 'bg-primary text-white align-self-end'
+                      : 'bg-white border text-dark align-self-start'
+                  }`}
+                  style={{ maxWidth: '85%' }}
+                >
+                  <div class="small fw-semibold">{m.sender === 'student' ? 'Student' : 'AI Companion'}</div>
+                  <div>{m.text}</div>
+                  <div class="text-end small opacity-75" style={{ fontSize: '0.7rem' }}>{m.time}</div>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleSend} class="d-flex gap-2">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Type your question or simulate speech input…"
+                value={inputMsg}
+                onChange={(e) => setInputMsg(e.target.value)}
+              />
+              <button class="btn btn-primary" type="submit">
+                <i class="bi bi-send-fill"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [students, setStudents] = useState([
+        { prn: '202401100099', name: 'Pritam Tatkari', email: 'pritam.tatkari@mitaoe.ac.in', age: 14, grade: 'Grade 9', preferredLanguage: 'en-IN' },
+        { prn: '202401100090', name: 'Aadesh Khande', email: 'aadesh.khande@mitaoe.ac.in', age: 15, grade: 'Grade 10', preferredLanguage: 'mr-IN' },
+        { prn: '202401100082', name: 'Ritesh Gavhane', email: 'ritesh.gavhane@mitaoe.ac.in', age: 14, grade: 'Grade 9', preferredLanguage: 'hi-IN' },
+        { prn: '202401100109', name: 'Anurag Kumbhar', email: 'anurag.kumbhar@mitaoe.ac.in', age: 15, grade: 'Grade 10', preferredLanguage: 'en-IN' }
+      ]);
+
+      const handleStudentAdded = (newStudent) => {
+        setStudents((prev) => [newStudent, ...prev]);
+      };
+
+      return (
+        <div>
+          <div class="hero-banner">
+            <div class="container">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                  <h1 class="h3 mb-1"><i class="bi bi-layers-fill me-2"></i>StoryLab Voice — ReactJS Framework Portal</h1>
+                  <p class="mb-0 text-light opacity-75">
+                    Course Code: <strong>2310362L</strong> | Web Technology | Third Year B.Tech Computer Engineering (MITAOE)
+                  </p>
+                </div>
+                <div>
+                  <span class="badge bg-light text-dark p-2 me-2">MERN Architecture</span>
+                  <a href="../wt-portal/index.html" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-bootstrap me-1"></i>Open Bootstrap Portal
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="container pb-5">
+            <div class="row">
+              <div class="col-lg-7">
+                <StudentRegistrationForm onStudentAdded={handleStudentAdded} />
+
+                <div class="card card-custom">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-people-fill text-primary me-2"></i>Active Student Registry (React State)</span>
+                    <span class="badge bg-secondary">{students.length} Registered</span>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th>PRN</th>
+                          <th>Name</th>
+                          <th>Grade</th>
+                          <th>Language</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {students.map((s, idx) => (
+                          <tr key={s.prn || idx}>
+                            <td><code>{s.prn}</code></td>
+                            <td><strong>{s.name}</strong><br/><small class="text-muted">{s.email}</small></td>
+                            <td><span class="badge bg-info text-dark">{s.grade}</span></td>
+                            <td><span class="badge bg-light text-dark border">{s.preferredLanguage}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-5">
+                <InteractiveCalculator />
+                <VoiceChatSimulator />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "storylab-voice-react-client",
+  "version": "1.0.0",
+  "description": "StoryLab Voice - ReactJS Client-Side Web Application (Practical 03)",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -l 3000"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
