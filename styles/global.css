@@ -408,6 +408,41 @@ pre,
   justify-self: end;
 }
 
+.lang-picker {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-inset);
+  padding: 2px;
+  gap: 2px;
+}
+.lang-picker__btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 0 7px;
+  height: 24px;
+  line-height: 22px;
+  cursor: pointer;
+  transition: all var(--dur-fast);
+  text-transform: uppercase;
+}
+.lang-picker__btn:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+.lang-picker__btn.is-active {
+  background: var(--color-accent);
+  color: #111;
+  font-weight: 700;
+  border-color: var(--color-accent);
+}
+
 .status-chip {
   display: inline-flex;
   align-items: center;

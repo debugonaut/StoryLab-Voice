@@ -71,23 +71,27 @@
   }
 
   function renderList(root, labs, error) {
-    var cards = (labs || []).map(function (lab) {
+    var t = (window.StoryLabUI && window.StoryLabUI.t) ? window.StoryLabUI.t : function (k, d) { return d; };
+    var cards = (labs || []).map(function (rawLab) {
+      var lab = (window.StoryLabI18n && window.StoryLabI18n.translateLab)
+        ? window.StoryLabI18n.translateLab(rawLab)
+        : rawLab;
       return '<article class="lb-card">' +
         (lab.image ? '<div class="lb-card__art"><img src="' + escapeHtml(lab.image) + '" alt="" loading="lazy" decoding="async"></div>' : '') +
         '<div class="lb-meta">' + escapeHtml(lab.subject || 'Science') + ' / GRADE ' + escapeHtml(lab.grade || '—') + '</div>' +
         '<h3>' + escapeHtml(lab.title) + '</h3>' +
-        '<p>Watch the apparatus, follow the steps and finish the experiment.</p>' +
+        '<p>' + t('lab.watch', 'Watch the apparatus, follow the steps and finish the experiment.') + '</p>' +
         '<div class="lb-toolbar"><span class="lb-status">' + escapeHtml(lab.duration || 'Guided experiment') + '</span>' +
-        '<button class="btn btn-primary" type="button" data-start-lab="' + escapeHtml(lab.id) + '">START EXPERIMENT →</button></div>' +
+        '<button class="btn btn-primary" type="button" data-start-lab="' + escapeHtml(lab.id) + '">' + t('lab.start_btn', 'START EXPERIMENT →') + '</button></div>' +
         '</article>';
     }).join('');
 
     root.innerHTML = '<div class="lb-wrap">' +
-      '<section class="panel"><div class="panel__header"><span class="panel__label">VIRTUAL LAB / CHOOSE AN EXPERIMENT</span><span class="status-dot status-dot--ok" style="margin-left:auto"></span></div>' +
-      '<div class="panel__body" style="padding:var(--sp-5)"><p style="margin:0;color:var(--color-text-secondary);line-height:1.6">A guided virtual laboratory. Follow each instruction, identify the materials and observe the reaction.</p></div></section>' +
+      '<section class="panel"><div class="panel__header"><span class="panel__label">' + t('lab.header', 'VIRTUAL LAB / CHOOSE AN EXPERIMENT') + '</span><span class="status-dot status-dot--ok" style="margin-left:auto"></span></div>' +
+      '<div class="panel__body" style="padding:var(--sp-5)"><p style="margin:0;color:var(--color-text-secondary);line-height:1.6">' + t('lab.sub', 'A guided virtual laboratory. Follow each instruction, identify the materials and observe the reaction.') + '</p></div></section>' +
       (error ? '<div class="panel" role="alert" style="margin-top:var(--sp-4);padding:var(--sp-5)"><p class="text-secondary">' + escapeHtml(error) + '</p><button class="btn btn-secondary" type="button" data-retry-labs>RETRY</button></div>' : '') +
       (cards ? '<div class="lb-grid">' + cards + '</div>' : '<div class="panel" style="margin-top:var(--sp-4);padding:var(--sp-5)"><p class="text-secondary">No experiments are available yet.</p></div>') +
-      '<div style="margin-top:var(--sp-5)"><button class="btn btn-secondary" type="button" data-home>← BACK HOME</button></div></div>';
+      '<div style="margin-top:var(--sp-5)"><button class="btn btn-secondary" type="button" data-home>' + t('lab.back_home', '← BACK HOME') + '</button></div></div>';
 
     root.querySelectorAll('[data-start-lab]').forEach(function (button) {
       button.addEventListener('click', function () { startLab(root, button.getAttribute('data-start-lab')); });
@@ -297,8 +301,11 @@
     cleanupActive();
     var token = { root: root, cancelled: false, timers: [], engine: null, onClick: null, busy: false, stepId: null, stepMap: {}, currentLab: null };
     active = token;
-    fetchJson('/data/labs/' + encodeURIComponent(id) + '.json?v=9').then(function (lab) {
+    fetchJson('/data/labs/' + encodeURIComponent(id) + '.json?v=9').then(function (rawLab) {
       if (token.cancelled || !isMounted(root)) return;
+      var lab = (window.StoryLabI18n && window.StoryLabI18n.translateLab)
+        ? window.StoryLabI18n.translateLab(rawLab)
+        : rawLab;
       if (!lab || !Array.isArray(lab.steps) || !Array.isArray(lab.apparatus)) throw new Error('This experiment has an invalid data file.');
       token.currentLab = lab;
       lab.steps.forEach(function (step) { token.stepMap[step.id] = step; });
@@ -354,7 +361,7 @@
   function speak(text, token) {
     if (token.cancelled) return Promise.resolve();
     if (window.Chatbot && typeof window.Chatbot.speak === 'function') {
-      try { return Promise.resolve(window.Chatbot.speak(text, 'en-IN')).catch(function () {}); }
+      try { return Promise.resolve(window.Chatbot.speak(text)).catch(function () {}); }
       catch (error) { console.warn('[LabInBox] Narration unavailable:', error); }
     }
     return Promise.resolve();

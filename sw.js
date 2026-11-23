@@ -9,11 +9,11 @@
  *   background sync  drain sync_queue into sync_archive
  */
 
-var CACHE_VERSION = 'storylab-v17';
+var CACHE_VERSION = 'storylab-v19';
 /* Give a dead or unreachable server this long before answering from cache. */
 var NETWORK_TIMEOUT = 2500;
 var DB_NAME = 'storylab_v1';
-var DB_VERSION = 2;
+var DB_VERSION = 3;
 
 var PRECACHE = [
   './',
@@ -22,6 +22,8 @@ var PRECACHE = [
   './styles/tokens.css',
   './styles/global.css',
   './styles/screens.css',
+  './styles/roles.css',
+  './src/shell/i18n.js',
   './src/shell/ui.js',
   './src/shell/db.js',
   './src/shell/state.js',
@@ -30,6 +32,10 @@ var PRECACHE = [
   './src/shell/record.js',
   './src/shell/offline.js',
   './src/shell/router.js',
+  './src/shell/auth.js',
+  './src/shell/login.js',
+  './src/shell/teacher.js',
+  './src/shell/admin.js',
   './src/storylearn/storylearn.js',
   './src/chatbot/chatbot.js',
   './src/labinbox/labinbox.js',
@@ -242,6 +248,10 @@ function openLedger() {
       if (!db.objectStoreNames.contains('events')) db.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
       if (!db.objectStoreNames.contains('sync_queue')) db.createObjectStore('sync_queue', { autoIncrement: true });
       if (!db.objectStoreNames.contains('sync_archive')) db.createObjectStore('sync_archive', { autoIncrement: true });
+      if (!db.objectStoreNames.contains('accounts')) db.createObjectStore('accounts');
+      if (!db.objectStoreNames.contains('teacher_notes')) db.createObjectStore('teacher_notes', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('assignments')) db.createObjectStore('assignments', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('audit_log')) db.createObjectStore('audit_log', { keyPath: 'id', autoIncrement: true });
     };
     req.onsuccess = function (event) { resolve(event.target.result); };
     req.onerror = function (event) { reject(event.target.error); };

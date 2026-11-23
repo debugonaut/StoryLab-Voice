@@ -10,6 +10,10 @@
  *   events        local activity log
  *   sync_queue    outbound events waiting for a connection
  *   sync_archive  events already handed to the sync mirror
+ *   accounts      role accounts (student / teacher / admin), keyed by account id
+ *   teacher_notes teacher observations attached to a student
+ *   assignments   modules a teacher has assigned
+ *   audit_log     sensitive action trail
  *
  * Public API (contract — do not break)
  *   DB.save(store, key, value) -> Promise
@@ -25,7 +29,7 @@
   'use strict';
 
   var DB_NAME = 'storylab_v1';
-  var DB_VERSION = 2;
+  var DB_VERSION = 3;
   var _db = null;
 
   var STORES = {
@@ -35,7 +39,11 @@
     sessions: { keyPath: 'id', autoIncrement: false },
     events: { keyPath: 'id', autoIncrement: true },
     sync_queue: { keyPath: null, autoIncrement: true },
-    sync_archive: { keyPath: null, autoIncrement: true }
+    sync_archive: { keyPath: null, autoIncrement: true },
+    accounts: { keyPath: null, autoIncrement: false },
+    teacher_notes: { keyPath: 'id', autoIncrement: true },
+    assignments: { keyPath: 'id', autoIncrement: true },
+    audit_log: { keyPath: 'id', autoIncrement: true }
   };
 
   function openDB() {

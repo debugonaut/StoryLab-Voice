@@ -216,19 +216,19 @@
     var checkpoints = storiesDone + labsDone;
 
     var storyMeta = [
-      indexes.stories + ' STORIES',
-      indexes.storySubjects + ' SUBJECTS',
-      storiesDone ? storiesDone + ' DONE' : 'NEW'
+      indexes.stories + ' ' + UI.t('deck.bay_story_count', 'STORIES'),
+      indexes.storySubjects + ' ' + UI.t('deck.bay_story_subjects', 'SUBJECTS'),
+      storiesDone ? storiesDone + ' ' + UI.t('deck.bay_story_done', 'DONE') : UI.t('deck.bay_story_new', 'NEW')
     ];
     var labMeta = [
-      indexes.labs + ' EXPERIMENTS',
+      indexes.labs + ' ' + UI.t('deck.bay_lab_experiments', 'EXPERIMENTS'),
       'CANVAS 2D',
-      labsDone ? labsDone + ' DONE' : 'NEW'
+      labsDone ? labsDone + ' ' + UI.t('deck.bay_story_done', 'DONE') : UI.t('deck.bay_story_new', 'NEW')
     ];
     var tutorMeta = [
-      'ALWAYS ON',
-      'VOICE + TOUCH',
-      'OFFLINE'
+      UI.t('deck.bay_tutor_always', 'ALWAYS ON'),
+      UI.t('deck.bay_tutor_mode', 'VOICE + TOUCH'),
+      UI.t('deck.bay_tutor_offline', 'OFFLINE')
     ];
 
     var greeting = UI.greeting();
@@ -255,29 +255,29 @@
       '<section class="screen deck">' +
       '  <header class="deck-head">' +
       '    <div class="deck-head__main">' +
-      '      <p class="eyebrow">STUDENT / ' + UI.escape(profile.id || 'LOCAL') + '</p>' +
+      '      <p class="eyebrow">' + UI.t('deck.eyebrow', 'STUDENT /') + ' ' + UI.escape(profile.id || 'LOCAL') + '</p>' +
       '      <h1 class="deck-title">' + greeting + ',<br><span>' + UI.escape(profile.name) + '.</span></h1>' +
       '      <p class="deck-sub">' + (orientationDone
-        ? 'Pick up where you left off, or open something new.'
-        : 'Start with a story, ask the tutor, or finish the short intro first.') + '</p>' +
+        ? UI.t('deck.sub_continue', 'Pick up where you left off, or open something new.')
+        : UI.t('deck.sub_start', 'Start with a story, ask the tutor, or finish the short intro first.')) + '</p>' +
       '      <div class="deck-tags">' +
-      '        <span class="deck-tag"><span class="led led--ok"></span> SAVED ON THIS DEVICE</span>' +
-      '        <span class="deck-tag">' + UI.escape(String(sessionActive ? 'TIMER RUNNING' : 'NO TIMER')) + '</span>' +
+      '        <span class="deck-tag"><span class="led led--ok"></span> ' + UI.t('deck.tag_saved', 'SAVED ON THIS DEVICE') + '</span>' +
+      '        <span class="deck-tag">' + UI.escape(String(sessionActive ? UI.t('deck.tag_timer_run', 'TIMER RUNNING') : UI.t('deck.tag_no_timer', 'NO TIMER'))) + '</span>' +
       '        <span class="deck-tag">' + UI.escape(language.toUpperCase()) + '</span>' +
       '      </div>' +
       '    </div>' +
       '    <aside class="station-panel" aria-label="Station status">' +
       '      <div class="station-panel__top">' +
-      '        <span class="station-panel__label">LOCAL TIME</span>' +
+      '        <span class="station-panel__label">' + UI.t('deck.station_time', 'LOCAL TIME') + '</span>' +
       '        <span class="led led--ok led--pulse"></span>' +
       '      </div>' +
       '      <div class="station-clock" id="station-clock">' + UI.formatClock(new Date()) + '</div>' +
       '      <div class="station-date" id="station-date">' + dateLabel + '</div>' +
       '      <div class="station-grid">' +
-      '        <div class="station-cell"><em>INTERNET</em><strong id="station-net">' + (navigator.onLine ? 'ONLINE' : 'OFFLINE') + '</strong></div>' +
-      '        <div class="station-cell"><em>TIMER</em><strong class="is-live" id="station-session">' + UI.formatDuration(elapsed) + '</strong></div>' +
-      '        <div class="station-cell"><em>TO UPLOAD</em><strong id="station-sync">' + (pending ? String(pending).padStart(2, '0') + ' WAITING' : 'ALL SENT') + '</strong></div>' +
-      '        <div class="station-cell"><em>MIC</em><strong>' + (profile.mic === 'verified' ? 'VERIFIED' : profile.mic === 'touch' ? 'TOUCH MODE' : 'NOT TESTED') + '</strong></div>' +
+      '        <div class="station-cell"><em>' + UI.t('deck.station_net', 'INTERNET') + '</em><strong id="station-net">' + (navigator.onLine ? UI.t('shell.online', 'ONLINE') : UI.t('shell.offline', 'OFFLINE')) + '</strong></div>' +
+      '        <div class="station-cell"><em>' + UI.t('deck.station_timer', 'TIMER') + '</em><strong class="is-live" id="station-session">' + UI.formatDuration(elapsed) + '</strong></div>' +
+      '        <div class="station-cell"><em>' + UI.t('deck.station_upload', 'TO UPLOAD') + '</em><strong id="station-sync">' + (pending ? String(pending).padStart(2, '0') + ' ' + UI.t('deck.station_waiting', 'WAITING') : UI.t('deck.station_all_sent', 'ALL SENT')) + '</strong></div>' +
+      '        <div class="station-cell"><em>' + UI.t('deck.station_mic', 'MIC') + '</em><strong>' + (profile.mic === 'verified' ? UI.t('deck.station_verified', 'VERIFIED') : profile.mic === 'touch' ? UI.t('deck.station_touch', 'TOUCH MODE') : UI.t('deck.station_not_tested', 'NOT TESTED')) + '</strong></div>' +
       '      </div>' +
       '    </aside>' +
       '  </header>' +
@@ -285,7 +285,7 @@
       '  <section class="directive" aria-label="Next directive">' +
       '    <div class="directive__glyph">' + UI.icon(next.icon) + '</div>' +
       '    <div class="directive__body">' +
-      '      <p class="directive__tag">NEXT / ' + next.code + '</p>' +
+      '      <p class="directive__tag">' + UI.t('deck.directive_next', 'NEXT /') + ' ' + next.code + '</p>' +
       '      <h2>' + UI.escape(next.title) + '</h2>' +
       '      <p>' + UI.escape(next.desc) + '</p>' +
       '    </div>' +
@@ -295,24 +295,24 @@
       '  </section>' +
 
       '  <div class="section-head">' +
-      '    <h2 class="section-title">Learn</h2>' +
-      '    <span class="section-head__meta">3 MODULES / WORKS OFFLINE</span>' +
+      '    <h2 class="section-title">' + UI.t('deck.learn_title', 'Learn') + '</h2>' +
+      '    <span class="section-head__meta">' + UI.t('deck.learn_meta', '3 MODULES / WORKS OFFLINE') + '</span>' +
       '  </div>' +
 
       '  <div class="bay-grid" id="bays">' +
-      bayCard('story', '01', 'Stories', 'Voice-guided stories with one question inside.', storyMeta, '#/storylearn', 'OPEN', bayArt('story')) +
-      bayCard('tutor', '02', 'Voice Tutor', 'Ask anything. Answers out loud, without internet.', tutorMeta, '#/chatbot', 'OPEN', bayArt('tutor')) +
-      bayCard('lab', '03', 'Virtual Lab', 'Try science experiments on screen. No apparatus needed.', labMeta, '#/labinbox', 'OPEN', bayArt('lab')) +
+      bayCard('story', '01', UI.t('deck.bay_story_title', 'Stories'), UI.t('deck.bay_story_desc', 'Voice-guided stories with one question inside.'), storyMeta, '#/storylearn', UI.t('deck.bay_open', 'OPEN'), bayArt('story')) +
+      bayCard('tutor', '02', UI.t('deck.bay_tutor_title', 'Voice Tutor'), UI.t('deck.bay_tutor_desc', 'Ask anything. Answers out loud, without internet.'), tutorMeta, '#/chatbot', UI.t('deck.bay_open', 'OPEN'), bayArt('tutor')) +
+      bayCard('lab', '03', UI.t('deck.bay_lab_title', 'Virtual Lab'), UI.t('deck.bay_lab_desc', 'Try science experiments on screen. No apparatus needed.'), labMeta, '#/labinbox', UI.t('deck.bay_open', 'OPEN'), bayArt('lab')) +
       '  </div>' +
 
       '  <div class="section-head">' +
-      '    <h2 class="section-title">Your progress</h2>' +
-      '    <a class="section-head__link" href="#/record">OPEN FULL RECORD ' + UI.icon('arrow-right') + '</a>' +
+      '    <h2 class="section-title">' + UI.t('deck.progress_title', 'Your progress') + '</h2>' +
+      '    <a class="section-head__link" href="#/record">' + UI.t('deck.progress_link', 'OPEN FULL RECORD') + ' ' + UI.icon('arrow-right') + '</a>' +
       '  </div>' +
 
       '  <div class="dossier-grid">' +
       '    <section class="dossier-card">' +
-      '      <div class="dossier-card__head"><h3>Student</h3><span class="mono-label">ON THIS DEVICE</span></div>' +
+      '      <div class="dossier-card__head"><h3>' + UI.t('deck.card_student', 'Student') + '</h3><span class="mono-label">' + UI.t('deck.on_device', 'ON THIS DEVICE') + '</span></div>' +
       '      <div class="student-file">' +
       '        <div class="avatar avatar--lg">' + UI.avatar(profile.avatar) + '</div>' +
       '        <div class="student-file__info">' +
@@ -320,34 +320,34 @@
       '          <div class="student-file__id">' + UI.escape(profile.id) + '</div>' +
       '          <div class="student-file__badge">' +
       (orientationDone
-        ? '<span class="badge badge--ok"><i class="led led--ok"></i> GETTING STARTED DONE</span>'
-        : '<span class="badge badge--warn"><i class="led led--warn"></i> GETTING STARTED</span>') +
+        ? '<span class="badge badge--ok"><i class="led led--ok"></i> ' + UI.t('deck.intro_done', 'GETTING STARTED DONE') + '</span>'
+        : '<span class="badge badge--warn"><i class="led led--warn"></i> ' + UI.t('deck.intro_pending', 'GETTING STARTED') + '</span>') +
       '          </div>' +
       '        </div>' +
       '      </div>' +
       '      <div class="student-file__grid">' +
-      '        <div class="field-pair"><em>GRADE</em><strong>' + UI.escape(profile.grade) + '</strong></div>' +
-      '        <div class="field-pair"><em>LANGUAGE</em><strong>' + UI.escape(language) + ' / ' + UI.escape(profile.languageTag || profile.language.toUpperCase()) + '</strong></div>' +
-      '        <div class="field-pair"><em>SESSIONS</em><strong>' + sessionsCount + ' CLOSED</strong></div>' +
-      '        <div class="field-pair"><em>MEMBER SINCE</em><strong>' + UI.formatDate(profile.createdAt, false) + '</strong></div>' +
+      '        <div class="field-pair"><em>' + UI.t('deck.field_grade', 'GRADE') + '</em><strong>' + UI.escape(profile.grade) + '</strong></div>' +
+      '        <div class="field-pair"><em>' + UI.t('deck.field_lang', 'LANGUAGE') + '</em><strong>' + UI.escape(language) + ' / ' + UI.escape(profile.languageTag || profile.language.toUpperCase()) + '</strong></div>' +
+      '        <div class="field-pair"><em>' + UI.t('deck.field_sessions', 'SESSIONS') + '</em><strong>' + sessionsCount + ' ' + UI.t('deck.field_closed', 'CLOSED') + '</strong></div>' +
+      '        <div class="field-pair"><em>' + UI.t('deck.field_since', 'MEMBER SINCE') + '</em><strong>' + UI.formatDate(profile.createdAt, false) + '</strong></div>' +
       '      </div>' +
       '      <div class="barcode" aria-hidden="true"></div>' +
       '    </section>' +
 
       '    <section class="dossier-card">' +
-      '      <div class="dossier-card__head"><h3>Numbers</h3><span class="mono-label">LIVE</span></div>' +
+      '      <div class="dossier-card__head"><h3>' + UI.t('deck.card_numbers', 'Numbers') + '</h3><span class="mono-label">' + UI.t('deck.live', 'LIVE') + '</span></div>' +
       '      <div class="telemetry-grid">' +
-      '        <div class="telemetry-tile"><div class="telemetry-tile__value' + (orientationDone ? ' is-accent' : '') + '">' + (orientationDone ? 'DONE' : '—') + '</div><div class="telemetry-tile__label">GETTING STARTED</div><div class="telemetry-tile__sub">' + (orientationDone ? 'Done' : 'Not done yet') + '</div></div>' +
-      '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + String(checkpoints).padStart(2, '0') + '</div><div class="telemetry-tile__label">COMPLETED</div><div class="telemetry-tile__sub">Stories + labs</div></div>' +
-      '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + UI.formatMinutes(totalTime) + '</div><div class="telemetry-tile__label">TIME ON TASK</div><div class="telemetry-tile__sub">Across ' + Math.max(1, sessionsCount) + ' session' + (sessionsCount === 1 ? '' : 's') + '</div></div>' +
-      '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + String(badges.length).padStart(2, '0') + '</div><div class="telemetry-tile__label">BADGES</div><div class="telemetry-tile__sub">' + (badges.length ? 'Earned locally' : 'Earn your first') + '</div></div>' +
+      '        <div class="telemetry-tile"><div class="telemetry-tile__value' + (orientationDone ? ' is-accent' : '') + '">' + (orientationDone ? UI.t('deck.bay_story_done', 'DONE') : '—') + '</div><div class="telemetry-tile__label">' + UI.t('deck.directive_intro_title', 'GETTING STARTED') + '</div><div class="telemetry-tile__sub">' + (orientationDone ? 'Done' : 'Not done yet') + '</div></div>' +
+      '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + String(checkpoints).padStart(2, '0') + '</div><div class="telemetry-tile__label">' + UI.t('deck.field_completed', 'COMPLETED') + '</div><div class="telemetry-tile__sub">' + UI.t('deck.field_stories_labs', 'Stories + labs') + '</div></div>' +
+      '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + UI.formatMinutes(totalTime) + '</div><div class="telemetry-tile__label">' + UI.t('deck.field_time', 'TIME ON TASK') + '</div><div class="telemetry-tile__sub">Across ' + Math.max(1, sessionsCount) + ' session' + (sessionsCount === 1 ? '' : 's') + '</div></div>' +
+      '        <div class="telemetry-tile"><div class="telemetry-tile__value">' + String(badges.length).padStart(2, '0') + '</div><div class="telemetry-tile__label">' + UI.t('deck.field_badges', 'BADGES') + '</div><div class="telemetry-tile__sub">' + (badges.length ? UI.t('deck.earned_locally', 'Earned locally') : UI.t('deck.earn_first', 'Earn your first')) + '</div></div>' +
       '      </div>' +
       '    </section>' +
 
       '    <section class="dossier-card">' +
-      '      <div class="dossier-card__head"><h3>Status</h3><span class="mono-label">ON THIS DEVICE</span></div>' +
+      '      <div class="dossier-card__head"><h3>' + UI.t('deck.card_status', 'Status') + '</h3><span class="mono-label">' + UI.t('deck.on_device', 'ON THIS DEVICE') + '</span></div>' +
       '      <div class="system-list">' +
-      '        <div class="system-item"><span class="led led--ok"></span><span class="system-item__label">Saved data</span><span class="system-item__value is-ok">READY</span></div>' +
+      '        <div class="system-item"><span class="led led--ok"></span><span class="system-item__label">' + UI.t('deck.field_saved_data', 'Saved data') + '</span><span class="system-item__value is-ok">' + UI.t('deck.field_ready', 'READY') + '</span></div>' +
       '        <div class="system-item"><span class="led ' + (navigator.onLine ? 'led--ok' : 'led--error') + '"></span><span class="system-item__label">Internet</span><span class="system-item__value ' + (navigator.onLine ? 'is-ok' : 'is-error') + '">' + (navigator.onLine ? 'ONLINE' : 'OFFLINE') + '</span></div>' +
       '        <div class="system-item"><span class="led ' + (('speechSynthesis' in window) ? 'led--ok' : 'led--warn') + '"></span><span class="system-item__label">Voice</span><span class="system-item__value">' + (('speechSynthesis' in window) ? 'READY' : 'TEXT MODE') + '</span></div>' +
       '        <div class="system-item"><span class="led led--ok"></span><span class="system-item__label">Offline files</span><span class="system-item__value" id="cache-chip">' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'READY' : 'STARTING') + '</span></div>' +
@@ -397,14 +397,13 @@
     var completed = progress.completedStories + progress.completedLabs;
 
     if (!orientation.completed) {
-      var step = (orientation.lastStep || 0) + 1;
       return {
         code: '01 / START',
         icon: 'compass',
-        title: orientation.lastStep ? 'Continue getting started' : 'Finish getting started',
-        desc: 'Five short screens and one question, then you are ready.',
+        title: UI.t('deck.directive_intro_title', 'Intro / First Shift'),
+        desc: UI.t('deck.directive_intro_desc', 'Five quick cards on how the tablet, the voice tutor, and the virtual lab work.'),
         href: '#/orientation',
-        cta: orientation.lastStep ? 'CONTINUE' : 'START'
+        cta: UI.t('deck.directive_intro_cta', 'START INTRO')
       };
     }
 
@@ -412,20 +411,20 @@
       return {
         code: '02 / FIRST STORY',
         icon: 'book',
-        title: 'Open your first story',
-        desc: 'Listen, answer one question, and your progress is saved.',
+        title: UI.t('deck.directive_story_title', 'Start your first story'),
+        desc: UI.t('deck.directive_story_desc', 'Pick a subject and listen to a short story. One question inside.'),
         href: '#/storylearn',
-        cta: 'OPEN STORIES'
+        cta: UI.t('deck.directive_story_cta', 'OPEN STORIES')
       };
     }
 
     return {
       code: '03 / KEEP GOING',
       icon: 'flag',
-      title: 'Keep going',
-      desc: 'You have ' + completed + ' finished item' + (completed === 1 ? '' : 's') + ' on this device. Open something new, or review your progress.',
+      title: UI.t('deck.progress_title', 'Your progress'),
+      desc: UI.t('deck.progress_link', 'Review your progress and badges on this tablet.'),
       href: '#/record',
-      cta: 'OPEN PROGRESS'
+      cta: UI.t('deck.progress_link', 'OPEN FULL RECORD')
     };
   }
 

@@ -187,9 +187,20 @@
       });
   }
 
+  function subjectLabel(subj) {
+    var s = String(subj || '').toLowerCase();
+    var t = (window.StoryLabUI && window.StoryLabUI.t) ? window.StoryLabUI.t : function (k, d) { return d; };
+    if (s === 'math') return t('story.math', 'Math');
+    if (s === 'science') return t('story.science', 'Science');
+    if (s === 'social studies' || s === 'social') return t('story.social', 'Social Studies');
+    if (s === 'evs') return t('story.evs', 'EVS');
+    return subj;
+  }
+
   function _renderLibrary() {
     var esc = window.StoryLabUI.escape;
     var icon = window.StoryLabUI.icon;
+    var t = (window.StoryLabUI && window.StoryLabUI.t) ? window.StoryLabUI.t : function (k, d) { return d; };
     if (!_root) return;
 
     var subjects = [];
@@ -197,11 +208,11 @@
       if (s.subject && subjects.indexOf(s.subject) === -1) subjects.push(s.subject);
     });
 
-    var filters = [{ id: 'All', label: 'All', count: _stories.length }].concat(
+    var filters = [{ id: 'All', label: t('story.all', 'All'), count: _stories.length }].concat(
       subjects.map(function (subject) {
         return {
           id: subject,
-          label: subject,
+          label: subjectLabel(subject),
           count: _stories.filter(function (s) { return s.subject === subject; }).length
         };
       })
@@ -218,7 +229,10 @@
       ? _stories
       : _stories.filter(function (s) { return s.subject === _filter; });
 
-    var cards = visible.map(function (story) {
+    var cards = visible.map(function (storyRaw) {
+      var story = (window.StoryLabI18n && window.StoryLabI18n.translateStory)
+        ? window.StoryLabI18n.translateStory(storyRaw)
+        : storyRaw;
       var tone = subjectClass(story.subject);
       return [
         '<button type="button" class="story-card" data-story-id="' + esc(story.id) + '"',
@@ -226,13 +240,13 @@
         '  <span class="story-card__art art--' + tone + '">' + artFor(story) + '</span>',
         '  <span class="story-card__body">',
         '    <span class="story-card__meta">',
-        '      <span class="badge badge--' + tone + '">' + esc(story.subject) + '</span>',
+        '      <span class="badge badge--' + tone + '">' + esc(subjectLabel(story.subject)) + '</span>',
         '      <span>GR ' + esc(story.grade || '3-8') + '</span>',
         '      <span>' + esc(story.minutes || 4) + ' MIN</span>',
         '    </span>',
         '    <span class="story-card__title">' + esc(story.title) + '</span>',
         '    <span class="story-card__summary">' + esc(story.summary || '') + '</span>',
-        '    <span class="story-card__foot"><span>OPEN STORY</span>' + icon('arrow-right') + '</span>',
+        '    <span class="story-card__foot"><span>' + t('story.open_story', 'OPEN STORY') + '</span>' + icon('arrow-right') + '</span>',
         '  </span>',
         '</button>'
       ].join('\n');
@@ -241,8 +255,8 @@
     _root.innerHTML = [
       '<section class="story-hero">',
       '  <p class="eyebrow">STORYLEARN</p>',
-      '  <h1 class="story-hero__title">Pick a story</h1>',
-      '  <p class="story-hero__sub">' + _stories.length + ' stories · ' + subjects.length + ' subjects · works offline</p>',
+      '  <h1 class="story-hero__title">' + t('story.hero_title', 'Pick a story') + '</h1>',
+      '  <p class="story-hero__sub">' + _stories.length + ' ' + t('story.hero_sub', 'stories · subjects · works offline') + '</p>',
       '</section>',
       '<div class="story-filters" role="tablist" aria-label="Filter stories by subject">' + filterHTML + '</div>',
       '<div class="story-grid">' + cards + '</div>'
@@ -280,8 +294,11 @@
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
-      .then(function (story) {
+      .then(function (rawStory) {
         if (_unmounted) return;
+        var story = (window.StoryLabI18n && window.StoryLabI18n.translateStory)
+          ? window.StoryLabI18n.translateStory(rawStory)
+          : rawStory;
         var meta = null;
         for (var m = 0; m < _stories.length; m++) {
           if (_stories[m].id === id) { meta = _stories[m]; break; }
@@ -390,7 +407,9 @@
     _hideAdvance();
     _hideVoice();
 
-    var speakPromise = window.Chatbot.speak(step.text, 'en-IN');
+    var speakPromise = (window.Chatbot && typeof window.Chatbot.speak === 'function')
+      ? window.Chatbot.speak(step.text)
+      : Promise.resolve();
 
     if (step.type === 'narrate') {
       _showAdvance(function () { _goTo(step.next, token); });

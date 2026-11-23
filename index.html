@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="styles/tokens.css">
   <link rel="stylesheet" href="styles/global.css">
   <link rel="stylesheet" href="styles/screens.css">
+  <link rel="stylesheet" href="styles/roles.css">
 </head>
 
 <body class="has-no-profile">
@@ -70,13 +71,30 @@
         </span>
       </a>
 
-      <nav class="app-nav" aria-label="Primary navigation">
-        <a class="app-nav__link" data-nav="home" href="#/home">HOME</a>
-        <a class="app-nav__link" data-nav="record" href="#/record">PROGRESS</a>
-        <a class="app-nav__link" data-nav="guide" href="#/orientation">INTRO</a>
+      <nav class="app-nav" aria-label="Primary navigation" data-role="">
+        <!-- student -->
+        <a class="app-nav__link nav--student" data-nav="home" href="#/home">HOME</a>
+        <a class="app-nav__link nav--student" data-nav="record" href="#/record">PROGRESS</a>
+        <a class="app-nav__link nav--student nav--guest" data-nav="guide" href="#/orientation">INTRO</a>
+        <!-- teacher -->
+        <a class="app-nav__link nav--teacher" data-nav="teacher" href="#/teacher">DASHBOARD</a>
+        <a class="app-nav__link nav--teacher" data-nav="teacher-assign" href="#/teacher/assign">ASSIGN</a>
+        <!-- admin -->
+        <a class="app-nav__link nav--admin" data-nav="admin" href="#/admin">OVERVIEW</a>
+        <a class="app-nav__link nav--admin" data-nav="admin-accounts" href="#/admin/accounts">ACCOUNTS</a>
+        <a class="app-nav__link nav--admin" data-nav="admin-settings" href="#/admin/settings">SETTINGS</a>
+        <a class="app-nav__link nav--admin" data-nav="admin-log" href="#/admin/log">LOG</a>
+        <!-- sign out for teacher + admin -->
+        <button type="button" class="app-nav__link nav--teacher nav--admin" id="nav-signout" style="background:none;border:none;cursor:pointer;">SIGN OUT</button>
       </nav>
 
       <div class="app-status">
+        <div class="lang-picker" role="group" aria-label="Select language">
+          <button type="button" class="lang-picker__btn is-active" data-lang-choice="en" title="English">EN</button>
+          <button type="button" class="lang-picker__btn" data-lang-choice="hi" title="हिंदी">हिं</button>
+          <button type="button" class="lang-picker__btn" data-lang-choice="mr" title="मराठी">मरा</button>
+        </div>
+
         <span class="status-chip" id="net-chip" title="Network status">
           <span class="status-dot status-dot--ok" aria-hidden="true"></span>
           <span id="net-label">ONLINE</span>
@@ -143,13 +161,18 @@
   </noscript>
 
   <!-- Shell scripts — order matters -->
+  <script src="src/shell/i18n.js"></script>
   <script src="src/shell/ui.js"></script>
   <script src="src/shell/db.js"></script>
+  <script src="src/shell/auth.js"></script>
   <script src="src/shell/state.js"></script>
   <script src="src/shell/onboarding.js"></script>
   <script src="src/shell/dashboard.js"></script>
   <script src="src/shell/record.js"></script>
   <script src="src/shell/offline.js"></script>
+  <script src="src/shell/login.js"></script>
+  <script src="src/shell/teacher.js"></script>
+  <script src="src/shell/admin.js"></script>
   <script src="src/shell/router.js"></script>
 
   <!-- Module controllers — owned by the other three team members -->

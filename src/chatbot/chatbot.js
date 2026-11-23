@@ -146,6 +146,9 @@
 
   function _lang() {
     try {
+      if (window.StoryLabI18n && typeof window.StoryLabI18n.getLanguage === 'function') {
+        return window.StoryLabI18n.getLanguage();
+      }
       var p = window.StoryLabState && window.StoryLabState.getProfile && window.StoryLabState.getProfile();
       var lang = p && p.language;
       return (lang === 'hi' || lang === 'mr') ? lang : 'en';
@@ -291,6 +294,14 @@
         utter.lang = voiceLang;
         utter.rate = 0.92;
         utter.pitch = 1.0;
+        if (synth && typeof synth.getVoices === 'function') {
+          var voices = synth.getVoices() || [];
+          var prefix = voiceLang.slice(0, 2).toLowerCase();
+          var matched = voices.find(function (v) {
+            return v.lang === voiceLang || (v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(prefix));
+          });
+          if (matched) utter.voice = matched;
+        }
         index += 1;
         _utterance = utter;
 
@@ -896,15 +907,15 @@
         _listening = false;
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         if (_activeRec) { try { _activeRec.stop(); } catch (e) {} }
-        var saving = (window.StoryLabState && window.StoryLabState.setLanguage)
-          ? window.StoryLabState.setLanguage(next)
-          : Promise.resolve();
-        Promise.resolve(saving).then(function () {
-          if (_unmounted) return;
-          var host = _root || root;
-          mount(host);
-          speak(_S().switched);
-        });
+        if (window.StoryLabI18n && typeof window.StoryLabI18n.setLanguage === 'function') {
+          window.StoryLabI18n.setLanguage(next);
+        } else if (window.StoryLabState && window.StoryLabState.setLanguage) {
+          window.StoryLabState.setLanguage(next);
+        }
+        if (_unmounted) return;
+        var host = _root || root;
+        mount(host);
+        speak(_S().switched);
       });
     }
 
@@ -1322,6 +1333,12 @@
     if (speakBtn) speakBtn.disabled = busy;
     if (stopBtn)  stopBtn.disabled  = !busy;
   }
+
+  window.addEventListener('storylab:language', function () {
+    if (_root && !_unmounted) {
+      mount(_root);
+    }
+  });
 
   Object.defineProperty(window, 'Chatbot', {
     value: {

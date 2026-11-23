@@ -273,11 +273,18 @@
     return formatDate(ts, false);
   }
 
+  function t(key, fallback) {
+    if (window.StoryLabI18n && typeof window.StoryLabI18n.t === 'function') {
+      return window.StoryLabI18n.t(key, fallback);
+    }
+    return fallback !== undefined ? fallback : key;
+  }
+
   function greeting(date) {
     var hour = (date || new Date()).getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    var key = hour < 12 ? 'deck.greeting_morning' : (hour < 17 ? 'deck.greeting_afternoon' : 'deck.greeting_evening');
+    var fallback = hour < 12 ? 'Good morning' : (hour < 17 ? 'Good afternoon' : 'Good evening');
+    return t(key, fallback);
   }
 
   function formatBytes(bytes) {
@@ -302,6 +309,7 @@
     formatDateTime: formatDateTime,
     relativeTime: relativeTime,
     greeting: greeting,
+    t: t,
     formatBytes: formatBytes,
     pad: pad
   };

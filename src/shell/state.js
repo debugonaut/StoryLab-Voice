@@ -84,8 +84,10 @@
   }
 
   function applyLanguage(language) {
-    var tag = LANG_MAP[language] || LANG_MAP.en;
+    var valid = (language === 'hi' || language === 'mr') ? language : 'en';
+    var tag = LANG_MAP[valid] || LANG_MAP.en;
     document.documentElement.lang = tag;
+    document.documentElement.setAttribute('data-lang', valid);
   }
 
   function init() {
@@ -96,7 +98,11 @@
         var journey = await window.DB.load('journey', JOURNEY_KEY);
         _profile = profile || null;
         _journey = normalizeJourney(journey);
-        if (_profile) applyLanguage(_profile.language);
+        if (_profile) {
+          applyLanguage(_profile.language);
+        } else if (window.StoryLabI18n) {
+          applyLanguage(window.StoryLabI18n.getLanguage());
+        }
         _events = await loadRecentEvents(14);
         _pending = await window.DB.count('sync_queue');
         _error = null;
@@ -567,8 +573,23 @@
   }
 
   async function setLanguage(language) {
-    if (!_profile) return;
-    await saveProfile({ language: language });
+    var valid = (language === 'hi' || language === 'mr') ? language : 'en';
+    var tag = LANG_MAP[valid] || 'en-IN';
+    applyLanguage(valid);
+    try {
+      localStorage.setItem('storylab:language', valid);
+    } catch (e) {}
+    if (_profile) {
+      await saveProfile({ language: valid, languageTag: tag });
+    }
+    emit('language');
+  }
+
+  function getLanguage() {
+    if (window.StoryLabI18n && typeof window.StoryLabI18n.getLanguage === 'function') {
+      return window.StoryLabI18n.getLanguage();
+    }
+    return (_profile && _profile.language) || 'en';
   }
 
   if ('serviceWorker' in navigator) {
@@ -611,7 +632,8 @@
     requestBackgroundSync: requestBackgroundSync,
     exportRecord: exportRecord,
     resetUnit: resetUnit,
-    setLanguage: setLanguage
+    setLanguage: setLanguage,
+    getLanguage: getLanguage
   };
 
   console.log('[State] window.StoryLabState ready');

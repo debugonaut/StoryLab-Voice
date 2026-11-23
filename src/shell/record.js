@@ -122,18 +122,19 @@
     var checkpoints = progress.completedStories + progress.completedLabs + (orientationDone ? 1 : 0);
     var activeElapsed = snapshot.sessions.activeElapsed || 0;
 
+    var currentLang = (window.StoryLabI18n && window.StoryLabI18n.getLanguage) ? window.StoryLabI18n.getLanguage() : (profile.language || 'en');
     return (
       '<section class="screen record">' +
       '  <div class="print-only">STORYLAB VOICE / MY PROGRESS / ' + UI.escape(profile.id) + ' / PRINTED ' + UI.formatDateTime(new Date()) + '</div>' +
       '  <header class="screen-head record-head">' +
       '    <div>' +
-      '      <p class="eyebrow">STUDENT / ' + UI.escape(profile.id) + '</p>' +
-      '      <h1 class="screen-head__title">My progress</h1>' +
-      '      <p class="screen-head__sub">Everything saved on this tablet: sessions, lessons, and uploads.</p>' +
+      '      <p class="eyebrow">' + UI.t('deck.eyebrow', 'STUDENT /') + ' ' + UI.escape(profile.id) + '</p>' +
+      '      <h1 class="screen-head__title">' + UI.t('record.title', 'My progress') + '</h1>' +
+      '      <p class="screen-head__sub">' + UI.t('record.sub', 'Everything saved on this tablet: sessions, lessons, and uploads.') + '</p>' +
       '    </div>' +
       '    <div class="record-actions">' +
-      '      <button type="button" class="btn btn-secondary" id="export-record">' + UI.icon('download') + ' EXPORT JSON</button>' +
-      '      <button type="button" class="btn btn-secondary" id="print-record">' + UI.icon('printer') + ' PRINT</button>' +
+      '      <button type="button" class="btn btn-secondary" id="export-record">' + UI.icon('download') + ' ' + UI.t('record.export', 'EXPORT JSON') + '</button>' +
+      '      <button type="button" class="btn btn-secondary" id="print-record">' + UI.icon('printer') + ' ' + UI.t('record.print', 'PRINT') + '</button>' +
       '    </div>' +
       '  </header>' +
 
@@ -142,23 +143,23 @@
       '      <div class="id-card__top">' +
       '        <div class="avatar avatar--lg">' + UI.avatar(profile.avatar) + '</div>' +
       '        <div>' +
-      '          <div class="badge ' + (orientationDone ? 'badge--ok' : 'badge--warn') + '"><i class="led ' + (orientationDone ? 'led--ok' : 'led--warn') + '"></i> ' + (orientationDone ? 'READY' : 'SETUP') + '</div>' +
+      '          <div class="badge ' + (orientationDone ? 'badge--ok' : 'badge--warn') + '"><i class="led ' + (orientationDone ? 'led--ok' : 'led--warn') + '"></i> ' + (orientationDone ? UI.t('deck.field_ready', 'READY') : 'SETUP') + '</div>' +
       '          <div class="id-card__name">' + UI.escape(profile.name) + '</div>' +
       '          <div class="id-card__id">' + UI.escape(profile.id) + '</div>' +
       '        </div>' +
       '      </div>' +
       '      <div class="id-card__body">' +
-      '        <div class="id-card__row"><em>GRADE</em><strong>' + UI.escape(profile.grade) + '</strong></div>' +
-      '        <div class="id-card__row"><em>LANGUAGE</em><strong>' +
+      '        <div class="id-card__row"><em>' + UI.t('deck.field_grade', 'GRADE') + '</em><strong>' + UI.escape(profile.grade) + '</strong></div>' +
+      '        <div class="id-card__row"><em>' + UI.t('deck.field_lang', 'LANGUAGE') + '</em><strong>' +
       '          <select class="language-select" id="language-select" aria-label="Change language">' +
       [['en', 'English'], ['hi', 'हिंदी'], ['mr', 'मराठी']].map(function (pair) {
-        return '<option value="' + pair[0] + '"' + (profile.language === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>';
+        return '<option value="' + pair[0] + '"' + (currentLang === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>';
       }).join('') +
       '          </select>' +
       '        </strong></div>' +
-      '        <div class="id-card__row"><em>MIC</em><strong>' + (profile.mic === 'verified' ? 'VERIFIED' : profile.mic === 'touch' ? 'TOUCH MODE' : 'NOT TESTED') + '</strong></div>' +
-      '        <div class="id-card__row"><em>MEMBER SINCE</em><strong>' + UI.formatDate(profile.createdAt, false) + '</strong></div>' +
-      '        <div class="id-card__row"><em>SAVED</em><strong>THIS DEVICE</strong></div>' +
+      '        <div class="id-card__row"><em>MIC</em><strong>' + (profile.mic === 'verified' ? UI.t('deck.station_verified', 'VERIFIED') : profile.mic === 'touch' ? UI.t('deck.station_touch', 'TOUCH MODE') : UI.t('deck.station_not_tested', 'NOT TESTED')) + '</strong></div>' +
+      '        <div class="id-card__row"><em>' + UI.t('deck.field_since', 'MEMBER SINCE') + '</em><strong>' + UI.formatDate(profile.createdAt, false) + '</strong></div>' +
+      '        <div class="id-card__row"><em>' + UI.t('deck.field_saved_data', 'SAVED') + '</em><strong>' + UI.t('deck.on_device', 'THIS DEVICE') + '</strong></div>' +
       '      </div>' +
       '      <div class="badge-strip" style="margin-top:14px">' +
       (badges.length
@@ -173,10 +174,10 @@
 
       '    <div class="record-main">' +
       '      <div class="stat-row">' +
-      '        <div class="stat-tile"><div class="stat-tile__value">' + String(sessionCount).padStart(2, '0') + '</div><div class="stat-tile__label">SESSIONS</div><div class="stat-tile__sub">' + (active ? '01 running' : 'None running') + '</div></div>' +
-      '        <div class="stat-tile"><div class="stat-tile__value">' + UI.formatMinutes(totalTime) + '</div><div class="stat-tile__label">TIME ON TASK</div><div class="stat-tile__sub">Including the open session</div></div>' +
-      '        <div class="stat-tile"><div class="stat-tile__value is-accent">' + String(checkpoints).padStart(2, '0') + '</div><div class="stat-tile__label">COMPLETED</div><div class="stat-tile__sub">Intro + lessons</div></div>' +
-      '        <div class="stat-tile"><div class="stat-tile__value">' + String(pending).padStart(2, '0') + '</div><div class="stat-tile__label">TO UPLOAD</div><div class="stat-tile__sub">' + (archiveCount ? archiveCount + ' uploaded' : 'Nothing uploaded yet') + '</div></div>' +
+      '        <div class="stat-tile"><div class="stat-tile__value">' + String(sessionCount).padStart(2, '0') + '</div><div class="stat-tile__label">' + UI.t('record.sessions', 'SESSIONS') + '</div><div class="stat-tile__sub">' + (active ? '01 running' : 'None running') + '</div></div>' +
+      '        <div class="stat-tile"><div class="stat-tile__value">' + UI.formatMinutes(totalTime) + '</div><div class="stat-tile__label">' + UI.t('record.time_on_task', 'TIME ON TASK') + '</div><div class="stat-tile__sub">Including the open session</div></div>' +
+      '        <div class="stat-tile"><div class="stat-tile__value is-accent">' + String(checkpoints).padStart(2, '0') + '</div><div class="stat-tile__label">' + UI.t('record.completed', 'COMPLETED') + '</div><div class="stat-tile__sub">' + UI.t('deck.field_stories_labs', 'Intro + lessons') + '</div></div>' +
+      '        <div class="stat-tile"><div class="stat-tile__value">' + String(pending).padStart(2, '0') + '</div><div class="stat-tile__label">' + UI.t('record.to_upload', 'TO UPLOAD') + '</div><div class="stat-tile__sub">' + (archiveCount ? archiveCount + ' uploaded' : 'Nothing uploaded yet') + '</div></div>' +
       '      </div>' +
 
       '      <section class="panel record-section">' +
@@ -481,10 +482,14 @@
       languageSelect.addEventListener('change', async function () {
         var language = languageSelect.value;
         try {
-          await State.saveProfile({
-            language: language,
-            languageTag: LANG_TAGS[language] || 'en-IN'
-          });
+          if (window.StoryLabI18n && typeof window.StoryLabI18n.setLanguage === 'function') {
+            window.StoryLabI18n.setLanguage(language);
+          } else {
+            await State.saveProfile({
+              language: language,
+              languageTag: LANG_TAGS[language] || 'en-IN'
+            });
+          }
           await State.logEvent('profile.language', 'Changed language to ' + (LANG_NAMES[language] || language), {
             language: language
           }, { sync: false });

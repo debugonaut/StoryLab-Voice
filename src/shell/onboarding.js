@@ -935,7 +935,7 @@
           : 'not-tested';
 
     try {
-      await State.saveProfile({
+      var profile = await State.saveProfile({
         name: enrolment.name.trim(),
         avatar: enrolment.avatar,
         grade: enrolment.grade,
@@ -944,6 +944,27 @@
         mic: micState,
         onboardedAt: Date.now()
       });
+
+      // Enrolment also creates an accounts entry so this student can sign in
+      // with the role system. The default PIN is 1234 — an admin should reset it.
+      if (window.StoryLabAuth) {
+        try {
+          var accountExists = await window.DB.load('accounts', profile.id);
+          if (!accountExists) {
+            await window.StoryLabAuth.createAccount('student', {
+              id: profile.id,
+              name: profile.name,
+              grade: profile.grade,
+              avatar: profile.avatar,
+              language: profile.language
+            }, '1234');
+            console.log('[Onboarding] Created accounts entry for new student, default PIN: 1234');
+          }
+        } catch (err) {
+          console.warn('[Onboarding] Could not create accounts entry:', err);
+          // Non-fatal — the student can still use the app.
+        }
+      }
       await State.logEvent('student.enrolled', 'Commissioned the learning terminal', {
         grade: enrolment.grade,
         language: enrolment.language,
