@@ -399,6 +399,15 @@
         return;
       }
 
+      /* Cleanly stop or abort any dangling active recognition first */
+      if (_activeRec) {
+        try {
+          if (typeof _activeRec.abort === 'function') _activeRec.abort();
+          else if (typeof _activeRec.stop === 'function') _activeRec.stop();
+        } catch (e) {}
+        _activeRec = null;
+      }
+
       /* Never listen while the tutor is still narrating: the microphone would
        * pick up the tutor's own voice instead of the student's. */
       if (typeof window.speechSynthesis.cancel === 'function') window.speechSynthesis.cancel();
@@ -1387,11 +1396,24 @@
     }
   });
 
+  function stopListening() {
+    if (_activeRec) {
+      try {
+        if (typeof _activeRec.abort === 'function') _activeRec.abort();
+        else if (typeof _activeRec.stop === 'function') _activeRec.stop();
+      } catch (e) {}
+      _activeRec = null;
+    }
+    _listening = false;
+    _setState('idle');
+  }
+
   Object.defineProperty(window, 'Chatbot', {
     value: {
       speak: speak,
       listen: listen,
       listenLive: listenLive,
+      stopListening: stopListening,
       setLessonContext: setLessonContext,
       mount: mount,
       unmount: unmount,

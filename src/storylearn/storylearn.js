@@ -159,6 +159,9 @@
     _unmounted = true;
     _stepToken += 1;
     _listening = false;
+    if (window.Chatbot && typeof window.Chatbot.stopListening === 'function') {
+      window.Chatbot.stopListening();
+    }
     if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
@@ -477,7 +480,14 @@
     if (micBtn) {
       micBtn.addEventListener('click', function () {
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-        _startVoiceAnswer(step, token);
+        if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
+        if (window.Chatbot && typeof window.Chatbot.stopListening === 'function') {
+          window.Chatbot.stopListening();
+        }
+        _listening = false;
+        setTimeout(function () {
+          _startVoiceAnswer(step, token);
+        }, 80);
       });
     }
 
@@ -498,40 +508,106 @@
     optionsEl.appendChild(buttonsWrap);
 
     if (speakPromise && typeof speakPromise.then === 'function') {
-      speakPromise.then(function () { _startVoiceAnswer(step, token); })
-        .catch(function () { _startVoiceAnswer(step, token); });
+      speakPromise.then(function () {
+        if (_unmounted || token !== _stepToken) return;
+        setTimeout(function () {
+          if (_unmounted || token !== _stepToken) return;
+          _startVoiceAnswer(step, token);
+        }, 400);
+      }).catch(function () {
+        if (_unmounted || token !== _stepToken) return;
+        _startVoiceAnswer(step, token);
+      });
     } else {
-      _startVoiceAnswer(step, token);
+      setTimeout(function () {
+        _startVoiceAnswer(step, token);
+      }, 200);
     }
   }
 
   function _startVoiceAnswer(step, token) {
-    if (_unmounted || token !== _stepToken || _listening) return;
-    if (!window.Chatbot || typeof window.Chatbot.listen !== 'function') return;
+    if (_unmounted || token !== _stepToken) return;
+    if (!window.Chatbot || (typeof window.Chatbot.listenLive !== 'function' && typeof window.Chatbot.listen !== 'function')) return;
 
     var currentLang = (window.StoryLabI18n && window.StoryLabI18n.getLanguage) ? window.StoryLabI18n.getLanguage() : 'en';
     var langTag = (window.StoryLabI18n && window.StoryLabI18n.getLanguageTag)
       ? window.StoryLabI18n.getLanguageTag()
       : (currentLang === 'hi' ? 'hi-IN' : currentLang === 'mr' ? 'mr-IN' : 'en-IN');
 
+    // If already listening, stop previous session first
+    if (_listening && window.Chatbot && typeof window.Chatbot.stopListening === 'function') {
+      window.Chatbot.stopListening();
+    }
     _listening = true;
-    _showVoice(currentLang === 'hi' ? 'सुन रहा हूँ… उत्तर बोलें' : currentLang === 'mr' ? 'ऐकत आहे… उत्तर बोला' : 'Listening… speak answer');
+
+    var micBtn = document.getElementById('sl-mic-btn');
+    if (micBtn) {
+      micBtn.classList.add('is-listening');
+      micBtn.style.borderColor = 'var(--color-accent)';
+      micBtn.style.color = 'var(--color-accent)';
+      var micSpan = micBtn.querySelector('span');
+      if (micSpan) {
+        micSpan.textContent = currentLang === 'hi' ? 'सुन रहा हूँ…' : currentLang === 'mr' ? 'ऐकत आहे…' : 'LISTENING…';
+      }
+    }
 
     var statusEl = document.getElementById('sl-voice-status');
     if (statusEl) {
-      statusEl.textContent = '● ' + (currentLang === 'hi' ? 'माइक चालू है… बोलिए' : currentLang === 'mr' ? 'माइक सुरू आहे… बोला' : 'Mic listening… speak now');
+      statusEl.textContent = '● ' + (currentLang === 'hi' ? 'माइक चालू है… बोलिए ("ए", "बी" या उत्तर)' : currentLang === 'mr' ? 'माइक सुरू आहे… बोला ("ए", "बी" किंवा उत्तर)' : 'Mic listening… say "A", "B", or your answer');
       statusEl.style.color = 'var(--color-accent)';
     }
 
-    window.Chatbot.listen(langTag).then(function (transcript) {
+    _showVoice(currentLang === 'hi' ? 'सुन रहा हूँ… उत्तर बोलें' : currentLang === 'mr' ? 'ऐकत आहे… उत्तर बोला' : 'Listening… speak answer');
+
+    function resetMicBtn() {
+      var b = document.getElementById('sl-mic-btn');
+      if (!b) return;
+      b.classList.remove('is-listening');
+      b.style.borderColor = '';
+      b.style.color = '';
+      var s = b.querySelector('span');
+      if (s) {
+        s.textContent = currentLang === 'hi' ? 'उत्तर बोलें (Mic)' : currentLang === 'mr' ? 'उत्तर बोला (Mic)' : 'SPEAK ANSWER (Mic)';
+      }
+    }
+
+    var onInterim = function (live) {
+      if (_unmounted || token !== _stepToken) return;
+      if (statusEl) {
+        statusEl.textContent = 'Hearing: “' + live + '”…';
+        statusEl.style.color = 'var(--color-accent)';
+      }
+      _showVoice('Hearing: “' + live + '”…');
+      var liveMatch = _matchTranscript(live, step.options);
+      if (liveMatch) {
+        _highlightOptionPreview(liveMatch.label);
+      }
+    };
+
+    var listenPromise = (typeof window.Chatbot.listenLive === 'function')
+      ? window.Chatbot.listenLive(onInterim, langTag)
+      : window.Chatbot.listen(langTag).then(function (t) { return { text: t, reason: 'ok' }; });
+
+    listenPromise.then(function (result) {
       if (token !== _stepToken) return;
       _listening = false;
       _hideVoice();
+      resetMicBtn();
       if (_unmounted) return;
+
+      var transcript = (result && typeof result === 'object') ? (result.text || '') : String(result || '');
+      var reason = (result && result.reason) || (transcript ? 'ok' : 'no-speech');
+
       if (!transcript) {
+        _highlightOptionPreview(null);
         if (statusEl) {
-          statusEl.textContent = currentLang === 'hi' ? 'आवाज़ नहीं सुनाई दी, माइक दबाकर फिर बोलें' : currentLang === 'mr' ? 'आवाज ऐकू आला नाही, पुन्हा बोला' : 'No speech heard. Tap mic to speak again.';
-          statusEl.style.color = 'var(--color-warn)';
+          if (reason === 'denied') {
+            statusEl.textContent = currentLang === 'hi' ? 'माइक ब्लॉक है — नीचे किसी विकल्प पर क्लिक करें' : currentLang === 'mr' ? 'माइक ब्लॉक आहे — खालील पर्यायावर क्लिक करा' : 'Microphone is blocked. Tap an option directly or allow mic in browser settings.';
+            statusEl.style.color = 'var(--color-warn)';
+          } else {
+            statusEl.textContent = currentLang === 'hi' ? 'आवाज़ नहीं सुनाई दी — माइक दबाकर फिर बोलें' : currentLang === 'mr' ? 'आवाज ऐकू आला नाही — माइक दाबून पुन्हा बोला' : 'Did not hear speech. Tap SPEAK to try again or click an option.';
+            statusEl.style.color = 'var(--color-text-muted)';
+          }
         }
         return;
       }
@@ -545,8 +621,9 @@
       if (match) {
         _selectOption(step, match, _findOptionButton(match.label), token);
       } else {
+        _highlightOptionPreview(null);
         if (statusEl) {
-          statusEl.textContent = 'Heard "' + transcript + '". Tap an option directly or try again.';
+          statusEl.textContent = 'Heard “' + transcript + '”. Say "A" or "B", or tap an option directly.';
           statusEl.style.color = 'var(--color-warn)';
         }
       }
@@ -554,6 +631,8 @@
       if (token !== _stepToken) return;
       _listening = false;
       _hideVoice();
+      resetMicBtn();
+      _highlightOptionPreview(null);
       if (statusEl) {
         statusEl.textContent = 'Mic stopped. Tap button to retry.';
         statusEl.style.color = 'var(--color-text-muted)';
@@ -563,29 +642,61 @@
 
   function _matchTranscript(transcript, options) {
     if (!transcript || !options || !options.length) return null;
+
     var raw = String(transcript).trim().toLowerCase();
-    var clean = raw.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ').replace(/\s+/g, ' ').trim();
-
-    // 1. Direct letter & ordinal mappings
-    var letterMap = {
-      'a': 0, 'option a': 0, 'choice a': 0, 'letter a': 0, 'ए': 0, 'ऑप्शन ए': 0, 'पहिला': 0, 'पहला': 0, 'first': 0, 'one': 0, '1': 0, '१': 0,
-      'b': 1, 'option b': 1, 'choice b': 1, 'letter b': 1, 'बी': 1, 'ऑप्शन बी': 1, 'दुसरा': 1, 'दूसरा': 1, 'second': 1, 'two': 1, '2': 1, '२': 1,
-      'c': 2, 'option c': 2, 'choice c': 2, 'letter c': 2, 'सी': 2, 'ऑप्शन सी': 2, 'तिसरा': 2, 'तीसरा': 2, 'third': 2, 'three': 2, '3': 2, '३': 2,
-      'd': 3, 'option d': 3, 'choice d': 3, 'letter d': 3, 'डी': 3, 'ऑप्शन डी': 3, 'चौथा': 3, 'fourth': 3, 'four': 3, '4': 3, '४': 3
-    };
-
-    if (letterMap[clean] !== undefined && options[letterMap[clean]]) {
-      return options[letterMap[clean]];
+    var clean;
+    try {
+      clean = raw.replace(/[^\p{L}\p{M}\p{N}\s-]/gu, ' ').replace(/\s+/g, ' ').trim();
+    } catch (e) {
+      clean = raw.replace(/[^a-z0-9\s-]/gi, ' ').replace(/\s+/g, ' ').trim();
     }
+    if (!clean) return null;
 
-    for (var key in letterMap) {
-      var wordRegex = new RegExp('(?:^|\\s)' + key + '(?:\\s|$)', 'i');
-      if (wordRegex.test(clean) && options[letterMap[key]]) {
-        return options[letterMap[key]];
+    function hasTerm(text, term) {
+      var safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      try {
+        return new RegExp('(^|[^\\p{L}\\p{M}\\p{N}])' + safe + '([^\\p{L}\\p{M}\\p{N}]|$)', 'iu').test(text);
+      } catch (err) {
+        return new RegExp('(^|\\s)' + safe + '(\\s|$)', 'i').test(text);
       }
     }
 
-    // 2. Number normalization: "six" -> 6, "seven" -> 7, "सहा" -> 6, etc.
+    // 1. Direct letter, ordinal & explicit choice indicators
+    var specificPhrases = [
+      { terms: ['option d', 'choice d', 'letter d', 'fourth one', 'fourth option', '4th', 'option 4', 'चौथा', 'चौथा पर्याय', 'ऑप्शन डी', 'पर्याय डी'], idx: 3 },
+      { terms: ['option c', 'choice c', 'letter c', 'third one', 'third option', '3rd', 'option 3', 'तीसरा', 'तिसरा', 'तिसरा पर्याय', 'ऑप्शन सी', 'पर्याय सी'], idx: 2 },
+      { terms: ['option b', 'choice b', 'letter b', 'second one', 'second option', '2nd', 'option 2', 'दूसरा', 'दुसरा', 'दुसरा पर्याय', 'ऑप्शन बी', 'पर्याय बी', 'पर्याय दुसरा', 'choice 2'], idx: 1 },
+      { terms: ['option a', 'choice a', 'letter a', 'first one', 'first option', '1st', 'option 1', 'पहला', 'पहिला', 'पहिला पर्याय', 'ऑप्शन ए', 'पर्याय ए', 'पर्याय पहिला', 'choice 1'], idx: 0 }
+    ];
+
+    for (var p = 0; p < specificPhrases.length; p++) {
+      var item = specificPhrases[p];
+      for (var t = 0; t < item.terms.length; t++) {
+        if (hasTerm(clean, item.terms[t])) {
+          if (options[item.idx]) return options[item.idx];
+        }
+      }
+    }
+
+    // Exact standalone letters & ordinals
+    var standaloneMap = {
+      'a': 0, 'ए': 0, 'first': 0, '1': 0, '१': 0,
+      'b': 1, 'बी': 1, 'second': 1, '2': 1, '२': 1,
+      'c': 2, 'सी': 2, 'third': 2, '3': 2, '३': 2,
+      'd': 3, 'डी': 3, 'fourth': 3, '4': 3, '४': 3
+    };
+    if (standaloneMap[clean] !== undefined && options[standaloneMap[clean]]) {
+      return options[standaloneMap[clean]];
+    }
+
+    // Check conversational commands: "choose B", "pick A", "select C"
+    var chooseMatch = clean.match(/(?:choose|select|pick|answer)\s+([abcd])/i);
+    if (chooseMatch) {
+      var cIdx = { a: 0, b: 1, c: 2, d: 3 }[chooseMatch[1].toLowerCase()];
+      if (options[cIdx]) return options[cIdx];
+    }
+
+    // 2. Number normalization: "six" -> 6, "सात" -> 7, etc.
     var numMap = {
       'zero': '0', 'शून्य': '0',
       'one': '1', 'एक': '1',
@@ -602,37 +713,97 @@
 
     var expanded = clean;
     for (var numWord in numMap) {
-      var nRegex = new RegExp('(?:^|\\s)' + numWord + '(?:\\s|$)', 'gi');
-      if (nRegex.test(expanded)) {
-        expanded = expanded.replace(nRegex, ' ' + numMap[numWord] + ' ');
+      try {
+        var nRegex = new RegExp('(^|[^\\p{L}\\p{M}\\p{N}])' + numWord + '([^\\p{L}\\p{M}\\p{N}]|$)', 'giu');
+        expanded = expanded.replace(nRegex, '$1' + numMap[numWord] + '$2');
+      } catch (err) {
+        var nRegexFallback = new RegExp('(^|\\s)' + numWord + '(\\s|$)', 'gi');
+        expanded = expanded.replace(nRegexFallback, '$1' + numMap[numWord] + '$2');
       }
     }
     expanded = expanded.replace(/\s+/g, ' ').trim();
 
-    // 3. Direct or substring matches on option labels
+    // Strip conversational fillers
+    var stripped;
+    try {
+      stripped = expanded.replace(/^(i think|i choose|i guess|the answer is|answer is|my answer is|it is|it's|is it|please|select|choose|उत्तर|पर्याय|माझे उत्तर|मला वाटते)\s+/giu, '').trim();
+    } catch (err) {
+      stripped = expanded.replace(/^(i think|i choose|i guess|the answer is|answer is|my answer is|it is|it's|is it|please|select|choose)\s+/gi, '').trim();
+    }
+
+    // Stop words for word overlap
+    var stopWords = { 'and': 1, 'or': 1, 'the': 1, 'a': 1, 'an': 1, 'is': 1, 'of': 1, 'to': 1, 'in': 1, 'for': 1, 'और': 1, 'व': 1, 'आणि': 1, 'आहे': 1, 'है': 1 };
+
+    var bestScore = 0;
+    var bestOption = null;
+
     for (var i = 0; i < options.length; i++) {
-      var optLabel = String(options[i].label || '').toLowerCase();
-      var optClean = optLabel.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ').replace(/\s+/g, ' ').trim();
+      var optRaw = String(options[i].label || '').toLowerCase();
+      var optClean;
+      try {
+        optClean = optRaw.replace(/[^\p{L}\p{M}\p{N}\s-]/gu, ' ').replace(/\s+/g, ' ').trim();
+      } catch (e) {
+        optClean = optRaw.replace(/[^a-z0-9\s-]/gi, ' ').replace(/\s+/g, ' ').trim();
+      }
+      if (!optClean) continue;
 
-      if (clean === optClean || expanded === optClean) return options[i];
-      if (clean.indexOf(optClean) !== -1 || expanded.indexOf(optClean) !== -1) return options[i];
-      if (optClean.indexOf(clean) !== -1 || optClean.indexOf(expanded) !== -1) return options[i];
+      var optExpanded = optClean;
+      for (var nw in numMap) {
+        try {
+          optExpanded = optExpanded.replace(new RegExp('(^|[^\\p{L}\\p{M}\\p{N}])' + nw + '([^\\p{L}\\p{M}\\p{N}]|$)', 'giu'), '$1' + numMap[nw] + '$2');
+        } catch (err) {
+          optExpanded = optExpanded.replace(new RegExp('(^|\\s)' + nw + '(\\s|$)', 'gi'), '$1' + numMap[nw] + '$2');
+        }
+      }
+      optExpanded = optExpanded.replace(/\s+/g, ' ').trim();
 
-      var optNumbers = optClean.match(/\d+/g) || [];
-      var spokenNumbers = expanded.match(/\d+/g) || [];
-      if (optNumbers.length > 0 && spokenNumbers.length > 0) {
-        if (optNumbers.some(function (n) { return spokenNumbers.indexOf(n) !== -1; })) {
-          return options[i];
+      var score = 0;
+
+      // Exact matches
+      if (clean === optClean || expanded === optExpanded || stripped === optClean || stripped === optExpanded) {
+        score = 1000;
+      } else if (clean.indexOf(optClean) !== -1 || expanded.indexOf(optExpanded) !== -1 || stripped.indexOf(optClean) !== -1) {
+        score = 500 + optClean.length;
+      } else if (optClean.indexOf(clean) !== -1 || optExpanded.indexOf(expanded) !== -1 || optClean.indexOf(stripped) !== -1) {
+        score = 300 + clean.length;
+      }
+
+      // Number matching: if option has digits and user spoke digits
+      var optDigits = optExpanded.match(/\d+/g) || [];
+      var spokenDigits = expanded.match(/\d+/g) || [];
+      if (optDigits.length > 0 && spokenDigits.length > 0) {
+        var sharedDigits = 0;
+        for (var d = 0; d < optDigits.length; d++) {
+          if (spokenDigits.indexOf(optDigits[d]) !== -1) sharedDigits++;
+        }
+        if (sharedDigits > 0) {
+          score += sharedDigits * 200;
         }
       }
 
-      var firstWord = optClean.split(' ')[0];
-      if (firstWord && firstWord.length > 2 && (clean.indexOf(firstWord) !== -1 || expanded.indexOf(firstWord) !== -1)) {
-        return options[i];
+      // Significant words overlap
+      var optWords = optClean.split(/\s+/).filter(function(w) { return w.length > 1 && !stopWords[w]; });
+      var spokenWords = (clean + ' ' + expanded + ' ' + stripped).split(/\s+/).filter(function(w) { return w.length > 1 && !stopWords[w]; });
+
+      var overlap = 0;
+      for (var w = 0; w < optWords.length; w++) {
+        if (spokenWords.indexOf(optWords[w]) !== -1) {
+          overlap++;
+        }
+      }
+
+      if (optWords.length > 0 && overlap > 0) {
+        var overlapRatio = overlap / optWords.length;
+        score += Math.round(overlapRatio * 150) + (overlap * 20);
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestOption = options[i];
       }
     }
 
-    return null;
+    return bestScore >= 50 ? bestOption : null;
   }
 
   function _findOptionButton(label) {
@@ -651,11 +822,30 @@
     return btns[0] || null;
   }
 
+  function _highlightOptionPreview(label) {
+    if (!_root) return;
+    var targetBtn = label ? _findOptionButton(label) : null;
+    var btns = _root.querySelectorAll('.story-option-btn');
+    for (var i = 0; i < btns.length; i++) {
+      if (targetBtn && btns[i] === targetBtn) {
+        btns[i].style.borderColor = 'var(--color-accent)';
+        btns[i].style.boxShadow = '0 0 0 2px var(--color-accent-soft, rgba(37,99,235,0.25))';
+      } else {
+        btns[i].style.borderColor = '';
+        btns[i].style.boxShadow = '';
+      }
+    }
+  }
+
   function _selectOption(step, opt, btn, token) {
     if (_unmounted || token !== _stepToken) return;
 
     _stepToken += 1;
     _listening = false;
+    if (window.Chatbot && typeof window.Chatbot.stopListening === 'function') {
+      window.Chatbot.stopListening();
+    }
+    _highlightOptionPreview(null);
     if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
@@ -847,6 +1037,10 @@
     _stepIndex = null;
     _stepToken += 1;
     _listening = false;
+    if (window.Chatbot && typeof window.Chatbot.stopListening === 'function') {
+      window.Chatbot.stopListening();
+    }
+    _highlightOptionPreview(null);
     if (_speakTimer) { clearTimeout(_speakTimer); _speakTimer = null; }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
