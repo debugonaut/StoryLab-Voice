@@ -99,15 +99,16 @@
 
     root.innerHTML = loadingMarkup();
 
-    Promise.all([State.getSnapshot(), loadIndexCounts()]).then(function (results) {
+    Promise.all([State.getSnapshot(), loadIndexCounts(), loadAssignments()]).then(function (results) {
       if (disposed) return;
       var snapshot = results[0];
       var indexes = results[1];
+      var assignments = results[2] || [];
       if (!snapshot.profile) {
         window.StoryLabRouter.navigate('onboarding');
         return;
       }
-      root.innerHTML = deckMarkup(snapshot, indexes);
+      root.innerHTML = deckMarkup(snapshot, indexes, assignments);
       hydrateStorage();
       startClock(snapshot);
       bindLiveUpdates(snapshot);
@@ -167,6 +168,22 @@
     clockTimer = window.setInterval(tick, 1000);
   }
 
+  async function loadAssignments() {
+    try {
+      if (!window.DB) return [];
+      var profile = window.StoryLabState && window.StoryLabState.getProfile();
+      var studentId = profile ? profile.id : null;
+      var all = await window.DB.getAll('assignments');
+      return (all || []).filter(function (item) {
+        if (!item) return false;
+        if (studentId && Array.isArray(item.completedBy) && item.completedBy.indexOf(studentId) !== -1) return false;
+        return item.targetType === 'all' || (studentId && item.targetId === studentId);
+      });
+    } catch (err) {
+      return [];
+    }
+  }
+
   async function loadIndexCounts() {
     var result = { stories: 2, labs: 1, storySubjects: 4 };
     try {
@@ -199,7 +216,7 @@
     );
   }
 
-  function deckMarkup(snapshot, indexes) {
+  function deckMarkup(snapshot, indexes, assignments) {
     var profile = snapshot.profile;
     var journey = snapshot.journey;
     var progress = snapshot.progress;
@@ -214,6 +231,26 @@
     var storiesDone = progress.completedStories || 0;
     var labsDone = progress.completedLabs || 0;
     var checkpoints = storiesDone + labsDone;
+
+    var assignmentMarkup = '';
+    if (assignments && assignments.length > 0) {
+      var asn = assignments[0];
+      var isLab = asn.moduleType === 'lab';
+      var asnHref = isLab ? '#/labinbox' : '#/storylearn';
+      var asnTypeLabel = isLab ? 'VIRTUAL LAB' : 'STORY';
+      assignmentMarkup =
+        '<section class="directive directive--assignment" style="border: 1.5px solid var(--color-role-teacher, #60a5fa); background: rgba(96, 165, 250, 0.08); margin-bottom: 20px;">' +
+        '  <div class="directive__glyph" style="color: var(--color-role-teacher, #60a5fa);">' + UI.icon('arrow-right') + '</div>' +
+        '  <div class="directive__body">' +
+        '    <p class="directive__tag" style="color: var(--color-role-teacher, #60a5fa);">ASSIGNED BY TEACHER / ' + UI.escape(asn.teacherName || 'Teacher') + '</p>' +
+        '    <h2>' + UI.escape(asn.moduleId) + ' · ' + asnTypeLabel + '</h2>' +
+        '    <p>' + UI.escape(asn.notes || 'Please complete this assignment from your teacher.') + '</p>' +
+        '  </div>' +
+        '  <div class="directive__actions">' +
+        '    <a class="btn btn-primary" href="' + asnHref + '" style="background: #2563eb; border-color: #60a5fa;">OPEN ASSIGNED ' + asnTypeLabel + ' ' + UI.icon('arrow-right') + '</a>' +
+        '  </div>' +
+        '</section>';
+    }
 
     var storyMeta = [
       indexes.stories + ' ' + UI.t('deck.bay_story_count', 'STORIES'),
@@ -281,7 +318,7 @@
       '      </div>' +
       '    </aside>' +
       '  </header>' +
-
+      assignmentMarkup +
       '  <section class="directive" aria-label="Next directive">' +
       '    <div class="directive__glyph">' + UI.icon(next.icon) + '</div>' +
       '    <div class="directive__body">' +

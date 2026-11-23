@@ -462,6 +462,10 @@
     if (window.StoryLabAuth) {
       try {
         await window.StoryLabAuth.init();
+        if (await window.StoryLabAuth.isFirstBoot()) {
+          console.log('[Boot] First boot detected: auto-seeding demo roles and records...');
+          await window.StoryLabAuth.seedDemoData();
+        }
         await window.StoryLabAuth.migrateExistingStudent();
       } catch (err) {
         console.warn('[Boot] Accounts layer failed:', err);

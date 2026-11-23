@@ -24,6 +24,7 @@ import {
   connectMongo,
   isMongoConnected
 } from './models.mjs';
+import { seedDatabase } from './seed.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -620,6 +621,16 @@ app.get('/api/audit-log', async function (req, res) {
   }
 });
 
+/* 7. Seed API: Populates or resets interconnected demo roles and records */
+app.all('/api/seed', async function (req, res) {
+  try {
+    const stats = await seedDatabase();
+    res.status(200).json({ ok: true, seeded: stats });
+  } catch (err) {
+    res.status(500).json({ error: 'seed_failed', message: err.message });
+  }
+});
+
 /* Fallback for unknown /api endpoints - required by smoke test to return JSON 404 */
 app.use('/api', function (req, res) {
   res.status(404).json({ error: 'not_found' });
@@ -681,6 +692,17 @@ server.on('error', function (error) {
 
 async function start() {
   await connectMongo();
+  if (isMongoConnected()) {
+    try {
+      const count = await Account.countDocuments();
+      if (count === 0) {
+        console.log('[server] No accounts found in MongoDB, auto-seeding demo dataset...');
+        await seedDatabase();
+      }
+    } catch (e) {
+      console.warn('[server] Auto-seed check failed:', e.message);
+    }
+  }
 
   server.listen(PORT, HOST, function () {
     console.log('[server] StoryLab running with Express at http://' + HOST + ':' + PORT);

@@ -117,6 +117,7 @@
       '    <p class="pin-error" id="setup-error"></p>' +
       '    <div class="form-actions" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">' +
       '      <button type="submit" class="btn btn-primary">CREATE ADMIN →</button>' +
+      '      <button type="button" class="btn btn-secondary" data-action="reseed-demo" style="border:1px dashed var(--color-accent);color:var(--color-accent);">⚡ LOAD DEMO DATA</button>' +
       '      <a href="#/home" class="btn btn-ghost">← CONTINUE AS GUEST</a>' +
       '    </div>' +
       '  </form>' +
@@ -138,7 +139,26 @@
       '    <span class="role-badge role-badge--admin">ADMIN</span>MANAGE' +
       '  </button>' +
       '</div>' +
-      '<p class="login-setup__hint">PINs are checked on this device. Nothing is sent anywhere.</p>' +
+      '<div class="demo-credentials-card" style="margin-top:24px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid var(--color-border);border-radius:4px;text-align:left;">' +
+      '  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">' +
+      '    <span class="mono-label" style="color:var(--color-accent);">◈ DEMO CREDENTIALS (INTERCONNECTED)</span>' +
+      '    <button type="button" class="btn btn-ghost btn--sm" data-action="reseed-demo" style="font-size:11px;padding:3px 8px;border:1px dashed var(--color-border);">⚡ RE-SEED DATA</button>' +
+      '  </div>' +
+      '  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;font-size:12px;">' +
+      '    <div>' +
+      '      <strong style="color:var(--color-role-admin);">ADMIN (PIN: 112233)</strong><br>' +
+      '      <span style="color:var(--color-text-muted);">Principal Sharma · Full School Overview & Audit</span>' +
+      '    </div>' +
+      '    <div>' +
+      '      <strong style="color:var(--color-role-teacher);">TEACHERS (2233 / 4455)</strong><br>' +
+      '      <span style="color:var(--color-text-muted);">Anjali Patil (2233) · Vikram Deshmukh (4455)</span>' +
+      '    </div>' +
+      '    <div>' +
+      '      <strong style="color:var(--color-role-student);">STUDENTS (PIN: 1234)</strong><br>' +
+      '      <span style="color:var(--color-text-muted);">Aarav (Grade 6) · Priya (Grade 5)</span>' +
+      '    </div>' +
+      '  </div>' +
+      '</div>' +
       '<div style="margin-top:20px;text-align:center;">' +
       '  <a href="#/home" class="btn btn-ghost">← CONTINUE AS GUEST</a>' +
       '</div>'
@@ -374,7 +394,30 @@
       var session;
       if (state.role === 'admin') session = await Auth.loginAdmin(pin);
       else if (state.role === 'teacher') session = await Auth.loginTeacher(state.accountId, pin);
-      else session = await Auth.loginStudent(state.accountId, pin);
+      else {
+        session = await Auth.loginStudent(state.accountId, pin);
+        if (Auth.loadAccount && window.StoryLabState) {
+          try {
+            var studentAcc = await Auth.loadAccount(state.accountId);
+            if (studentAcc) {
+              var meta = studentAcc.metadata || {};
+              await window.StoryLabState.saveProfile({
+                id: studentAcc.id,
+                name: studentAcc.name,
+                grade: meta.grade || '5',
+                avatar: meta.avatar || 'sun',
+                language: meta.language || 'en',
+                languageTag: (meta.language === 'hi' ? 'hi-IN' : meta.language === 'mr' ? 'mr-IN' : 'en-IN'),
+                mic: 'touch',
+                onboardedAt: Date.now()
+              });
+              await window.StoryLabState.startSession();
+            }
+          } catch (e) {
+            console.warn('[Login] Could not activate student profile in state:', e);
+          }
+        }
+      }
 
       if (UI && UI.toast) {
         UI.toast({ title: 'Signed in', message: 'Welcome, ' + session.name + '.', kind: 'ok' });
@@ -443,6 +486,23 @@
      Events
      ------------------------------------------------------------ */
   function onClick(event) {
+    var reseedBtn = event.target.closest('[data-action="reseed-demo"]');
+    if (reseedBtn) {
+      if (Auth && typeof Auth.seedDemoData === 'function') {
+        reseedBtn.disabled = true;
+        reseedBtn.textContent = 'SEEDING…';
+        Auth.seedDemoData(true).then(function () {
+          fetch('/api/seed', { method: 'POST' }).catch(function () {});
+          if (UI && UI.toast) UI.toast({ title: 'Demo ready', message: 'Demo roles and records interconnected.', kind: 'ok' });
+          mount(_root);
+        }).catch(function (err) {
+          reseedBtn.disabled = false;
+          reseedBtn.textContent = '⚡ RE-SEED DATA';
+        });
+      }
+      return;
+    }
+
     var roleBtn = event.target.closest('[data-role-pick]');
     if (roleBtn) {
       pickRole(roleBtn.getAttribute('data-role-pick'));

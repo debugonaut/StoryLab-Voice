@@ -445,6 +445,398 @@
     return next;
   }
 
+  async function seedDemoData(force) {
+    var DB = window.DB;
+    if (!DB) return;
+
+    if (!force) {
+      try {
+        var existing = await getAccounts();
+        if (existing && existing.length > 0) return;
+      } catch (e) {}
+    }
+
+    console.log('[Auth] Seeding interconnected demo roles and records into IndexedDB...');
+
+    // 1. Accounts
+    var accounts = [
+      {
+        id: 'ADM-ROOT',
+        role: 'admin',
+        name: 'Principal Sharma',
+        pinHash: 'e0bc60c82713f64ef8a57c0c40d02ce24fd0141d5cc3086259c19b1e62a62bea', // 112233
+        createdAt: now() - 86400000 * 7,
+        active: true,
+        metadata: {
+          title: 'School Administrator',
+          school: 'Z.P. Primary School, Pune',
+          assignedStudentIds: []
+        }
+      },
+      {
+        id: 'TCH-2026-SCIE',
+        role: 'teacher',
+        name: 'Anjali Patil',
+        pinHash: 'bcac371b54f59945a14aa49e2e408e5d6e4dbc59387f5d8cfc6b015d40d5bb02', // 2233
+        createdAt: now() - 86400000 * 6,
+        active: true,
+        metadata: {
+          batchLabel: 'Grade 6 - Science & Math',
+          subject: 'Science & Mathematics',
+          assignedStudentIds: ['SLV-2026-AARV', 'SLV-2026-PRYA']
+        }
+      },
+      {
+        id: 'TCH-2026-LANG',
+        role: 'teacher',
+        name: 'Vikram Deshmukh',
+        pinHash: 'dec1ab2f6d6e994cfe718666751e27a22a3c8c2e7c2708b995fb1e021197136e', // 4455
+        createdAt: now() - 86400000 * 6,
+        active: true,
+        metadata: {
+          batchLabel: 'Grade 5 - EVS & Social',
+          subject: 'Environmental Studies & Social',
+          assignedStudentIds: ['SLV-2026-RHAN', 'SLV-2026-SNHA']
+        }
+      },
+      {
+        id: 'SLV-2026-AARV',
+        role: 'student',
+        name: 'Aarav Shinde',
+        pinHash: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 1234
+        createdAt: now() - 86400000 * 5,
+        active: true,
+        metadata: {
+          grade: '6',
+          avatar: 'sun',
+          language: 'mr',
+          teacherId: 'TCH-2026-SCIE',
+          teacherName: 'Anjali Patil'
+        }
+      },
+      {
+        id: 'SLV-2026-PRYA',
+        role: 'student',
+        name: 'Priya Sharma',
+        pinHash: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 1234
+        createdAt: now() - 86400000 * 5,
+        active: true,
+        metadata: {
+          grade: '5',
+          avatar: 'star',
+          language: 'hi',
+          teacherId: 'TCH-2026-SCIE',
+          teacherName: 'Anjali Patil'
+        }
+      },
+      {
+        id: 'SLV-2026-RHAN',
+        role: 'student',
+        name: 'Rohan Kadam',
+        pinHash: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 1234
+        createdAt: now() - 86400000 * 4,
+        active: true,
+        metadata: {
+          grade: '5',
+          avatar: 'bolt',
+          language: 'mr',
+          teacherId: 'TCH-2026-LANG',
+          teacherName: 'Vikram Deshmukh'
+        }
+      },
+      {
+        id: 'SLV-2026-SNHA',
+        role: 'student',
+        name: 'Sneha Patil',
+        pinHash: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4', // 1234
+        createdAt: now() - 86400000 * 4,
+        active: true,
+        metadata: {
+          grade: '6',
+          avatar: 'atom',
+          language: 'en',
+          teacherId: 'TCH-2026-LANG',
+          teacherName: 'Vikram Deshmukh'
+        }
+      }
+    ];
+
+    for (var a = 0; a < accounts.length; a++) {
+      await DB.save('accounts', accounts[a].id, accounts[a]);
+    }
+
+    // 2. Student Progress
+    var aaravProgress = {
+      stories: {
+        'science-plants': {
+          id: 'science-plants',
+          title: 'How Plants Eat Light',
+          completed: true,
+          score: 1,
+          attempts: 1,
+          completedAt: now() - 86400000 * 2,
+          answers: { s2: 0 }
+        },
+        'math-market': {
+          id: 'math-market',
+          title: 'Market Day',
+          completed: true,
+          score: 1,
+          attempts: 1,
+          completedAt: now() - 86400000,
+          answers: { s2: 0 }
+        }
+      },
+      labs: {
+        'acid-base': {
+          id: 'acid-base',
+          title: 'Acids, Bases and Turmeric Indicator',
+          completed: true,
+          completedAt: now() - 86400000,
+          durationMs: 360000
+        }
+      }
+    };
+    await DB.save('progress', 'SLV-2026-AARV', aaravProgress);
+    await DB.save('progress', 'student', aaravProgress);
+
+    var priyaProgress = {
+      stories: {
+        'math-fractions': {
+          id: 'math-fractions',
+          title: 'Pizza Fractions',
+          completed: true,
+          score: 1,
+          attempts: 1,
+          completedAt: now() - 86400000 * 2,
+          answers: { s2: 0 }
+        },
+        'math-market': {
+          id: 'math-market',
+          title: 'Market Day',
+          completed: true,
+          score: 1,
+          attempts: 1,
+          completedAt: now() - 86400000,
+          answers: { s2: 0 }
+        }
+      },
+      labs: {
+        'salt-dissolving': {
+          id: 'salt-dissolving',
+          title: 'Salt Dissolving and Saturation',
+          completed: true,
+          completedAt: now() - 86400000,
+          durationMs: 420000
+        }
+      }
+    };
+    await DB.save('progress', 'SLV-2026-PRYA', priyaProgress);
+
+    var rohanProgress = {
+      stories: {
+        'social-village': {
+          id: 'social-village',
+          title: 'Our Village Community',
+          completed: true,
+          score: 1,
+          attempts: 1,
+          completedAt: now() - 86400000 * 3
+        },
+        'evs-animals': {
+          id: 'evs-animals',
+          title: 'Animals and Habitats',
+          completed: true,
+          score: 1,
+          attempts: 1,
+          completedAt: now() - 86400000
+        }
+      },
+      labs: {}
+    };
+    await DB.save('progress', 'SLV-2026-RHAN', rohanProgress);
+
+    var snehaProgress = {
+      stories: {
+        'science-solar': {
+          id: 'science-solar',
+          title: 'Touring the Solar System',
+          completed: true,
+          score: 1,
+          attempts: 1,
+          completedAt: now() - 86400000 * 2
+        }
+      },
+      labs: {
+        'acid-base': {
+          id: 'acid-base',
+          title: 'Acids, Bases and Turmeric Indicator',
+          completed: true,
+          completedAt: now() - 86400000,
+          durationMs: 310000
+        }
+      }
+    };
+    await DB.save('progress', 'SLV-2026-SNHA', snehaProgress);
+
+    // 3. Journeys
+    var aaravJourney = {
+      version: 1,
+      createdAt: now() - 86400000 * 7,
+      orientation: { completed: true, score: 1, total: 1, completedAt: now() - 86400000 * 5 },
+      badges: [
+        { id: 'first-story', label: 'Story Starter', earnedAt: now() - 86400000 * 2 },
+        { id: 'curious-mind', label: 'Curious Mind', earnedAt: now() - 86400000 },
+        { id: 'lab-explorer', label: 'Lab Explorer', earnedAt: now() - 86400000 },
+        { id: 'marathi-scholar', label: 'मराठी भाषा', earnedAt: now() - 86400000 }
+      ],
+      stats: { sessionsStarted: 4, totalTimeMs: 42 * 60 * 1000 }
+    };
+    await DB.save('journey', 'SLV-2026-AARV', aaravJourney);
+    await DB.save('journey', 'student', aaravJourney);
+
+    // 4. Default Profile
+    var curProf = await DB.load('profile', 'student');
+    if (!curProf || !curProf.name) {
+      await DB.save('profile', 'student', {
+        id: 'SLV-2026-AARV',
+        name: 'Aarav Shinde',
+        avatar: 'sun',
+        grade: '6',
+        language: 'mr',
+        languageTag: 'mr-IN',
+        mic: 'verified',
+        onboardedAt: now() - 86400000 * 5
+      });
+    }
+
+    // 5. Assignments (Teacher Anjali Patil -> Aarav & Priya, Vikram Deshmukh -> All)
+    var assignments = [
+      {
+        id: 1,
+        teacherId: 'TCH-2026-SCIE',
+        teacherName: 'Anjali Patil',
+        targetType: 'student',
+        targetId: 'SLV-2026-AARV',
+        moduleType: 'story',
+        moduleId: 'science-water',
+        notes: 'Please listen to the water cycle story before our Tuesday practical lab.',
+        dueAt: now() + 86400000 * 2,
+        createdAt: now() - 86400000,
+        completedBy: []
+      },
+      {
+        id: 2,
+        teacherId: 'TCH-2026-SCIE',
+        teacherName: 'Anjali Patil',
+        targetType: 'student',
+        targetId: 'SLV-2026-PRYA',
+        moduleType: 'lab',
+        moduleId: 'acid-base',
+        notes: 'Complete the turmeric paper indicator test experiment.',
+        dueAt: now() + 86400000 * 3,
+        createdAt: now() - 86400000,
+        completedBy: []
+      },
+      {
+        id: 3,
+        teacherId: 'TCH-2026-LANG',
+        teacherName: 'Vikram Deshmukh',
+        targetType: 'all',
+        targetId: null,
+        moduleType: 'story',
+        moduleId: 'social-map',
+        notes: 'Class 5 & 6 reading assignment: Map symbols and directions.',
+        dueAt: now() + 86400000 * 4,
+        createdAt: now() - 86400000 * 2,
+        completedBy: []
+      }
+    ];
+    for (var i = 0; i < assignments.length; i++) {
+      await DB.save('assignments', assignments[i].id, assignments[i]);
+    }
+
+    // 6. Teacher Notes
+    var notes = [
+      {
+        id: 1,
+        teacherId: 'TCH-2026-SCIE',
+        studentId: 'SLV-2026-AARV',
+        text: 'Aarav demonstrated excellent understanding of photosynthesis and asked insightful questions about chlorophyll in the voice tutor.',
+        createdAt: now() - 86400000 * 2
+      },
+      {
+        id: 2,
+        teacherId: 'TCH-2026-SCIE',
+        studentId: 'SLV-2026-PRYA',
+        text: 'Priya quickly grasped fraction division using the pizza story visualizer. Recommended for advanced math modules.',
+        createdAt: now() - 86400000 * 2
+      },
+      {
+        id: 3,
+        teacherId: 'TCH-2026-LANG',
+        studentId: 'SLV-2026-RHAN',
+        text: 'Rohan completed the village community mapping story with high accuracy and fluent Marathi voice answers.',
+        createdAt: now() - 86400000
+      }
+    ];
+    for (var n = 0; n < notes.length; n++) {
+      await DB.save('teacher_notes', notes[n].id, notes[n]);
+    }
+
+    // 7. Sessions
+    var sessions = [
+      {
+        id: 'SES-AARV-01',
+        studentId: 'SLV-2026-AARV',
+        startedAt: now() - 86400000 * 2,
+        endedAt: now() - 86400000 * 2 + (22 * 60 * 1000),
+        durationMs: 22 * 60 * 1000
+      },
+      {
+        id: 'SES-AARV-02',
+        studentId: 'SLV-2026-AARV',
+        startedAt: now() - 86400000,
+        endedAt: now() - 86400000 + (20 * 60 * 1000),
+        durationMs: 20 * 60 * 1000
+      },
+      {
+        id: 'SES-PRYA-01',
+        studentId: 'SLV-2026-PRYA',
+        startedAt: now() - 86400000,
+        endedAt: now() - 86400000 + (35 * 60 * 1000),
+        durationMs: 35 * 60 * 1000
+      },
+      {
+        id: 'SES-RHAN-01',
+        studentId: 'SLV-2026-RHAN',
+        startedAt: now() - 86400000,
+        endedAt: now() - 86400000 + (18 * 60 * 1000),
+        durationMs: 18 * 60 * 1000
+      }
+    ];
+    for (var s = 0; s < sessions.length; s++) {
+      await DB.save('sessions', sessions[s].id, sessions[s]);
+    }
+
+    // 8. Audit Log
+    var logs = [
+      { id: 1, actorId: 'ADM-ROOT', actorRole: 'admin', action: 'system_init', targetId: null, detail: 'Principal Sharma initialized school tablet ledger', ts: now() - 86400000 * 7 },
+      { id: 2, actorId: 'ADM-ROOT', actorRole: 'admin', action: 'teacher_enrolled', targetId: 'TCH-2026-SCIE', detail: 'Registered teacher Anjali Patil (Grade 6 Science & Math)', ts: now() - 86400000 * 6 },
+      { id: 3, actorId: 'ADM-ROOT', actorRole: 'admin', action: 'teacher_enrolled', targetId: 'TCH-2026-LANG', detail: 'Registered teacher Vikram Deshmukh (Grade 5 EVS & Social)', ts: now() - 86400000 * 6 },
+      { id: 4, actorId: 'TCH-2026-SCIE', actorRole: 'teacher', action: 'student_enrolled', targetId: 'SLV-2026-AARV', detail: 'Enrolled Aarav Shinde into Grade 6 Science & Math batch', ts: now() - 86400000 * 5 },
+      { id: 5, actorId: 'TCH-2026-SCIE', actorRole: 'teacher', action: 'assign_module', targetId: 'SLV-2026-AARV', detail: 'story: science-water assigned to Aarav Shinde', ts: now() - 86400000 },
+      { id: 6, actorId: 'TCH-2026-SCIE', actorRole: 'teacher', action: 'assign_module', targetId: 'SLV-2026-PRYA', detail: 'lab: acid-base assigned to Priya Sharma', ts: now() - 86400000 },
+      { id: 7, actorId: 'SLV-2026-AARV', actorRole: 'student', action: 'story_complete', targetId: 'science-plants', detail: 'Completed story: How Plants Eat Light (100% score)', ts: now() - 86400000 * 2 },
+      { id: 8, actorId: 'SLV-2026-PRYA', actorRole: 'student', action: 'lab_complete', targetId: 'salt-dissolving', detail: 'Completed virtual lab: Salt Dissolving and Saturation', ts: now() - 86400000 }
+    ];
+    for (var l = 0; l < logs.length; l++) {
+      await DB.save('audit_log', logs[l].id, logs[l]);
+    }
+
+    console.log('[Auth] ✓ Demo seed complete in IndexedDB!');
+  }
+
   window.StoryLabAuth = {
     init: init,
     getSession: getSession,
@@ -454,6 +846,7 @@
     loginTeacher: loginTeacher,
     loginAdmin: loginAdmin,
     logout: logout,
+    loadAccount: loadAccount,
     createAccount: createAccount,
     updateAccount: updateAccount,
     resetPin: resetPin,
@@ -465,6 +858,7 @@
     hashPin: hashPin,
     checkPin: checkPin,
     isFirstBoot: isFirstBoot,
+    seedDemoData: seedDemoData,
     migrateExistingStudent: migrateExistingStudent,
     writeAuditLog: writeAuditLog,
     getAppSettings: getAppSettings,

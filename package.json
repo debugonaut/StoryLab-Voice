@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node tools/server.mjs",
     "serve": "node tools/server.mjs",
+    "seed": "node tools/seed.mjs",
     "test": "node tools/smoke.mjs"
   },
   "engines": {

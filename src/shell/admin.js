@@ -124,6 +124,7 @@
       '      <button type="button" class="btn btn-secondary btn--sm" data-action="settings">APP SETTINGS</button>' +
       '      <button type="button" class="btn btn-secondary btn--sm" data-action="log">VIEW AUDIT LOG</button>' +
       '      <button type="button" class="btn btn-secondary btn--sm" data-action="export">EXPORT ALL DATA</button>' +
+      '      <button type="button" class="btn btn-secondary btn--sm" data-action="reseed" style="border:1px dashed var(--color-accent);color:var(--color-accent);">⚡ RE-SEED DEMO DATA</button>' +
       '      <button type="button" class="btn btn-danger btn--sm" data-action="factory">FACTORY RESET</button>' +
       '    </div>' +
       '  </section>' +
@@ -146,6 +147,25 @@
     root.querySelector('[data-action="log"]').addEventListener('click', function () {
       window.StoryLabRouter.navigate('admin/log');
     });
+
+    var reseedBtn = root.querySelector('[data-action="reseed"]');
+    if (reseedBtn) {
+      reseedBtn.addEventListener('click', async function () {
+        if (confirm('Re-seed all interconnected demo accounts, assignments, and audit logs?')) {
+          reseedBtn.disabled = true;
+          reseedBtn.textContent = 'SEEDING…';
+          try {
+            await Auth.seedDemoData(true);
+            fetch('/api/seed', { method: 'POST' }).catch(function () {});
+            toast('Demo seeded', 'All interconnected roles and records have been refreshed.', 'ok');
+            mount(root);
+          } catch (e) {
+            reseedBtn.disabled = false;
+            reseedBtn.textContent = '⚡ RE-SEED DEMO DATA';
+          }
+        }
+      });
+    }
 
     root.querySelector('[data-action="export"]').addEventListener('click', async function () {
       var dump = {
